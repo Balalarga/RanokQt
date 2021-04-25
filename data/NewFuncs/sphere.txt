@@ -1,0 +1,5 @@
+ARGUMENT X(-2, 2),Y(-2, 2),Z(-2, 2);
+
+VARIABLE W = 1 - X*X - Y*Y - Z*Z;
+
+RETURN W;
