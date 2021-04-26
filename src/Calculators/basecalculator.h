@@ -24,12 +24,15 @@ struct ZoneFlags
 
 struct VoxelData
 {
-    VoxelData(const glm::vec3& center, const glm::vec3& size, const glm::vec4& color):
-        center(center), size(size), color(color)
+    VoxelData(){};
+    VoxelData(const glm::vec3& center, const glm::vec3& size,
+              const glm::vec4& color, std::vector<std::pair<glm::vec3, double>>& values):
+        center(center), size(size), color(color), values(values)
     {}
     glm::vec3 center;
     glm::vec3 size;
     glm::vec4 color;
+    std::vector<std::pair<glm::vec3, double>> values;
 };
 
 struct StorageItem
@@ -37,37 +40,24 @@ struct StorageItem
     glm::vec3 point;
     friend inline bool operator<(const StorageItem& a, const StorageItem& b);
 };
-inline bool operator<(const StorageItem& a, const StorageItem& b)
-{
-    return a.point.x < b.point.x && a.point.y < b.point.y && a.point.z < b.point.z;
-}
 
 class BaseCalculator
 {
 public:
-    BaseCalculator(){m_results = new std::deque<VoxelData>;};
-    virtual ~BaseCalculator(){delete m_results;};
+    BaseCalculator();
+    virtual ~BaseCalculator();
     virtual const std::deque<VoxelData>& Calculate(Program& program, Zone zone) = 0;
-    void SetIterationFunc(std::function<void(VoxelData&)> iterFunc){m_iterFunc = iterFunc;}
+    const std::deque<VoxelData>& GetResults();
+    void SetIterationFunc(std::function<void(VoxelData&)> iterFunc);
+    void SaveDataToFile(std::string file);
+    void LoadDataFromFile(std::string file);
 
 protected:
     std::deque<VoxelData>* m_results;
     std::map<StorageItem, double> storage;
     std::function<void(VoxelData&)> m_iterFunc;
 
-    bool CheckZone(Zone zone, ZoneFlags flags) const
-    {
-        switch (zone)
-        {
-        case Zone::Positive:
-            return flags.plus;
-        case Zone::Zero:
-            return flags.zero || (flags.plus && flags.minus);
-        case Zone::Negative:
-            return flags.minus;
-
-        }
-    }
+    bool CheckZone(Zone zone, ZoneFlags flags) const;
 };
 
 #endif // BASECALCULATOR_H

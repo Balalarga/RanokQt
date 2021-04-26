@@ -15,6 +15,7 @@ std::map<std::string, FunctionRef> LangFunctions::functions =
     {"sinh",  std::sinh},
     {"tanh",  std::tanh},
     {"exp",   std::exp},
+    {"ln",    std::log},
     {"log",   std::log},
     {"log10", std::log10},
     {"log2",  std::log2},

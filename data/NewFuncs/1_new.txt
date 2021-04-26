@@ -1,13 +1,13 @@
-arg x, y, z;
+arg x(2), y(2), z(2);
 
-const a = 4,
-      b = 5;
+const a = 4, b = 5;
 
-var w1 = a - x^2 - z;
-var w2 = a - y^2 - z;
-var w3 = w2 & w1;
-var w6 = 0.00001 - z^2;
+var s1 = 1 - (x-0)^2 - (y-0)^2 - (z-0)^2;
+var s2 = 1 - (x-1)^2 - (y-0)^2 - (z-0)^2;
+var s3 = 1 - (x-0)^2 - (y-1.2)^2 - (z-0)^2;
 
-var w = w3 | w6;
+var v = 2 * 2 + 1;
+
+var w = s1 | s2 & s3;
 
 return w;

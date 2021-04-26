@@ -31,7 +31,7 @@ public:
 private:
     std::mutex mtx;
     float zoom = 20;
-    float yAngle = 135.f;
+    float yAngle = 134.f;
     SDL_Window* window;
     SDL_GLContext context;
     std::vector<Cube> cubes;

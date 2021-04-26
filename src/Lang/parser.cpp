@@ -33,6 +33,11 @@ Program Parser::GetProgram()
                 else
                     error = "Unknown keyword " + token.name;
             }
+            else
+            {
+                error = "Unknown token " + token.name;
+                break;
+            }
         }
     }
     else
@@ -182,9 +187,7 @@ std::shared_ptr<Expression> Parser::Term(Program& program)
     auto node = Factor(program);
     while(token == TokenType::Pow      ||
           token == TokenType::Multiply ||
-          token == TokenType::Divide   ||
-          token == TokenType::Cross    ||
-          token == TokenType::Union)
+          token == TokenType::Divide)
     {
         auto prev = token;
         ToNextToken();
@@ -237,7 +240,9 @@ std::shared_ptr<Expression> Parser::Expr(Program& program)
 {
     auto node = Term(program);
     while(token == TokenType::Minus||
-          token == TokenType::Plus)
+          token == TokenType::Plus ||
+          token == TokenType::Cross ||
+          token == TokenType::Union)
     {
         auto prev = token;
         ToNextToken();

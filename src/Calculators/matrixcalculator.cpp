@@ -27,41 +27,30 @@ const std::deque<VoxelData> &MatrixCalculator::Calculate(Program &program, Zone 
             double z = args[2].limits.first + size.z;
             while(z <= args[2].limits.second)
             {
-                glm::vec3 currentCoords[] = {
-                    { x+size.x, y+size.y, z+size.z },
-                    { x+size.x, y+size.y, z-size.z },
-                    { x+size.x, y-size.y, z+size.z },
-                    { x+size.x, y-size.y, z-size.z },
-                    { x-size.x, y+size.y, z+size.z },
-                    { x-size.x, y+size.y, z-size.z },
-                    { x-size.x, y-size.y, z+size.z },
-                    { x-size.x, y-size.y, z-size.z }
+                vector<pair<glm::vec3, double>> values{
+                    {{ x+size.x, y+size.y, z+size.z }, 0},
+                    {{ x+size.x, y+size.y, z-size.z }, 0},
+                    {{ x+size.x, y-size.y, z+size.z }, 0},
+                    {{ x+size.x, y-size.y, z-size.z }, 0},
+                    {{ x-size.x, y+size.y, z+size.z }, 0},
+                    {{ x-size.x, y+size.y, z-size.z }, 0},
+                    {{ x-size.x, y-size.y, z+size.z }, 0},
+                    {{ x-size.x, y-size.y, z-size.z }, 0}
                 };
-                double currentValues[8];
                 ZoneFlags flags;
                 for(int i = 0; i < 8; i++)
                 {
-//                    auto it = storage.find({currentCoords[i]});
-//                    if(it != storage.end())
-//                    {
-//                        currentValues[i] = it->second;
-//                    }
-//                    else
-//                    {
-                        currentValues[i] = program.Compute(currentCoords[i]);
-//                        storage[{currentCoords[i]}] = currentValues[i];
-//                    }
-
-                    if(currentValues[i] > 0)
+                    values[i].second = program.Compute(values[i].first);
+                    if(values[i].second > 0)
                         flags.plus = true;
-                    if(currentValues[i] < 0)
+                    if(values[i].second < 0)
                         flags.minus = true;
-                    if(currentValues[i] == 0)
+                    if(values[i].second == 0)
                         flags.zero = true;
                 }
                 if(CheckZone(zone, flags))
                 {
-                    m_results->push_back(VoxelData({x, y, z}, size, {1, 1, 1, 0.2}));
+                    m_results->push_back(VoxelData({x, y, z}, size, {1, 1, 1, 0.2}, values));
                     if(m_iterFunc)
                         m_iterFunc(m_results->back());
                     counter++;
