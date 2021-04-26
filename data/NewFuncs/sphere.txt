@@ -1,4 +1,4 @@
-ARGUMENT X(-2, 2),Y(-2, 2),Z(-2, 2);
+ARGUMENT X(-1, 1),Y(-1, 1),Z(-1, 1);
 
 VARIABLE W = 1 - X*X - Y*Y - Z*Z;
 

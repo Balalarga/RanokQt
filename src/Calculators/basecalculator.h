@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <vector>
+#include <functional>
 #include <glm/glm.hpp>
 
 #include "Lang/program.h"
@@ -31,14 +32,29 @@ struct VoxelData
     glm::vec4 color;
 };
 
+struct StorageItem
+{
+    glm::vec3 point;
+    friend inline bool operator<(const StorageItem& a, const StorageItem& b);
+};
+inline bool operator<(const StorageItem& a, const StorageItem& b)
+{
+    return a.point.x < b.point.x && a.point.y < b.point.y && a.point.z < b.point.z;
+}
+
 class BaseCalculator
 {
 public:
-    BaseCalculator(){};
-    virtual ~BaseCalculator(){};
-    virtual std::deque<VoxelData> Calculate(Program& program, Zone zone) = 0;
+    BaseCalculator(){m_results = new std::deque<VoxelData>;};
+    virtual ~BaseCalculator(){delete m_results;};
+    virtual const std::deque<VoxelData>& Calculate(Program& program, Zone zone) = 0;
+    void SetIterationFunc(std::function<void(VoxelData&)> iterFunc){m_iterFunc = iterFunc;}
 
 protected:
+    std::deque<VoxelData>* m_results;
+    std::map<StorageItem, double> storage;
+    std::function<void(VoxelData&)> m_iterFunc;
+
     bool CheckZone(Zone zone, ZoneFlags flags) const
     {
         switch (zone)

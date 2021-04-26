@@ -28,9 +28,3 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                        ${CMAKE_SOURCE_DIR}/bin/ $<TARGET_FILE_DIR:${PROJECT_NAME}>)
-
-#   if(EXISTS ${CMAKE_SOURCE_DIR}/data)
-#       add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
-#                         COMMAND ${CMAKE_COMMAND} -E copy_directory
-#                             ${CMAKE_SOURCE_DIR}/data/ $<TARGET_FILE_DIR:${PROJECT_NAME}>/data)
-#   endif()

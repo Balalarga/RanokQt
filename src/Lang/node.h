@@ -53,11 +53,11 @@ struct NumberExpr: public Expression
 
 struct ConstExpr: public Expression
 {
-    ConstExpr(std::string name, double value):
-        name(name)
+    ConstExpr(std::string name, std::shared_ptr<Expression> expr):
+        name(name),
+        expr(expr)
     {
-        ready = true;
-        store = value;
+        ready = false;
     }
     virtual double GetValue() override
     {
@@ -65,10 +65,13 @@ struct ConstExpr: public Expression
         std::cout<<name<<" = ";
         std::cout<<store<<std::endl;
 #endif
+        if(!ready)
+            SetValue(expr->GetValue());
         return store;
     };
 
     std::string name;
+    std::shared_ptr<Expression> expr;
 };
 
 struct ArgumentExpr: public Expression

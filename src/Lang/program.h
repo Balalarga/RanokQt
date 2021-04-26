@@ -2,6 +2,7 @@
 #define PROGRAM_H
 
 #include "node.h"
+#include <glm/glm.hpp>
 #include <set>
 #include <map>
 
@@ -18,7 +19,7 @@ public:
     Program();
 
     double Compute(std::map<std::string, double> arguments);
-    double Compute(std::vector<double> arguments);
+    double Compute(glm::vec3 arguments);
     std::vector<ArgData> GetArgs();
 
     std::string GetError();
@@ -38,7 +39,7 @@ private:
 
     void AddArg(std::string& name, std::pair<double, double> limits);
     void AddVar(std::string& name, std::shared_ptr<Expression> expr);
-    void AddConst(std::string& name, double value);
+    void AddConst(std::string& name, std::shared_ptr<Expression> expr);
 };
 
 #endif // PROGRAM_H

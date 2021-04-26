@@ -24,7 +24,7 @@ Window::Window(WindowConfig config)
 
     glEnable(GL_DEPTH_TEST);
 
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
 
     glEnable(GL_LIGHT0);
     glEnable(GL_LIGHTING);
@@ -36,8 +36,9 @@ Window::Window(WindowConfig config)
     glLoadIdentity();
     gluPerspective(45.0f, (float)800 / (600> 0 ? (float)600: 1.0f), 0.125f, 512.0f);
 
-    float LightPosition[] = {0.0f, 0.0f, 2.5f, 1.0f};
+    float LightPosition[] = {0.0f, 2.5f, 2.5f};
     glLightfv(GL_LIGHT0, GL_POSITION, LightPosition);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
 Window::~Window()
@@ -86,12 +87,14 @@ void Window::Render()
 
     glEnd();
 
+    mtx.lock();
     glBegin(GL_QUADS);
 
     for(auto& i: cubes)
         i.Draw();
 
     glEnd();
+    mtx.unlock();
 
     SDL_GL_SwapWindow(window);
 }
@@ -109,19 +112,19 @@ void Window::HandleEvent()
                 isOpen = false;
             else if(e.key.keysym.scancode == SDL_SCANCODE_S)
             {
-                zoom += 0.1;
+                zoom += 0.2;
             }
             else if(e.key.keysym.scancode == SDL_SCANCODE_W)
             {
-                zoom -= 0.1;
+                zoom -= 0.2;
             }
             else if(e.key.keysym.scancode == SDL_SCANCODE_A)
             {
-                yAngle--;
+                yAngle-=2;
             }
             else if(e.key.keysym.scancode == SDL_SCANCODE_D)
             {
-                yAngle++;
+                yAngle+=2;
             }
         }
     }

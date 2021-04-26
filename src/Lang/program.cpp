@@ -10,7 +10,10 @@ Program::Program()
         {"e", 2.71828182845904523536},
     };
     for(const auto& i: stdConstant)
-        constants[i.first] = shared_ptr<ConstExpr>(new ConstExpr(i.first, i.second));
+    {
+        shared_ptr<Expression> expr(new NumberExpr(i.second));
+        constants[i.first] = shared_ptr<ConstExpr>(new ConstExpr(i.first, expr));
+    }
 }
 
 double Program::Compute(std::map<std::string, double> args)
@@ -36,19 +39,14 @@ double Program::Compute(std::map<std::string, double> args)
     return res;
 }
 
-double Program::Compute(std::vector<double> args)
+double Program::Compute(glm::vec3 args)
 {
-    if(args.size() != arguments.size())
-    {
-        error = "Invalid count of arguments";
-        return 0;
-    }
-
-    int count = 0;
-    for(auto& i: this->arguments)
-    {
-        i.second->SetValue(args[count++]);
-    }
+    auto it = arguments.begin();
+    it->second->SetValue(args.x);
+    it++;
+    it->second->SetValue(args.y);
+    it++;
+    it->second->SetValue(args.z);
 
     double res = result->GetValue();
 
@@ -123,10 +121,10 @@ void Program::AddVar(string& name, std::shared_ptr<Expression> expr)
         error = "Variable "+name+" alredy exists";
 }
 
-void Program::AddConst(string& name, double value)
+void Program::AddConst(string& name, std::shared_ptr<Expression> expr)
 {
     if(!findArgument(name))
-        constants[name] = shared_ptr<ConstExpr>(new ConstExpr(name, value));
+        constants[name] = shared_ptr<ConstExpr>(new ConstExpr(name, expr));
     else
         error = "Constant "+name+" alredy exists";
 }

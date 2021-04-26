@@ -63,11 +63,12 @@ void Parser::HandleArgument(Program &program)
         while(token != TokenType::Endline)
         {
             ToNextToken();
-                CheckToken(TokenType::Id);
-                string name = token.name;
-                ToNextToken();
-                CheckToken(TokenType::ParenOpen);
-                pair<double, double> limit;
+            CheckToken(TokenType::Id);
+            string name = token.name;
+            ToNextToken();
+            pair<double, double> limit{-5, 5};
+            if(token == TokenType::ParenOpen)
+            {
                 ToNextToken();
                 bool negative = false;
                 if(token == TokenType::Minus)
@@ -76,22 +77,31 @@ void Parser::HandleArgument(Program &program)
                     ToNextToken();
                 }
                 CheckToken(TokenType::Number);
-                limit.first = negative ? -token.value : token.value;
+                limit.first = token.value;
                 ToNextToken();
-                CheckToken(TokenType::Comma);
-                ToNextToken();
-                negative = false;
-                if(token == TokenType::Minus)
+                if(token == TokenType::Comma)
                 {
-                    negative = true;
+                    limit.first = negative ? -limit.first : limit.first;
+                    ToNextToken();
+                    negative = false;
+                    if(token == TokenType::Minus)
+                    {
+                        negative = true;
+                        ToNextToken();
+                    }
+                    CheckToken(TokenType::Number);
+                    limit.second = negative ? -token.value : token.value;
                     ToNextToken();
                 }
-                CheckToken(TokenType::Number);
-                limit.second = negative ? -token.value : token.value;
-                ToNextToken();
+                else
+                {
+                    limit.second = limit.first;
+                    limit.first = -limit.second;
+                }
                 CheckToken(TokenType::ParenClose);
                 ToNextToken();
-                program.AddArg(name, limit);
+            }
+            program.AddArg(name, limit);
         }
         CheckToken(TokenType::Endline);
         ToNextToken();
@@ -104,26 +114,19 @@ void Parser::HandleArgument(Program &program)
 
 void Parser::HandleConstant(Program &program)
 {
-    ToNextToken();
-    if(!IsError()){
-        CheckToken(TokenType::Id);
-        string name = token.name;
-        double value;
-        ToNextToken();
-        CheckToken(TokenType::Assign);
-        ToNextToken();
-        bool negative = false;
-        if(token == TokenType::Minus)
+    if(!IsError())
+    {
+        while(token != TokenType::Endline)
         {
-            negative = true;
             ToNextToken();
+            CheckToken(TokenType::Id);
+            string name = token.name;
+            ToNextToken();
+            CheckToken(TokenType::Assign);
+            ToNextToken();
+            auto expr = Expr(program);
+            program.AddConst(name, expr);
         }
-        CheckToken(TokenType::Number);
-        value = negative ? -token.value : token.value;
-        ToNextToken();
-
-        CheckToken(TokenType::Endline);
-        program.AddConst(name, value);
         ToNextToken();
     }
     else
@@ -169,7 +172,7 @@ void Parser::CheckToken(TokenType expect)
     if(token != expect)
     {
         cout<<"Parser error: \n"<<"Unexpected token "+token.ToString()+
-            "\n"+"Expected " + Token(expect).ToString()<<endl;
+              "\n"+"Expected " + Token(expect).ToString()<<endl;
         cout<<lexer.GetData().substr(0, lexer.GetPivot())<<endl;
     }
 }

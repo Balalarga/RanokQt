@@ -27,6 +27,14 @@ Token Lexer::NextToken()
 {
     while (pivot < dataSize && isspace(data[pivot]))
         pivot++;
+    if(data[pivot] == '/' && data[pivot+1] == '/')
+    {
+        while(pivot < dataSize && data[pivot] != '\n')
+            pivot++;
+        pivot++;
+        return NextToken();
+    }
+
     if(pivot >= dataSize || data[pivot] == '\0')
         return Token(TokenType::End, "\\0");
     if(data[pivot] == ';')
@@ -38,7 +46,6 @@ Token Lexer::NextToken()
     if ((data[pivot+1] == '.')
             || isdigit (data[pivot])
             // allow decimal numbers without a leading 0. e.g. ".5"
-            // Dennis Jones 01-30-2009
             || (data[pivot] == '.' && isdigit (data[pivot+1])))
     {
         // skip sign for now

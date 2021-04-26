@@ -1,0 +1,13 @@
+arg x, y, z;
+
+const a = 4,
+      b = 5;
+
+var w1 = a - x^2 - z;
+var w2 = a - y^2 - z;
+var w3 = w2 & w1;
+var w6 = 0.00001 - z^2;
+
+var w = w3 | w6;
+
+return w;
