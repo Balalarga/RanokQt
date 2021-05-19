@@ -55,13 +55,6 @@ void Window::AddCube(glm::vec3 pos, float size, glm::vec4 color)
     mtx.unlock();
 }
 
-void Window::AddCube(glm::vec3 pos, glm::vec3 size, glm::vec4 color)
-{
-    mtx.lock();
-    cubes.push_back(Cube(pos, size, color));
-    mtx.unlock();
-}
-
 void Window::Render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

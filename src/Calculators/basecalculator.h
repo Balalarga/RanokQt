@@ -25,12 +25,12 @@ struct ZoneFlags
 struct VoxelData
 {
     VoxelData(){};
-    VoxelData(const glm::vec3& center, const glm::vec3& size,
+    VoxelData(const glm::vec3& center, const double& size,
               const glm::vec4& color, std::vector<std::pair<glm::vec3, double>>& values):
         center(center), size(size), color(color), values(values)
     {}
     glm::vec3 center;
-    glm::vec3 size;
+    double size;
     glm::vec4 color;
     std::vector<std::pair<glm::vec3, double>> values;
 };

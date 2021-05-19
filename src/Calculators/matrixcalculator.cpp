@@ -3,7 +3,7 @@
 
 using namespace std;
 
-MatrixCalculator::MatrixCalculator(glm::vec3 step):
+MatrixCalculator::MatrixCalculator(const std::vector<int> &step):
     m_step(step)
 {
 
@@ -12,30 +12,33 @@ MatrixCalculator::MatrixCalculator(glm::vec3 step):
 const std::deque<VoxelData> &MatrixCalculator::Calculate(Program &program, Zone zone)
 {
     auto args = program.GetArgs();
-    glm::vec3 size = {
-        (args[0].limits.second - args[0].limits.first)/m_step.x,
-        (args[1].limits.second - args[1].limits.first)/m_step.y,
-        (args[2].limits.second - args[2].limits.first)/m_step.z
-    };
-    double x = args[0].limits.first + size.x;
+    double size = (args[0].limits.second - args[0].limits.first)/m_step[0];
+    for(int i = 1; i < args.size(); i++)
+    {
+        double newSize = (args[i].limits.second - args[i].limits.first)/m_step[i];
+        if(size > newSize)
+            size = newSize;
+    }
+    double halfSize = size/2.;
+    double x = args[0].limits.first + halfSize;
     int counter = 0;
     while(x <= args[0].limits.second)
     {
-        double y = args[1].limits.first + size.y;
+        double y = args[1].limits.first + halfSize;
         while(y <= args[1].limits.second)
         {
-            double z = args[2].limits.first + size.z;
+            double z = args[2].limits.first + halfSize;
             while(z <= args[2].limits.second)
             {
                 vector<pair<glm::vec3, double>> values{
-                    {{ x+size.x, y+size.y, z+size.z }, 0},
-                    {{ x+size.x, y+size.y, z-size.z }, 0},
-                    {{ x+size.x, y-size.y, z+size.z }, 0},
-                    {{ x+size.x, y-size.y, z-size.z }, 0},
-                    {{ x-size.x, y+size.y, z+size.z }, 0},
-                    {{ x-size.x, y+size.y, z-size.z }, 0},
-                    {{ x-size.x, y-size.y, z+size.z }, 0},
-                    {{ x-size.x, y-size.y, z-size.z }, 0}
+                    {{ x+halfSize, y+halfSize, z+halfSize }, 0},
+                    {{ x+halfSize, y+halfSize, z-halfSize }, 0},
+                    {{ x+halfSize, y-halfSize, z+halfSize }, 0},
+                    {{ x+halfSize, y-halfSize, z-halfSize }, 0},
+                    {{ x-halfSize, y+halfSize, z+halfSize }, 0},
+                    {{ x-halfSize, y+halfSize, z-halfSize }, 0},
+                    {{ x-halfSize, y-halfSize, z+halfSize }, 0},
+                    {{ x-halfSize, y-halfSize, z-halfSize }, 0}
                 };
                 ZoneFlags flags;
                 for(int i = 0; i < 8; i++)
@@ -55,11 +58,11 @@ const std::deque<VoxelData> &MatrixCalculator::Calculate(Program &program, Zone 
                         m_iterFunc(m_results->back());
                     counter++;
                 }
-                z+= size.z;
+                z+= size;
             }
-            y+= size.y;
+            y+= size;
         }
-//        x+= size.x;
+        x+= size;
     }
     return *m_results;
 }

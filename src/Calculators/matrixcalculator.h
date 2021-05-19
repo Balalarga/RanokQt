@@ -7,11 +7,11 @@
 class MatrixCalculator: public BaseCalculator
 {
 public:
-    MatrixCalculator(glm::vec3 step);
+    MatrixCalculator(const std::vector<int>& step);
     virtual const std::deque<VoxelData>& Calculate(Program& program, Zone zone) override;
 
 private:
-    glm::vec3 m_step;
+    std::vector<int> m_step;
 
 };
 
