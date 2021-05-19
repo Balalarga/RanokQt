@@ -32,10 +32,6 @@ double Program::Compute(std::map<std::string, double> args)
     double res = result->GetValue();
     result->Reset();
 
-#ifdef DEBUG
-    cout<<"\n\n";
-#endif
-
     return res;
 }
 
@@ -52,9 +48,6 @@ double Program::Compute(glm::vec3 args)
 
     result->Reset();
 
-#ifdef DEBUG
-    cout<<"\n\n";
-#endif
     return res;
 }
 
@@ -127,4 +120,10 @@ void Program::AddConst(string& name, std::shared_ptr<Expression> expr)
         constants[name] = shared_ptr<ConstExpr>(new ConstExpr(name, expr));
     else
         error = "Constant "+name+" alredy exists";
+}
+
+void Program::AddResult(std::shared_ptr<Expression> expr)
+{
+    if(!result.get())
+        result = expr;
 }

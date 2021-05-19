@@ -1,5 +1,6 @@
 #include "lexer.h"
 #include <sstream>
+#include <iostream>
 #include <algorithm>
 
 using namespace std;
@@ -16,26 +17,57 @@ void Lexer::SetText(const std::string& text)
         error = "Empty source code";
         return;
     }
-    data = text;
+    std::string data = text;
     std::transform(data.begin(), data.end(), data.begin(),
         [](unsigned char c){ return std::tolower(c); });
-    dataSize = text.size();
-    pivot = 0;
+    unsigned pivot = 0;
+    Token token;
+    while(token != TokenType::End)
+    {
+        token = ParseNextToken(data, pivot);
+        m_tokens.push(token);
+    }
 }
 
 Token Lexer::NextToken()
 {
-    while (pivot < dataSize && isspace(data[pivot]))
+    if(!m_tokens.empty())
+    {
+        auto first = m_tokens.front();
+        m_tokens.pop();
+        return first;
+    }
+    return Token(TokenType::End);
+}
+
+string Lexer::GetError()
+{
+    return error;
+}
+
+bool Lexer::IsError()
+{
+    return !error.empty();
+}
+
+void Lexer::FillQueue()
+{
+
+}
+
+Token Lexer::ParseNextToken(const std::string& data, unsigned& pivot)
+{
+    while (pivot < data.size() && isspace(data[pivot]))
         pivot++;
     if(data[pivot] == '/' && data[pivot+1] == '/')
     {
-        while(pivot < dataSize && data[pivot] != '\n')
+        while(pivot < data.size() && data[pivot] != '\n')
             pivot++;
         pivot++;
         return NextToken();
     }
 
-    if(pivot >= dataSize || data[pivot] == '\0')
+    if(pivot >= data.size() || data[pivot] == '\0')
         return Token(TokenType::End, "\\0");
     if(data[pivot] == ';')
     {
@@ -115,24 +147,4 @@ Token Lexer::NextToken()
         pivot++;
     auto word = data.substr(begin, pivot-begin);
     return Token(TokenType::Id, word);
-}
-
-string Lexer::GetError()
-{
-    return error;
-}
-
-bool Lexer::IsError()
-{
-    return !error.empty();
-}
-
-string &Lexer::GetData()
-{
-    return data;
-}
-
-int Lexer::GetPivot()
-{
-    return pivot;
 }

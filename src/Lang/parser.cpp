@@ -1,12 +1,24 @@
 #include "parser.h"
 #include "langfunctions.h"
+#include <sstream>
+#include <fstream>
 
 using namespace std;
 
-Parser::Parser(Lexer& lexer):
-    lexer(lexer)
+Parser::Parser(const std::string &sourceFile)
 {
+    fstream file(sourceFile);
+    if(!file)
+    {
+        cout<<"Parser: couldn't open file"<<endl;
+        return;
+    }
+    stringstream converter;
+    converter<<file.rdbuf();
 
+    file.close();
+
+    lexer.SetText(converter.str());
 }
 
 Program Parser::GetProgram()
@@ -165,7 +177,7 @@ void Parser::HandleReturn(Program &program)
     if(!IsError())
     {
         ToNextToken();
-        program.result = Expr(program);
+        program.AddResult(Expr(program));
         ToNextToken();
     }
     else
@@ -178,7 +190,6 @@ void Parser::CheckToken(TokenType expect)
     {
         cout<<"Parser error: \n"<<"Unexpected token "+token.ToString()+
               "\n"+"Expected " + Token(expect).ToString()<<endl;
-        cout<<lexer.GetData().substr(0, lexer.GetPivot())<<endl;
     }
 }
 

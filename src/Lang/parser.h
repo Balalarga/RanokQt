@@ -7,13 +7,13 @@
 class Parser
 {
 public:
-    Parser(Lexer &lexer);
+    Parser(const std::string& sourceFile);
     Program GetProgram();
     bool IsError();
     std::string GetError();
 
 private:
-    Lexer& lexer;
+    Lexer lexer;
     Token token;
 
     std::string error = "";

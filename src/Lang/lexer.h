@@ -2,6 +2,7 @@
 #define LEXER_H
 
 #include <string>
+#include <queue>
 #include "token.h"
 
 class Lexer
@@ -12,14 +13,14 @@ public:
     Token NextToken();
     std::string GetError();
     bool IsError();
-    std::string& GetData();
-    int GetPivot();
+
+protected:
+    void FillQueue();
+    Token ParseNextToken(const std::string &data, unsigned &pivot);
 
 private:
+    std::queue<Token> m_tokens;
     std::string error = "";
-    std::string data;
-    unsigned dataSize = 0;
-    unsigned pivot = 0;
 };
 
 #endif // LEXER_H

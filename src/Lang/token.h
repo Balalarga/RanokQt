@@ -25,6 +25,10 @@ enum class TokenType
 
 struct Token
 {
+    TokenType type;
+    double value = 0;
+    std::string name = "";
+
     Token(TokenType type = TokenType::Begin):
         type(type){}
     Token(TokenType type, double value):
@@ -35,50 +39,44 @@ struct Token
         name(name){}
     Token(TokenType type, char c):
         type(type),
-        name(std::string(1, c))
-    {
-    }
-    TokenType type;
-    double value = 0;
-    std::string name = "";
+        name(std::string(1, c)){}
 
     std::string ToString()
     {
         switch (type) {
         case TokenType::Begin:
-            return "Begin";
+            return "TokenType::Begin";
         case TokenType::Id:
-            return "Id : "+name;
+            return "TokenType::Id : "+name;
         case TokenType::Number:
-            return "Number : "+std::to_string(value);
+            return "TokenType::Number : "+std::to_string(value);
         case TokenType::Endline:
-            return "Endline";
+            return "TokenType::Endline";
         case TokenType::End:
-            return "End";
+            return "TokenType::End";
         case TokenType::ParenOpen:
-            return "ParenOpen";
+            return "TokenType::ParenOpen";
         case TokenType::ParenClose:
-            return "ParenClose";
+            return "TokenType::ParenClose";
         case TokenType::Comma:
-            return "Comma";
+            return "TokenType::Comma";
         case TokenType::Pow:
-            return "Pow";
+            return "TokenType::Pow";
         case TokenType::Multiply:
-            return "Multiply";
+            return "TokenType::Multiply";
         case TokenType::Divide:
-            return "Divide";
+            return "TokenType::Divide";
         case TokenType::Plus:
-            return "Plus";
+            return "TokenType::Plus";
         case TokenType::Minus:
-            return "Minus";
+            return "TokenType::Minus";
         case TokenType::Cross:
-            return "Cross";
+            return "TokenType::Cross";
         case TokenType::Union:
-            return "Union";
+            return "TokenType::Union";
         case TokenType::Assign:
-            return "Assign";
+            return "TokenType::Assign";
         }
-        return "";
     }
 
     bool operator !=(TokenType type)
