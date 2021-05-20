@@ -27,9 +27,9 @@ const std::deque<VoxelData> &RecursiveCalculator::Calculate(Program &program, Zo
     }
     voxelSize /= 2.;
     glm::vec3 center = {
-        args[0].limits.first + voxelSize,
-        args[1].limits.first + voxelSize,
-        args[2].limits.first + voxelSize
+        args[0].limits.first+(args[0].limits.second - args[0].limits.first)/2.,
+        args[1].limits.first+(args[1].limits.second - args[1].limits.first)/2.,
+        args[2].limits.first+(args[2].limits.second - args[2].limits.first)/2.,
     };
 
     m_program = &program;

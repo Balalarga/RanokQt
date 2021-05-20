@@ -27,6 +27,7 @@ void Lexer::SetText(const std::string& text)
         token = ParseNextToken(data, pivot);
         m_tokens.push(token);
     }
+    m_tokens.push(token);
 }
 
 Token Lexer::NextToken()
@@ -64,7 +65,7 @@ Token Lexer::ParseNextToken(const std::string& data, unsigned& pivot)
         while(pivot < data.size() && data[pivot] != '\n')
             pivot++;
         pivot++;
-        return NextToken();
+        return ParseNextToken(data, pivot);
     }
 
     if(pivot >= data.size() || data[pivot] == '\0')
@@ -102,7 +103,7 @@ Token Lexer::ParseNextToken(const std::string& data, unsigned& pivot)
         if (is.fail () && !is.eof ())
         {
             error = "Unexpected eof";
-            return Token();
+            return Token(TokenType::End);
         }
         return Token(TokenType::Number, val);
     }
@@ -139,7 +140,7 @@ Token Lexer::ParseNextToken(const std::string& data, unsigned& pivot)
     if (!isalpha (data[pivot]))
     {
         error = "Unexpected symbol "+string(1, data[pivot]);
-        return Token();
+        return Token(TokenType::End);
     }
 
     // we have a word (starting with A-Z) - pull it out

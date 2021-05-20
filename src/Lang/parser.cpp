@@ -202,7 +202,7 @@ std::shared_ptr<Expression> Parser::Term(Program& program)
     {
         auto prev = token;
         ToNextToken();
-        node = shared_ptr<BinaryExpr>(new BinaryExpr(prev.name, node, Term(program)));
+        node = shared_ptr<BinaryExpr>(new BinaryExpr(prev.name, node, Factor(program)));
     }
     return node;
 }

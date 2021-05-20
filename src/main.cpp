@@ -18,8 +18,9 @@ int main(int argc, char** argv)
         "Bone",     //2
         "Chainik",  //3
         "sphere",   //4
+        "lopatka",  //5
     };
-    int fileId = 3;
+    int fileId = 5;
 
     Parser parser("../data/NewFuncs/"+sourceFiles[fileId]+".txt");
     Program program = parser.GetProgram();
@@ -35,7 +36,7 @@ int main(int argc, char** argv)
     auto lims = program.GetArgs()[0].limits;
     int zoom = lims.second-lims.first;
     BaseCalculator* calculator;
-    calculator = new RecursiveCalculator(3);
+    calculator = new RecursiveCalculator(4);
 //    calculator = new MatrixCalculator({40, 40, 40});
     deque<VoxelData> voxels;
 
