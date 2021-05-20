@@ -64,6 +64,61 @@ std::vector<ArgData> Program::GetArgs()
     return data;
 }
 
+void Program::PrintTreeDepth(int depth)
+{
+    set<string> vars;
+    PrintNode(result.get(), vars, 0, depth);
+    cout<<endl;
+}
+
+void Program::PrintNode(Expression *node, set<string>& vars, int currDepth, int maxDepth)
+{
+    if(maxDepth == currDepth)
+        return;
+
+    cout<<'\n';
+
+    for(int i = 0; i < currDepth; i++)
+        cout<<" |";
+
+    if(auto casted = dynamic_cast<NumberExpr*>(node))
+    {
+        cout<<"NumberExpr: "<<casted->GetValue();
+    }
+    else if(auto casted = dynamic_cast<ConstExpr*>(node))
+    {
+        cout<<"ConstExpr: "<<casted->name<<" = "<<casted->GetValue();
+    }
+    else if(auto casted = dynamic_cast<ArgumentExpr*>(node))
+    {
+        cout<<"ArgumentExpr: "<<casted->name;
+    }
+    else if(auto casted = dynamic_cast<VariableExpr*>(node))
+    {
+        cout<<"VariableExpr: "<<casted->name;
+        if(vars.find(casted->name) == vars.end())
+        {
+            vars.insert(casted->name);
+            PrintNode(casted->expr.get(), vars, currDepth+1, maxDepth);
+        }
+    }
+    else if(auto casted = dynamic_cast<UnaryExpr*>(node))
+    {
+        cout<<"UnaryExpr: "<<casted->op;
+        PrintNode(casted->expr.get(), vars, currDepth+1, maxDepth);
+    }
+    else if(auto casted = dynamic_cast<BinaryExpr*>(node))
+    {
+        cout<<"BinaryExpr: "<<casted->op;
+        PrintNode(casted->left.get(), vars, currDepth+1, maxDepth);
+        PrintNode(casted->right.get(), vars, currDepth+1, maxDepth);
+    }
+    else if(auto casted = dynamic_cast<FunctionExpr*>(node))
+    {
+        cout<<"FunctionExpr: "<<LangFunctions::Find(casted->func);
+        PrintNode(casted->arg.get(), vars, currDepth+1, maxDepth);
+    }
+}
 string Program::GetError()
 {
     return error;
@@ -127,3 +182,4 @@ void Program::AddResult(std::shared_ptr<Expression> expr)
     if(!result.get())
         result = expr;
 }
+

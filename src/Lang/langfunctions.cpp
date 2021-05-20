@@ -28,3 +28,11 @@ FunctionRef LangFunctions::Find(std::string name)
     auto it = functions.find(name);
     return it == functions.end() ? nullptr: it->second;
 }
+
+std::string LangFunctions::Find(FunctionRef func)
+{
+    for(auto& i: functions)
+        if(i.second == func)
+            return i.first;
+    return "unknown";
+}

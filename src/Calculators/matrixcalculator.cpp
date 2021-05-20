@@ -40,17 +40,9 @@ const std::deque<VoxelData> &MatrixCalculator::Calculate(Program &program, Zone 
                     {{ x-halfSize, y-halfSize, z+halfSize }, 0},
                     {{ x-halfSize, y-halfSize, z-halfSize }, 0}
                 };
-                ZoneFlags flags;
                 for(int i = 0; i < 8; i++)
-                {
                     values[i].second = program.Compute(values[i].first);
-                    if(values[i].second > 0)
-                        flags.plus = true;
-                    if(values[i].second < 0)
-                        flags.minus = true;
-                    if(values[i].second == 0)
-                        flags.zero = true;
-                }
+                ZoneFlags flags = GetZoneFlags(values);
                 if(CheckZone(zone, flags))
                 {
                     m_results->push_back(VoxelData({x, y, z}, size, {1, 1, 1, 0.2}, values));

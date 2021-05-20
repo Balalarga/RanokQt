@@ -24,7 +24,6 @@ public:
     void Render();
     void HandleEvent();
     void SetZoom(float z);
-
     bool isOpen = true;
 
 private:

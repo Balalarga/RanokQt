@@ -4,6 +4,7 @@
 #include "node.h"
 #include <glm/glm.hpp>
 #include <map>
+#include <set>
 
 struct ArgData
 {
@@ -20,7 +21,7 @@ public:
     double Compute(glm::vec3 args);
 
     std::vector<ArgData> GetArgs();
-
+    void PrintTreeDepth(int depth);
     std::string GetError();
     bool IsError();
 
@@ -43,6 +44,7 @@ private:
     std::map<std::string, std::shared_ptr<VariableExpr>> variables;
     std::map<std::string, std::shared_ptr<ConstExpr>> constants;
 
+    void PrintNode(Expression* node, std::set<std::string>& vars, int currDepth, int maxDepth);
 
 };
 

@@ -58,6 +58,8 @@ protected:
     std::function<void(VoxelData&)> m_iterFunc;
 
     bool CheckZone(Zone zone, ZoneFlags flags) const;
+    ZoneFlags GetZoneFlags(const std::vector<std::pair<glm::vec3, double> > &values);
+
 };
 
 #endif // BASECALCULATOR_H

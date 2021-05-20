@@ -52,3 +52,18 @@ bool BaseCalculator::CheckZone(Zone zone, ZoneFlags flags) const
         return flags.minus;
     }
 }
+
+ZoneFlags BaseCalculator::GetZoneFlags(const vector<pair<glm::vec3, double>>& values)
+{
+    ZoneFlags flags;
+    for(int i = 0; i < 8; i++)
+    {
+        if(values[i].second > 0.)
+            flags.plus = true;
+        if(values[i].second < 0.)
+            flags.minus = true;
+        if(values[i].second == 0.)
+            flags.zero = true;
+    }
+    return flags;
+}

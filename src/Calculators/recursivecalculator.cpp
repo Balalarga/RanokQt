@@ -42,8 +42,6 @@ const std::deque<VoxelData> &RecursiveCalculator::Calculate(Program &program, Zo
 
 void RecursiveCalculator::recursionFunc(glm::vec3 coords, double size, int step)
 {
-    if(step == m_depth-1)
-        cout<<"Step "<<step<<endl;
     if(step == 0)
     {
         vector<pair<glm::vec3, double>> values{
@@ -56,17 +54,9 @@ void RecursiveCalculator::recursionFunc(glm::vec3 coords, double size, int step)
             {{ coords.x-size, coords.y-size, coords.z+size }, 0},
             {{ coords.x-size, coords.y-size, coords.z-size }, 0}
         };
-        ZoneFlags flags;
         for(int i = 0; i < 8; i++)
-        {
             values[i].second = m_program->Compute(values[i].first);
-            if(values[i].second > 0)
-                flags.plus = true;
-            if(values[i].second < 0)
-                flags.minus = true;
-            if(values[i].second == 0)
-                flags.zero = true;
-        }
+        ZoneFlags flags = GetZoneFlags(values);
         if(CheckZone(m_zone, flags))
         {
             m_results->push_back(VoxelData(coords, size, {1, 1, 1, 0.2}, values));

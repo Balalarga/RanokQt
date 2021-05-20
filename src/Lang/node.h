@@ -43,9 +43,6 @@ struct NumberExpr: public Expression
     }
     virtual double GetValue() override
     {
-#ifdef DEBUG
-        std::cout<<store<<std::endl;
-#endif
         return store;
     };
 };
@@ -61,10 +58,6 @@ struct ConstExpr: public Expression
     }
     virtual double GetValue() override
     {
-#ifdef DEBUG
-        std::cout<<name<<" = ";
-        std::cout<<store<<std::endl;
-#endif
         if(!ready)
             SetValue(expr->GetValue());
         return store;
@@ -81,10 +74,6 @@ struct ArgumentExpr: public Expression
         limits(lims){}
     virtual double GetValue() override
     {
-#ifdef DEBUG
-        std::cout<<"arg("<<name<<" = ";
-        std::cout<<store<<")"<<std::endl;
-#endif
         return store;
     };
 
@@ -101,10 +90,6 @@ struct VariableExpr: public Expression
     {
         if(!ready)
             SetValue(expr->GetValue());
-#ifdef DEBUG
-        std::cout<<name<<" = ";
-        std::cout<<store<<std::endl;
-#endif
         return store;
     };
     virtual void Reset() override
@@ -130,10 +115,6 @@ struct UnaryExpr: public Expression
             {
                 SetValue(-expr->GetValue());
             }
-#ifdef DEBUG
-            std::cout<<op<<" ";
-            std::cout<<store<<std::endl;
-#endif
             return store;
         }
         error = "Unknown operation "+op;
@@ -162,11 +143,6 @@ struct BinaryExpr: public Expression
         {
             double lVal = left->GetValue();
             double rVal = right->GetValue();
-#ifdef DEBUG
-            std::cout<<lVal<<" ";
-            std::cout<<op<<" ";
-            std::cout<<rVal<<std::endl;
-#endif
             if(op == "+")
             {
                 SetValue(lVal+rVal);
@@ -223,14 +199,8 @@ struct FunctionExpr: public Expression
         arg(arg){}
     virtual double GetValue() override
     {
-#ifdef DEBUG
-        std::cout<<"Func ";
-#endif
         if(!ready)
             SetValue(func(arg->GetValue()));
-#ifdef DEBUG
-        std::cout<<store<<std::endl;
-#endif
         return store;
     };
     virtual void Reset() override

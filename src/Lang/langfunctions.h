@@ -12,6 +12,7 @@ public:
     LangFunctions() = delete;
     static std::map<std::string, FunctionRef> functions;
     static FunctionRef Find(std::string);
+    static std::string Find(FunctionRef);
 };
 
 #endif // LANGFUNCTIONS_H
