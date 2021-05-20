@@ -15,7 +15,7 @@ protected:
     Zone m_zone;
     Program* m_program = nullptr;
 
-    void recursionFunc(glm::vec3 coords, double size, int step);
+    void recursionFunc(glm::vec3 coords, glm::vec3 size, int step);
 
 };
 
