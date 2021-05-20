@@ -3,7 +3,7 @@
 
 using namespace std;
 
-MatrixCalculator::MatrixCalculator(const std::vector<int> &step):
+MatrixCalculator::MatrixCalculator(glm::vec3 step):
     m_step(step)
 {
 
@@ -12,33 +12,40 @@ MatrixCalculator::MatrixCalculator(const std::vector<int> &step):
 const std::deque<VoxelData> &MatrixCalculator::Calculate(Program &program, Zone zone)
 {
     auto args = program.GetArgs();
-    double size = (args[0].limits.second - args[0].limits.first)/m_step[0];
-    for(int i = 1; i < args.size(); i++)
-    {
-        double newSize = (args[i].limits.second - args[i].limits.first)/m_step[i];
-        if(size > newSize)
-            size = newSize;
-    }
-    double halfSize = size/2.;
-    double x = args[0].limits.first + halfSize;
+    glm::vec3 size{
+        (args[0].limits.second-args[0].limits.first)/m_step.x,
+        (args[1].limits.second-args[1].limits.first)/m_step.y,
+        (args[2].limits.second-args[2].limits.first)/m_step.z,
+    };
+    glm::vec3 halfSize{
+        size.x/2.,
+        size.y/2.,
+        size.z/2.,
+    };
+
+    double x = args[0].limits.first + halfSize.x;
+
     int counter = 0;
+    double xIters = (args[0].limits.second-args[0].limits.first)/size.x;
+
     while(x <= args[0].limits.second)
     {
-        double y = args[1].limits.first + halfSize;
+        cout<<counter/xIters<<endl;
+        double y = args[1].limits.first + halfSize.y;
         while(y <= args[1].limits.second)
         {
-            double z = args[2].limits.first + halfSize;
+            double z = args[2].limits.first + halfSize.z;
             while(z <= args[2].limits.second)
             {
                 vector<pair<glm::vec3, double>> values{
-                    {{ x+halfSize, y+halfSize, z+halfSize }, 0},
-                    {{ x+halfSize, y+halfSize, z-halfSize }, 0},
-                    {{ x+halfSize, y-halfSize, z+halfSize }, 0},
-                    {{ x+halfSize, y-halfSize, z-halfSize }, 0},
-                    {{ x-halfSize, y+halfSize, z+halfSize }, 0},
-                    {{ x-halfSize, y+halfSize, z-halfSize }, 0},
-                    {{ x-halfSize, y-halfSize, z+halfSize }, 0},
-                    {{ x-halfSize, y-halfSize, z-halfSize }, 0}
+                    {{ x+halfSize.x, y+halfSize.y, z+halfSize.z }, 0},
+                    {{ x+halfSize.x, y+halfSize.y, z-halfSize.z }, 0},
+                    {{ x+halfSize.x, y-halfSize.y, z+halfSize.z }, 0},
+                    {{ x+halfSize.x, y-halfSize.y, z-halfSize.z }, 0},
+                    {{ x-halfSize.x, y+halfSize.y, z+halfSize.z }, 0},
+                    {{ x-halfSize.x, y+halfSize.y, z-halfSize.z }, 0},
+                    {{ x-halfSize.x, y-halfSize.y, z+halfSize.z }, 0},
+                    {{ x-halfSize.x, y-halfSize.y, z-halfSize.z }, 0}
                 };
                 for(int i = 0; i < 8; i++)
                     values[i].second = program.Compute(values[i].first);
@@ -48,13 +55,13 @@ const std::deque<VoxelData> &MatrixCalculator::Calculate(Program &program, Zone 
                     m_results->push_back(VoxelData({x, y, z}, size, {1, 1, 1, 0.2}, values));
                     if(m_iterFunc)
                         m_iterFunc(m_results->back());
-                    counter++;
                 }
-                z+= size;
+                z+= size.z;
             }
-            y+= size;
+            y+= size.y;
         }
-        x+= size;
+        x+= size.x;
+        counter++;
     }
     return *m_results;
 }

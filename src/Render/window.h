@@ -20,7 +20,7 @@ class Window
 public:
     Window(WindowConfig config = {});
     ~Window();
-    void AddCube(glm::vec3 pos, float size, glm::vec4 color);
+    void AddCube(glm::vec3 pos, glm::vec3 size, glm::vec4 color);
     void Render();
     void HandleEvent();
     void SetZoom(float z);

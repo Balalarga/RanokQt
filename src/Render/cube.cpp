@@ -1,40 +1,5 @@
 #include "cube.h"
 
-Cube::Cube(glm::vec3 center, float size, glm::vec4 color)
-{
-    verticies[0] =  {center.x-size, center.y-size, center.z+size};
-    verticies[1] =  {center.x+size, center.y-size, center.z+size};
-    verticies[2] =  {center.x+size, center.y+size, center.z+size};
-    verticies[3] =  {center.x-size, center.y+size, center.z+size};
-
-    verticies[4] =  {center.x+size, center.y-size, center.z-size};
-    verticies[5] =  {center.x-size, center.y-size, center.z-size};
-    verticies[6] =  {center.x-size, center.y+size, center.z-size};
-    verticies[7] =  {center.x+size, center.y+size, center.z-size};
-
-    verticies[8] =  {center.x+size, center.y-size, center.z+size};
-    verticies[9] =  {center.x+size, center.y-size, center.z-size};
-    verticies[10] = {center.x+size, center.y+size, center.z-size};
-    verticies[11] = {center.x+size, center.y+size, center.z+size};
-
-    verticies[12] = {center.x-size, center.y-size, center.z-size};
-    verticies[13] = {center.x-size, center.y-size, center.z+size};
-    verticies[14] = {center.x-size, center.y+size, center.z+size};
-    verticies[15] = {center.x-size, center.y+size, center.z-size};
-
-    verticies[16] = {center.x-size, center.y+size, center.z+size};
-    verticies[17] = {center.x+size, center.y+size, center.z+size};
-    verticies[18] = {center.x+size, center.y+size, center.z-size};
-    verticies[19] = {center.x-size, center.y+size, center.z-size};
-
-    verticies[20] = {center.x-size, center.y-size, center.z-size};
-    verticies[21] = {center.x+size, center.y-size, center.z-size};
-    verticies[22] = {center.x+size, center.y-size, center.z+size};
-    verticies[23] = {center.x-size, center.y-size, center.z+size};
-
-    this->color = color;
-}
-
 Cube::Cube(glm::vec3 center, glm::vec3 size, glm::vec4 color)
 {
     verticies[0] =  {center.x-size.x, center.y-size.y, center.z+size.z};

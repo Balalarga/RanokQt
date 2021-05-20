@@ -18,19 +18,14 @@ const std::deque<VoxelData> &RecursiveCalculator::Calculate(Program &program, Zo
         cout<<"Arguments count error: "<<args.size()<<endl;
         return *m_results;
     }
-    double voxelSize = args[0].limits.second - args[0].limits.first;
-    for(int i = 1; i < args.size(); i++)
-    {
-        double newSize = args[i].limits.second - args[i].limits.first;
-        if(voxelSize > newSize)
-            voxelSize = newSize;
-    }
-    voxelSize /= 2.;
-    glm::vec3 center = {
-        args[0].limits.first+(args[0].limits.second - args[0].limits.first)/2.,
-        args[1].limits.first+(args[1].limits.second - args[1].limits.first)/2.,
-        args[2].limits.first+(args[2].limits.second - args[2].limits.first)/2.,
+    glm::vec3 voxelSize{
+        (args[0].limits.second-args[0].limits.first)/2.,
+        (args[1].limits.second-args[1].limits.first)/2.,
+        (args[2].limits.second-args[2].limits.first)/2.,
     };
+    glm::vec3 center = {args[0].limits.first+voxelSize.x,
+                        args[1].limits.first+voxelSize.y,
+                        args[2].limits.first+voxelSize.z};
 
     m_program = &program;
     m_zone = zone;
@@ -40,19 +35,19 @@ const std::deque<VoxelData> &RecursiveCalculator::Calculate(Program &program, Zo
     return *m_results;
 }
 
-void RecursiveCalculator::recursionFunc(glm::vec3 coords, double size, int step)
+void RecursiveCalculator::recursionFunc(glm::vec3 coords, glm::vec3 size, int step)
 {
     if(step == 0)
     {
         vector<pair<glm::vec3, double>> values{
-            {{ coords.x+size, coords.y+size, coords.z+size }, 0},
-            {{ coords.x+size, coords.y+size, coords.z-size }, 0},
-            {{ coords.x+size, coords.y-size, coords.z+size }, 0},
-            {{ coords.x+size, coords.y-size, coords.z-size }, 0},
-            {{ coords.x-size, coords.y+size, coords.z+size }, 0},
-            {{ coords.x-size, coords.y+size, coords.z-size }, 0},
-            {{ coords.x-size, coords.y-size, coords.z+size }, 0},
-            {{ coords.x-size, coords.y-size, coords.z-size }, 0}
+            {{ coords.x+size.x, coords.y+size.y, coords.z+size.z }, 0},
+            {{ coords.x+size.x, coords.y+size.y, coords.z-size.z }, 0},
+            {{ coords.x+size.x, coords.y-size.y, coords.z+size.z }, 0},
+            {{ coords.x+size.x, coords.y-size.y, coords.z-size.z }, 0},
+            {{ coords.x-size.x, coords.y+size.y, coords.z+size.z }, 0},
+            {{ coords.x-size.x, coords.y+size.y, coords.z-size.z }, 0},
+            {{ coords.x-size.x, coords.y-size.y, coords.z+size.z }, 0},
+            {{ coords.x-size.x, coords.y-size.y, coords.z-size.z }, 0}
         };
         for(int i = 0; i < 8; i++)
             values[i].second = m_program->Compute(values[i].first);
@@ -66,16 +61,16 @@ void RecursiveCalculator::recursionFunc(glm::vec3 coords, double size, int step)
     }
     else
     {
-        double newSize = size/2.;
+        glm::vec3 newSize = {size.x/2., size.y/2., size.z/2.};
         glm::vec3 newCubes[] = {
-            { coords.x+newSize, coords.y+newSize, coords.z+newSize },
-            { coords.x+newSize, coords.y+newSize, coords.z-newSize },
-            { coords.x+newSize, coords.y-newSize, coords.z+newSize },
-            { coords.x+newSize, coords.y-newSize, coords.z-newSize },
-            { coords.x-newSize, coords.y+newSize, coords.z+newSize },
-            { coords.x-newSize, coords.y+newSize, coords.z-newSize },
-            { coords.x-newSize, coords.y-newSize, coords.z+newSize },
-            { coords.x-newSize, coords.y-newSize, coords.z-newSize }
+            { coords.x+newSize.x, coords.y+newSize.y, coords.z+newSize.z },
+            { coords.x+newSize.x, coords.y+newSize.y, coords.z-newSize.z },
+            { coords.x+newSize.x, coords.y-newSize.y, coords.z+newSize.z },
+            { coords.x+newSize.x, coords.y-newSize.y, coords.z-newSize.z },
+            { coords.x-newSize.x, coords.y+newSize.y, coords.z+newSize.z },
+            { coords.x-newSize.x, coords.y+newSize.y, coords.z-newSize.z },
+            { coords.x-newSize.x, coords.y-newSize.y, coords.z+newSize.z },
+            { coords.x-newSize.x, coords.y-newSize.y, coords.z-newSize.z }
         };
         for(int i = 0; i < 8; i++)
         {

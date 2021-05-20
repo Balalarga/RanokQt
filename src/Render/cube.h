@@ -6,7 +6,6 @@
 class Cube
 {
 public:
-    Cube(glm::vec3 center, float size, glm::vec4 color);
     Cube(glm::vec3 center, glm::vec3 size, glm::vec4 color);
     void Draw();
 

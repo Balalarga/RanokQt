@@ -48,7 +48,7 @@ Window::~Window()
     SDL_Quit();
 }
 
-void Window::AddCube(glm::vec3 pos, float size, glm::vec4 color)
+void Window::AddCube(glm::vec3 pos, glm::vec3 size, glm::vec4 color)
 {
     mtx.lock();
     cubes.push_back(Cube(pos, size, color));

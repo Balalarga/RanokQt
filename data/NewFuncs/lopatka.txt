@@ -1,4 +1,4 @@
-ARGUMENT X0(15), Y0(6), Z0(5);
+ARGUMENT X0(6), Y0(5), Z0(5);
 
 //x : 6 ; y : 5 ; z : 4.5
 
