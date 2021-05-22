@@ -3,15 +3,19 @@
 
 #include "basecalculator.h"
 
-
 class MatrixCalculator: public BaseCalculator
 {
 public:
-    MatrixCalculator(glm::vec3 step);
-    virtual const std::deque<VoxelData>& Calculate(Program& program, Zone zone) override;
+    MatrixCalculator(Vector3 step);
+    const std::deque<VoxelData>& Calculate(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc = nullptr) override;
 
-private:
-    glm::vec3 m_step;
+protected:
+    Vector3 m_step;
+
+
+    const std::deque<VoxelData>& matrix1(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc);
+    const std::deque<VoxelData>& matrix2(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc);
+    const std::deque<VoxelData>& matrix3(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc);
 
 };
 

@@ -4,9 +4,10 @@
 #include <deque>
 #include <vector>
 #include <functional>
-#include <glm/glm.hpp>
 
-#include "Lang/program.h"
+#include "Vectors.h"
+#include "Color.h"
+#include "Language/program.h"
 
 enum class Zone
 {
@@ -25,20 +26,17 @@ struct ZoneFlags
 struct VoxelData
 {
     VoxelData(){};
-    VoxelData(const glm::vec3& center, const glm::vec3& size,
-              const glm::vec4& color, std::vector<std::pair<glm::vec3, double>>& values):
-        center(center), size(size), color(color), values(values)
+    VoxelData(const Vector3& center, const Vector3& size,
+              const Color& color, std::vector<std::pair<Vector3, double>>& values,
+              int dementions = 3):
+        center(center), size(size), color(color), values(values),
+        dementions(dementions)
     {}
-    glm::vec3 center;
-    glm::vec3 size;
-    glm::vec4 color;
-    std::vector<std::pair<glm::vec3, double>> values;
-};
-
-struct StorageItem
-{
-    glm::vec3 point;
-    friend inline bool operator<(const StorageItem& a, const StorageItem& b);
+    Vector3 center;
+    Vector3 size;
+    Color color;
+    std::vector<std::pair<Vector3, double>> values;
+    int dementions;
 };
 
 class BaseCalculator
@@ -46,20 +44,19 @@ class BaseCalculator
 public:
     BaseCalculator();
     virtual ~BaseCalculator();
-    virtual const std::deque<VoxelData>& Calculate(Program& program, Zone zone) = 0;
+    virtual const std::deque<VoxelData>& Calculate(Program& program, Zone zone, std::function<void(VoxelData&)> = nullptr) = 0;
     const std::deque<VoxelData>& GetResults();
-    void SetIterationFunc(std::function<void(VoxelData&)> iterFunc);
     void SaveDataToFile(std::string file);
     void LoadDataFromFile(std::string file);
+    void SetVoxelColor(Color color);
+    Color GetVoxelColor();
 
 protected:
     std::deque<VoxelData>* m_results;
-    std::map<StorageItem, double> storage;
-    std::function<void(VoxelData&)> m_iterFunc;
+    Color baseColor{1, 1, 1, 0.2};
 
     bool CheckZone(Zone zone, ZoneFlags flags) const;
-    ZoneFlags GetZoneFlags(const std::vector<std::pair<glm::vec3, double> > &values);
-
+    ZoneFlags GetZoneFlags(const std::vector<std::pair<Vector3, double> > &values);
 };
 
 #endif // BASECALCULATOR_H
