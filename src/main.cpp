@@ -68,9 +68,25 @@ void HandleEvents()
     }
 }
 
+void RenderMenu(sf::Clock& deltaClock)
+{
+    window->pushGLStates();
+
+    ImGui::SFML::Update(*window, deltaClock.restart());
+
+    ImGui::Begin("Window");
+    static bool checkBox = false;
+    ImGui::Button("Look at this pretty button");
+    ImGui::Checkbox("Check me", &checkBox);
+    ImGui::End();
+    ImGui::SFML::Render(*window);
+
+    window->popGLStates();
+}
+
 void Render()
 {
-    sf::Clock frameClock;
+    sf::Clock deltaClock;
     window->setActive(true);
     while (window->isOpen())
     {
@@ -87,18 +103,7 @@ void Render()
         {
             voxels.Get(i)->Draw();
         }
-        window->pushGLStates();
-
-        ImGui::SFML::Update(*window, frameClock.restart());
-
-        ImGui::Begin("Window");
-        static bool checkBox = false;
-        ImGui::Button("Look at this pretty button");
-        ImGui::Checkbox("Check me", &checkBox);
-        ImGui::End();
-        ImGui::SFML::Render(*window);
-
-        window->popGLStates();
+        RenderMenu(deltaClock);
         window->display();
     }
 }
@@ -123,8 +128,20 @@ void RunCalculating(RunData data)
     });
 }
 
-void InitGL()
+void Init()
 {
+    sf::ContextSettings settings;
+    settings.depthBits = 24;
+    settings.stencilBits = 8;
+    settings.antialiasingLevel = 4;
+    settings.majorVersion = 3;
+    settings.minorVersion = 0;
+    window = new sf::RenderWindow(sf::VideoMode(windowSize.x(), windowSize.y()),
+                            "OpenGL", sf::Style::Default, settings);
+    window->setFramerateLimit(60);
+    ImGui::CreateContext();
+    ImGui::SFML::Init(*window);
+
     GLfloat LightModelAmbient[] = {0.0f, 0.0f, 0.0f, 1.0f};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, LightModelAmbient);
     GLfloat LightAmbient[] = {0.25f, 0.25f, 0.25f, 1.0f};
@@ -152,25 +169,12 @@ void InitGL()
     gluPerspective(45.0f, (float)windowSize.x() /
                    (windowSize.y()> 0 ? (float)600: 1.0f),
                    0.125f, 512.0f);
+    window->setActive(false);
 }
 
 int main(int argc, char** argv)
 {
-    sf::ContextSettings settings;
-    settings.depthBits = 24;
-    settings.stencilBits = 8;
-    settings.antialiasingLevel = 4;
-    settings.majorVersion = 3;
-    settings.minorVersion = 0;
-    window = new sf::RenderWindow(sf::VideoMode(windowSize.x(), windowSize.y()),
-                            "OpenGL", sf::Style::Default, settings);
-    window->setFramerateLimit(60);
-    ImGui::CreateContext();
-    ImGui::SFML::Init(*window);
-
-    InitGL();
-    window->setActive(false);
-
+    Init();
     sf::Thread renderThread(&Render);
     renderThread.launch();
 
