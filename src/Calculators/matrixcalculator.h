@@ -6,11 +6,11 @@
 class MatrixCalculator: public BaseCalculator
 {
 public:
-    MatrixCalculator(Vector3 step);
+    MatrixCalculator(Vector3i step);
     const std::deque<VoxelData>& Calculate(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc = nullptr) override;
 
 protected:
-    Vector3 m_step;
+    Vector3i m_step;
 
 
     const std::deque<VoxelData>& matrix1(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc);

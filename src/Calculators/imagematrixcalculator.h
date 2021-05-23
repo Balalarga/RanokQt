@@ -7,11 +7,11 @@
 class ImageMatrixCalculator: public ImageCalculator
 {
 public:
-    ImageMatrixCalculator(Vector3 step);
+    ImageMatrixCalculator(Vector3i step);
     virtual const std::deque<ImageData>& Calculate(Program& program, ImageType type, std::function<void(ImageData&)> iterFunc = nullptr);
 
 protected:
-    Vector3 m_step;
+    Vector3i m_step;
 
     const std::deque<ImageData>& matrix1(Program& program, ImageType type, std::function<void(ImageData&)> iterFunc);
     const std::deque<ImageData>& matrix2(Program& program, ImageType type, std::function<void(ImageData&)> iterFunc);

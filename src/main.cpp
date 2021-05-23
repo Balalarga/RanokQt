@@ -38,6 +38,7 @@ void ModelCalculating(ModelData data);
 AsyncVector<IDrawableObject*> voxels;
 sf::RenderWindow* window = nullptr;
 Vector2i windowSize = {800, 600};
+sf::Clock deltaClock;
 
 float yAngle = 0;
 float xAngle = 0;
@@ -56,27 +57,33 @@ const char* files[]{
     "NewFuncs/2dspace", //8
 };
 int fileId = 7;
-bool fileChoosen = false;
+
+const char* calculators[]{
+    "Recursive",
+    "Matrix"
+};
+int calculatorId = 1;
+int recurDepth = 5;
+int matrSize = 20;
+ImageType imageType = ImageType::Cw;
+bool paramsChanged = false;
 
 sf::Thread* modelThread = nullptr;
 sf::Thread* imageThread = nullptr;
 ModelData runData{
     "../examples/"+string(files[fileId])+".txt",
-            //        new MatrixCalculator({10, 10, 10})
-            new RecursiveCalculator(5)
+            new RecursiveCalculator(recurDepth)
 };
 
 ImageCalcData imageData{
     "../examples/"+string(files[fileId])+".txt",
-            ImageType::Cw,
-            new ImageMatrixCalculator({40, 40, 40})
+            imageType,
+            new ImageMatrixCalculator({matrSize, matrSize, matrSize})
 };
-bool mode = true; // true - model, false - image
+bool mode = false; // true - model, false - image
 
 void ResetThreads()
 {
-    for(unsigned i = 0; i < voxels.Size(); i++)
-        delete voxels.At(i);
     if(modelThread)
     {
         modelThread->terminate();
@@ -93,16 +100,41 @@ void ResetThreads()
 void RunThreads()
 {
     ResetThreads();
+    for(unsigned i = 0; i < voxels.Size(); i++)
+        delete voxels.At(i);
+    voxels.Clear();
+    auto recreate = [](bool recur){
+        if(recur)
+        {
+            delete runData.calculator;
+            runData.calculator = new RecursiveCalculator(recurDepth);
+        }
+        else
+        {
+            delete runData.calculator;
+            runData.calculator = new MatrixCalculator({matrSize, matrSize, matrSize});
+            delete imageData.calculator;
+            imageData.calculator = new ImageMatrixCalculator({matrSize, matrSize, matrSize});
+        }
+    };
+
+    if(dynamic_cast<MatrixCalculator*>(runData.calculator) && !strcmp(calculators[calculatorId], "Recursive"))
+    {
+        recreate(true);
+    }
+    else if(dynamic_cast<RecursiveCalculator*>(runData.calculator) && !strcmp(calculators[calculatorId], "Matrix"))
+    {
+        recreate(false);
+    }
+    else if(paramsChanged)
+        recreate(strcmp(calculators[calculatorId], "Matrix"));
+
     modelThread = new sf::Thread(&ModelCalculating, runData);
     imageThread = new sf::Thread(&ImageCalculating, imageData);
-    if(mode)
-    {
+    if(!mode)
         modelThread->launch();
-    }
     else
-    {
         imageThread->launch();
-    }
 }
 
 void HandleEvents()
@@ -143,14 +175,14 @@ void HandleEvents()
     }
 }
 
-void RenderMenu(sf::Clock& deltaClock)
+void RenderMenu()
 {
     window->pushGLStates();
 
     ImGui::SFML::Update(*window, deltaClock.restart());
 
     ImGui::Begin("Settings");
-
+    ImGui::SetWindowSize({200, 200});
     if (ImGui::BeginCombo("File", files[fileId]))
     {
         for (int n = 0; n < IM_ARRAYSIZE(files); n++)
@@ -167,6 +199,41 @@ void RenderMenu(sf::Clock& deltaClock)
         }
         ImGui::EndCombo();
     }
+
+    if(mode)
+        calculatorId = 1;
+    if (ImGui::BeginCombo("Calculator", calculators[calculatorId]))
+    {
+        if(!mode)
+        {
+            for (int n = 0; n < IM_ARRAYSIZE(calculators); n++)
+            {
+                const bool is_selected = (calculatorId == n);
+                if (ImGui::Selectable(calculators[n], is_selected))
+                {
+                    calculatorId = n;
+                }
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if(!strcmp(calculators[calculatorId], "Recursive") && !mode)
+    {
+        if(ImGui::SliderInt("Depth", &recurDepth, 1, 10))
+        {
+            paramsChanged = true;
+        }
+    }
+    else
+    {
+        if(ImGui::SliderInt("Blocks", &matrSize, 1, 100))
+        {
+            paramsChanged = true;
+        }
+    }
+    ImGui::Checkbox("Show image", &mode);
     if (ImGui::Button("Start"))
     {
         ResetThreads();
@@ -185,25 +252,20 @@ void RenderMenu(sf::Clock& deltaClock)
 
 void Render()
 {
-    sf::Clock deltaClock;
-    window->setActive(true);
-    while (window->isOpen())
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    gluLookAt(0.0f, 0.0f, -zoom,
+              0.0f, 0.0f, 0.0f,
+              0.0f, 1.0f, 0.0f);
+    glRotatef(xAngle, 1, 0, 0);
+    glRotatef(yAngle, 0, 1, 0);
+    for(unsigned i = 0; i < voxels.Size(); i++)
     {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        gluLookAt(0.0f, 0.0f, -zoom,
-                  0.0f, 0.0f, 0.0f,
-                  0.0f, 1.0f, 0.0f);
-        glRotatef(xAngle, 1, 0, 0);
-        glRotatef(yAngle, 0, 1, 0);
-        for(unsigned i = 0; i < voxels.Size(); i++)
-        {
-            voxels.Get(i)->Draw();
-        }
-        RenderMenu(deltaClock);
-        window->display();
+        voxels.Get(i)->Draw();
     }
+    RenderMenu();
+    window->display();
 }
 
 void ModelCalculating(ModelData data)
@@ -277,24 +339,18 @@ void Init()
     gluPerspective(45.0f, (float)windowSize.x() /
                    (windowSize.y()> 0 ? (float)600: 1.0f),
                    0.125f, 512.0f);
-    window->setActive(false);
 }
 
 int main(int argc, char** argv)
 {
     Init();
-    sf::Thread renderThread(&Render);
-    renderThread.launch();
 
-    auto runThread = [](bool witch){
-    };
-    runThread(true);
+    deltaClock.restart();
     while (window->isOpen())
     {
+        Render();
         HandleEvents();
     }
-
-    renderThread.terminate();
 
     cout<<"Voxels size = "<<voxels.Size()<<endl;
     ResetThreads();

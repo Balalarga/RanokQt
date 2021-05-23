@@ -12,7 +12,7 @@ double &Vector2::operator[](unsigned id)
 {
     if(id < 3)
         return m_values[id];
-    throw std::runtime_error("Vector3: Out of range");
+    throw std::runtime_error("Vector2: Out of range");
 }
 
 double &Vector2::x()
@@ -52,7 +52,7 @@ double &Vector3::operator[](unsigned id)
 {
     if(id < 2)
         return m_values[id];
-    throw std::runtime_error("Vector2: Out of range");
+    throw std::runtime_error("Vector3: Out of range");
 }
 
 double &Vector3::x()
@@ -104,4 +104,33 @@ double &Vector4::z()
 double &Vector4::w()
 {
     return m_values[3];
+}
+
+Vector3i::Vector3i(int x, int y, int z)
+{
+    m_values[0] = x;
+    m_values[1] = y;
+    m_values[2] = z;
+}
+
+int &Vector3i::operator[](unsigned id)
+{
+    if(id < 2)
+        return m_values[id];
+    throw std::runtime_error("Vector3i: Out of range");
+}
+
+int &Vector3i::x()
+{
+    return m_values[0];
+}
+
+int &Vector3i::y()
+{
+    return m_values[1];
+}
+
+int &Vector3i::z()
+{
+    return m_values[2];
 }

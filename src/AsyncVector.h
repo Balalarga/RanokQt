@@ -41,6 +41,13 @@ public:
         return m_data.at(id);
     }
 
+    void Clear()
+    {
+        m_mutex.lock();
+        m_data.clear();
+        m_mutex.unlock();
+    }
+
     T& At(unsigned id)
     {
         m_mutex.lock();

@@ -3,7 +3,7 @@
 
 using namespace std;
 
-ImageMatrixCalculator::ImageMatrixCalculator(Vector3 step):
+ImageMatrixCalculator::ImageMatrixCalculator(Vector3i step):
     m_step(step)
 {
 

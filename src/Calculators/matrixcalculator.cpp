@@ -3,7 +3,7 @@
 
 using namespace std;
 
-MatrixCalculator::MatrixCalculator(Vector3 step):
+MatrixCalculator::MatrixCalculator(Vector3i step):
     m_step(step)
 {
 

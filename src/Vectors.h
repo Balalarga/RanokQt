@@ -39,6 +39,19 @@ private:
     double m_values[3];
 };
 
+class Vector3i
+{
+public:
+    Vector3i(int x = 0, int y = 0, int z = 0);
+    int& operator[](unsigned id);
+    int& x();
+    int& y();
+    int& z();
+
+private:
+    int m_values[3];
+};
+
 class Vector4
 {
 public:
