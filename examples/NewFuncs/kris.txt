@@ -1,30 +1,16 @@
-ARGUMENT X(5), Y(5), Z(5);
+arg x(3), y(3), z(3);
 
-CONSTANT NO=16;
-CONSTANT NO1=6;
+const r = 2.5;
+const z0 = -r;
 
-VARIABLE RO=SQRT(X*X+Y*Y);
-VARIABLE TET=ARCTAN(Y/X);
-VARIABLE FF=TET*NO/2;
-VARIABLE MU=8/PI/NO*(SIN(FF)-SIN(3*FF)/9+SIN(5*FF)/25-SIN(7*FF)/49);
-VARIABLE ALT=TET-MU;
-VARIABLE X1=RO*COS(MU)-0.7;
-VARIABLE Y1=RO*SIN(MU);
-VARIABLE FF1=TET*NO1/2;
-VARIABLE MU1=8/PI/NO1*(SIN(FF1)-SIN(3*FF1)/9+SIN(5*FF1)/25-SIN(7*FF1)/49);
-VARIABLE ALT1=TET-MU1;
-VARIABLE X11=RO*COS(MU1)-2*COS(PI/6);
-VARIABLE Y11=RO*SIN(MU1);
-VARIABLE W1=(1-RO*RO)&(8+Z);
-VARIABLE W2=(4-RO*RO)&((4+Z)*(-Z-2));
-VARIABLE W3=(9-RO*RO)&(2+Z)*(-Z);
-VARIABLE W4=(9-RO*RO)&(3.5-Z)*(Z-3);
-VARIABLE W5=(6.25-RO*RO)&(8-Z)*Z;
-VARIABLE W6=-(2.25-RO*RO)&(Z-7);
-VARIABLE W7=-(0.09-(RO-2.5)*(RO-2.5)-(Z-0.5)*(Z-0.5));
-VARIABLE W8=-(((X1/2-Y1)&(X1/2+Y1))&(-6-Z));
-VARIABLE W9=-X11;
-VARIABLE W10=-(((X/2-Y)&(X/2+Y))&(Z-7.5));
-VARIABLE W=-((((((((W1|(W2&W9))|W3)|W4)|W5)&W6)&W7)&W8)&W10);
+var sphere = r^2 - x^2 - y^2 - (z0 - z)^2;
 
-RETURN W;
+var w1=3 - x^2;
+var w2=3 - y^2;
+var w =w2 & w1;
+
+const cr = 1;
+var c = cr^2 - x^2 - y^2;
+
+
+return c & sphere;

@@ -27,7 +27,7 @@ struct VoxelData
 {
     VoxelData(){};
     VoxelData(const Vector3& center, const Vector3& size,
-              const Color& color, std::vector<std::pair<Vector3, double>>& values,
+              const Color& color, std::vector<std::pair<Vector3, double>> values = {},
               int dementions = 3):
         center(center), size(size), color(color), values(values),
         dementions(dementions)
@@ -53,7 +53,7 @@ public:
 
 protected:
     std::deque<VoxelData>* m_results;
-    Color baseColor{1, 1, 1, 0.2};
+    Color baseColor{1, 1, 1, 0.5};
 
     bool CheckZone(Zone zone, ZoneFlags flags) const;
     ZoneFlags GetZoneFlags(const std::vector<std::pair<Vector3, double> > &values);

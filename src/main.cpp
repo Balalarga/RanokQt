@@ -16,9 +16,24 @@
 
 #include "Calculators/matrixcalculator.h"
 #include "Calculators/recursivecalculator.h"
+#include "Calculators/imagematrixcalculator.h"
 #include "Language/parser.h"
 
 using namespace std;
+
+struct ModelData
+{
+    string filename;
+    BaseCalculator* calculator;
+};
+struct ImageCalcData
+{
+    string filename;
+    ImageType type;
+    ImageCalculator* calculator;
+};
+void ImageCalculating(ImageCalcData data);
+void ModelCalculating(ModelData data);
 
 AsyncVector<IDrawableObject*> voxels;
 sf::RenderWindow* window = nullptr;
@@ -29,6 +44,66 @@ float xAngle = 0;
 float zoom = 10;
 bool mousePressed = false;
 Vector2i prevMousePos{0, 0};
+const char* files[]{
+    "NewFuncs/1",       //0
+    "NewFuncs/1_new",   //1
+    "NewFuncs/Bone",    //2
+    "NewFuncs/Chainik", //3
+    "NewFuncs/kris",    //4
+    "NewFuncs/lopatka", //5
+    "NewFuncs/sphere",  //6
+    "NewFuncs/TeaCup",  //7
+    "NewFuncs/2dspace", //8
+};
+int fileId = 7;
+bool fileChoosen = false;
+
+sf::Thread* modelThread = nullptr;
+sf::Thread* imageThread = nullptr;
+ModelData runData{
+    "../examples/"+string(files[fileId])+".txt",
+            //        new MatrixCalculator({10, 10, 10})
+            new RecursiveCalculator(5)
+};
+
+ImageCalcData imageData{
+    "../examples/"+string(files[fileId])+".txt",
+            ImageType::Cw,
+            new ImageMatrixCalculator({40, 40, 40})
+};
+bool mode = true; // true - model, false - image
+
+void ResetThreads()
+{
+    for(unsigned i = 0; i < voxels.Size(); i++)
+        delete voxels.At(i);
+    if(modelThread)
+    {
+        modelThread->terminate();
+        delete modelThread;
+        modelThread = nullptr;
+    }
+    if(imageThread)
+    {
+        imageThread->terminate();
+        delete imageThread;
+        imageThread = nullptr;
+    }
+}
+void RunThreads()
+{
+    ResetThreads();
+    modelThread = new sf::Thread(&ModelCalculating, runData);
+    imageThread = new sf::Thread(&ImageCalculating, imageData);
+    if(mode)
+    {
+        modelThread->launch();
+    }
+    else
+    {
+        imageThread->launch();
+    }
+}
 
 void HandleEvents()
 {
@@ -74,11 +149,35 @@ void RenderMenu(sf::Clock& deltaClock)
 
     ImGui::SFML::Update(*window, deltaClock.restart());
 
-    ImGui::Begin("Window");
-    static bool checkBox = false;
-    ImGui::Button("Look at this pretty button");
-    ImGui::Checkbox("Check me", &checkBox);
+    ImGui::Begin("Settings");
+
+    if (ImGui::BeginCombo("File", files[fileId]))
+    {
+        for (int n = 0; n < IM_ARRAYSIZE(files); n++)
+        {
+            const bool is_selected = (fileId == n);
+            if (ImGui::Selectable(files[n], is_selected))
+            {
+                fileId = n;
+                runData.filename = "../examples/"+string(files[fileId])+".txt";
+                imageData.filename = "../examples/"+string(files[fileId])+".txt";
+            }
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    if (ImGui::Button("Start"))
+    {
+        ResetThreads();
+        RunThreads();
+    }
+    if (ImGui::Button("Stop"))
+    {
+        ResetThreads();
+    }
     ImGui::End();
+
     ImGui::SFML::Render(*window);
 
     window->popGLStates();
@@ -98,8 +197,7 @@ void Render()
                   0.0f, 1.0f, 0.0f);
         glRotatef(xAngle, 1, 0, 0);
         glRotatef(yAngle, 0, 1, 0);
-        unsigned size = voxels.Size();
-        for(unsigned i = 0; i < size; i++)
+        for(unsigned i = 0; i < voxels.Size(); i++)
         {
             voxels.Get(i)->Draw();
         }
@@ -108,24 +206,34 @@ void Render()
     }
 }
 
-struct RunData
-{
-    string filename;
-    BaseCalculator* calculator;
-};
-void RunCalculating(RunData data)
+void ModelCalculating(ModelData data)
 {
     Parser parser(data.filename);
     Program program = parser.GetProgram();
     auto voxelData = data.calculator->Calculate(program, Zone::Zero, [](VoxelData& voxel)
     {
-        if(voxel.dementions == 3)
+            if(voxel.dementions == 3)
             voxels.PushBack(new Cube(voxel.center, voxel.size, voxel.color));
-        if(voxel.dementions == 2)
+            if(voxel.dementions == 2)
             voxels.PushBack(new Square(voxel.center, voxel.size, voxel.color));
-        if(voxel.dementions == 1)
+            if(voxel.dementions == 1)
             voxels.PushBack(new Square(voxel.center, voxel.size, voxel.color));
-    });
+});
+}
+
+void ImageCalculating(ImageCalcData data)
+{
+    Parser parser(data.filename);
+    Program program = parser.GetProgram();
+    auto voxelData = data.calculator->Calculate(program, data.type, [](ImageData& voxel)
+    {
+            if(voxel.dementions == 3)
+            voxels.PushBack(new Cube(voxel.center, voxel.size, voxel.color));
+            if(voxel.dementions == 2)
+            voxels.PushBack(new Square(voxel.center, voxel.size, voxel.color));
+            if(voxel.dementions == 1)
+            voxels.PushBack(new Square(voxel.center, voxel.size, voxel.color));
+});
 }
 
 void Init()
@@ -137,7 +245,7 @@ void Init()
     settings.majorVersion = 3;
     settings.minorVersion = 0;
     window = new sf::RenderWindow(sf::VideoMode(windowSize.x(), windowSize.y()),
-                            "OpenGL", sf::Style::Default, settings);
+                                  "OpenGL", sf::Style::Default, settings);
     window->setFramerateLimit(60);
     ImGui::CreateContext();
     ImGui::SFML::Init(*window);
@@ -178,43 +286,21 @@ int main(int argc, char** argv)
     sf::Thread renderThread(&Render);
     renderThread.launch();
 
-    string files[]{
-        "NewFuncs/1",       //0
-        "NewFuncs/1_new",   //1
-        "NewFuncs/Bone",    //2
-        "NewFuncs/Chainik", //3
-        "NewFuncs/kris",    //4
-        "NewFuncs/lopatka", //5
-        "NewFuncs/sphere",  //6
-        "NewFuncs/TeaCup",  //7
-        "NewFuncs/2dspace", //8
+    auto runThread = [](bool witch){
     };
-    const int fileId = 7;
-
-    RunData runData{
-        "../examples/"+files[fileId]+".txt",
-//        new MatrixCalculator({10, 10, 10})
-        new RecursiveCalculator(5)
-    };
-
-    runData.calculator->SetVoxelColor({1, 1, 1, 0.5});
-
-    sf::Thread computeThread(&RunCalculating, runData);
-    computeThread.launch();
-
+    runThread(true);
     while (window->isOpen())
     {
         HandleEvents();
     }
 
-    computeThread.terminate();
     renderThread.terminate();
 
     cout<<"Voxels size = "<<voxels.Size()<<endl;
-    for(unsigned i = 0; i < voxels.Size(); i++)
-        delete voxels.At(i);
+    ResetThreads();
 
     delete runData.calculator;
+    delete imageData.calculator;
     delete window;
 
     ImGui::SFML::Shutdown();
