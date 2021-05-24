@@ -49,15 +49,14 @@ Vector2i prevMousePos{0, 0};
 const char* files[]{
     "NewFuncs/1",       //0
     "NewFuncs/1_new",   //1
-    "NewFuncs/Bone",    //2
-    "NewFuncs/Chainik", //3
-    "NewFuncs/euclid",  //4
-    "NewFuncs/lopatka", //5
+    "NewFuncs/2dspace", //2
+    "NewFuncs/Bone",    //3
+    "NewFuncs/Chainik", //4
+    "NewFuncs/euclid",  //5
     "NewFuncs/sphere",  //6
     "NewFuncs/TeaCup",  //7
-    "NewFuncs/2dspace", //8
 };
-int fileId = 7;
+int fileId = 6;
 
 
 const char* imageTypes[]{
@@ -253,7 +252,7 @@ void RenderMenu()
     }
     else
     {
-        if(ImGui::SliderInt("Blocks", &matrSize, 1, 400))
+        if(ImGui::SliderInt("Blocks", &matrSize, 1, 200))
         {
             paramsChanged = true;
         }
