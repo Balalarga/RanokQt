@@ -9,8 +9,6 @@
 
 #include "langfunctions.h"
 
-#define DEBUG1
-
 struct Expression
 {
     Expression(){}

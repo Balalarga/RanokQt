@@ -9,6 +9,7 @@ class Lexer
 {
 public:
     Lexer();
+    ~Lexer();
     void SetText(const std::string& text);
     Token NextToken();
     std::string GetError();

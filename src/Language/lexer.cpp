@@ -10,6 +10,10 @@ Lexer::Lexer()
 
 }
 
+Lexer::~Lexer()
+{
+}
+
 void Lexer::SetText(const std::string& text)
 {
     if(text.empty())

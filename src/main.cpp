@@ -37,8 +37,9 @@ void ModelCalculating(ModelData data);
 
 AsyncVector<IDrawableObject*> voxels;
 sf::RenderWindow* window = nullptr;
-Vector2i windowSize = {800, 600};
+Vector2i windowSize = {1280, 720};
 sf::Clock deltaClock;
+float LightPosition[] = {0.0f, 0.0f, 10.0f};
 
 float yAngle = 0;
 float xAngle = 0;
@@ -50,13 +51,23 @@ const char* files[]{
     "NewFuncs/1_new",   //1
     "NewFuncs/Bone",    //2
     "NewFuncs/Chainik", //3
-    "NewFuncs/kris",    //4
+    "NewFuncs/euclid",  //4
     "NewFuncs/lopatka", //5
     "NewFuncs/sphere",  //6
     "NewFuncs/TeaCup",  //7
     "NewFuncs/2dspace", //8
 };
 int fileId = 7;
+
+
+const char* imageTypes[]{
+    "Cx",
+    "Cy",
+    "Cz",
+    "Cw",
+    "Ct"
+};
+int imageTypeId = 0;
 
 const char* calculators[]{
     "Recursive",
@@ -72,15 +83,28 @@ sf::Thread* modelThread = nullptr;
 sf::Thread* imageThread = nullptr;
 ModelData runData{
     "../examples/"+string(files[fileId])+".txt",
-            new RecursiveCalculator(recurDepth)
+    new RecursiveCalculator(recurDepth)
 };
 
 ImageCalcData imageData{
     "../examples/"+string(files[fileId])+".txt",
-            imageType,
-            new ImageMatrixCalculator({matrSize, matrSize, matrSize})
+    imageType,
+    new ImageMatrixCalculator({matrSize, matrSize, matrSize})
 };
 bool mode = false; // true - model, false - image
+
+ImageType FromString(string type)
+{
+    if(type == "Cx")
+        return ImageType::Cx;
+    if(type == "Cy")
+        return ImageType::Cy;
+    if(type == "Cz")
+        return ImageType::Cz;
+    if(type == "Cw")
+        return ImageType::Cw;
+    return ImageType::Ct;
+}
 
 void ResetThreads()
 {
@@ -129,6 +153,7 @@ void RunThreads()
     else if(paramsChanged)
         recreate(strcmp(calculators[calculatorId], "Matrix"));
 
+    imageData.type = FromString(imageTypes[imageTypeId]);
     modelThread = new sf::Thread(&ModelCalculating, runData);
     imageThread = new sf::Thread(&ImageCalculating, imageData);
     if(!mode)
@@ -182,7 +207,7 @@ void RenderMenu()
     ImGui::SFML::Update(*window, deltaClock.restart());
 
     ImGui::Begin("Settings");
-    ImGui::SetWindowSize({200, 200});
+    ImGui::SetWindowSize({220, 200});
     if (ImGui::BeginCombo("File", files[fileId]))
     {
         for (int n = 0; n < IM_ARRAYSIZE(files); n++)
@@ -228,9 +253,26 @@ void RenderMenu()
     }
     else
     {
-        if(ImGui::SliderInt("Blocks", &matrSize, 1, 100))
+        if(ImGui::SliderInt("Blocks", &matrSize, 1, 400))
         {
             paramsChanged = true;
+        }
+    }
+    if(mode)
+    {
+        if (ImGui::BeginCombo("Image type", imageTypes[imageTypeId]))
+        {
+            for (int n = 0; n < IM_ARRAYSIZE(imageTypes); n++)
+            {
+                const bool is_selected = (imageTypeId == n);
+                if (ImGui::Selectable(imageTypes[n], is_selected))
+                {
+                    imageTypeId = n;
+                }
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
         }
     }
     ImGui::Checkbox("Show image", &mode);
@@ -274,11 +316,11 @@ void ModelCalculating(ModelData data)
     Program program = parser.GetProgram();
     auto voxelData = data.calculator->Calculate(program, Zone::Zero, [](VoxelData& voxel)
     {
-            if(voxel.dementions == 3)
+        if(voxel.dementions == 3)
             voxels.PushBack(new Cube(voxel.center, voxel.size, voxel.color));
-            if(voxel.dementions == 2)
+        if(voxel.dementions == 2)
             voxels.PushBack(new Square(voxel.center, voxel.size, voxel.color));
-            if(voxel.dementions == 1)
+        if(voxel.dementions == 1)
             voxels.PushBack(new Square(voxel.center, voxel.size, voxel.color));
 });
 }
@@ -289,11 +331,11 @@ void ImageCalculating(ImageCalcData data)
     Program program = parser.GetProgram();
     auto voxelData = data.calculator->Calculate(program, data.type, [](ImageData& voxel)
     {
-            if(voxel.dementions == 3)
+        if(voxel.dementions == 3)
             voxels.PushBack(new Cube(voxel.center, voxel.size, voxel.color));
-            if(voxel.dementions == 2)
+        if(voxel.dementions == 2)
             voxels.PushBack(new Square(voxel.center, voxel.size, voxel.color));
-            if(voxel.dementions == 1)
+        if(voxel.dementions == 1)
             voxels.PushBack(new Square(voxel.center, voxel.size, voxel.color));
 });
 }
@@ -322,7 +364,6 @@ void Init()
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, MaterialAmbient);
     GLfloat MaterialDiffuse[] = {1.0f, 1.0f, 1.0f, 1.0f};
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, MaterialDiffuse);
-    float LightPosition[] = {0.0f, 2.5f, 2.5f};
     glLightfv(GL_LIGHT0, GL_POSITION, LightPosition);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -338,7 +379,7 @@ void Init()
     glLoadIdentity();
     gluPerspective(45.0f, (float)windowSize.x() /
                    (windowSize.y()> 0 ? (float)600: 1.0f),
-                   0.125f, 512.0f);
+                   0.2f, 512.0f);
 }
 
 int main(int argc, char** argv)

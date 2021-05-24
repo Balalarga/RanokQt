@@ -1,16 +1,12 @@
-arg x(3), y(3), z(3);
+arg x(2), y(2), z(2);
 
-const r = 2.5;
+const r = 4;
 const z0 = -r;
 
 var sphere = r^2 - x^2 - y^2 - (z0 - z)^2;
 
-var w1=3 - x^2;
-var w2=3 - y^2;
-var w =w2 & w1;
+var w1 = 3 - x^2;
+var w2 = 3 - y^2;
+var w  = w2 & w1;
 
-const cr = 1;
-var c = cr^2 - x^2 - y^2;
-
-
-return c & sphere;
+return abs(w);
