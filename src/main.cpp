@@ -1,24 +1,13 @@
 #include <iostream>
 
-#include <GLEW/glew.h>
-#include <GL/glu.h>
-#include <SFML/Graphics.hpp>
-#include <SFML/OpenGL.hpp>
-
-#include "imgui-SFML.h"
-#include "imgui.h"
-
-#include "Render/Cube.h"
-#include "Render/Square.h"
-#include "AsyncVector.h"
-
 #include "Calculators/MatrixCalculator.h"
 #include "Calculators/RecursiveCalculator.h"
 #include "Calculators/MImageMatrixCalculator.h"
 #include "Language/Parser.h"
-
 #include "Render/OpenglSystem.h"
 #include "Render/MainWindow.h"
+#include "Render/Cube.h"
+#include "Render/Square.h"
 
 using namespace std;
 
@@ -60,10 +49,10 @@ const char* calculators[]{
     "Recursive",
     "Matrix"
 };
-int calculatorId = 1;
+int calculatorId = 0;
 int recurDepth = 5;
 int matrSize = 20;
-ImageType imageType = ImageType::Cw;
+ImageType imageType = ImageType::Cx;
 bool paramsChanged = false;
 
 sf::Thread* modelThread = nullptr;
@@ -115,7 +104,7 @@ void ModelCalculating(ModelData data)
 {
     Parser parser(data.filename);
     Program program = parser.GetProgram();
-    auto voxelData = data.calculator->Calculate(program, Zone::Zero, [](VoxelData& voxel)
+    auto voxelData = data.calculator->Calculate(program, Zone::Zero,[](VoxelData& voxel)
     {
         if(voxel.dementions == 3)
             mainWindow->AddObject(new Cube(voxel.center, voxel.size, voxel.color));
@@ -160,14 +149,12 @@ void RunThreads()
         }
     };
 
-    if(dynamic_cast<MatrixCalculator*>(runData.calculator) && !strcmp(calculators[calculatorId], "Recursive"))
-    {
+    if(dynamic_cast<MatrixCalculator*>(runData.calculator) &&
+            !strcmp(calculators[calculatorId], "Recursive"))
         recreate(true);
-    }
-    else if(dynamic_cast<RecursiveCalculator*>(runData.calculator) && !strcmp(calculators[calculatorId], "Matrix"))
-    {
+    else if(dynamic_cast<RecursiveCalculator*>(runData.calculator) &&
+            !strcmp(calculators[calculatorId], "Matrix"))
         recreate(false);
-    }
     else if(paramsChanged)
         recreate(strcmp(calculators[calculatorId], "Matrix"));
 
@@ -204,6 +191,7 @@ void MenuConfig()
 
     if(mode)
         calculatorId = 1;
+
     if (ImGui::BeginCombo("Calculator", calculators[calculatorId]))
     {
         if(!mode)
@@ -224,16 +212,12 @@ void MenuConfig()
     if(!strcmp(calculators[calculatorId], "Recursive") && !mode)
     {
         if(ImGui::SliderInt("Depth", &recurDepth, 1, 10))
-        {
             paramsChanged = true;
-        }
     }
     else
     {
         if(ImGui::SliderInt("Blocks", &matrSize, 1, 200))
-        {
             paramsChanged = true;
-        }
     }
     if(mode)
     {
@@ -254,14 +238,9 @@ void MenuConfig()
     }
     ImGui::Checkbox("Show image", &mode);
     if (ImGui::Button("Start"))
-    {
-        ResetThreads();
         RunThreads();
-    }
     if (ImGui::Button("Stop"))
-    {
         ResetThreads();
-    }
     ImGui::End();
 }
 
