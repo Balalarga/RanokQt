@@ -1,11 +1,11 @@
 #ifndef PROGRAM_H
 #define PROGRAM_H
 
-#include "node.h"
+#include "Node.h"
 #include <map>
 #include <set>
-
-#include "Vectors.h"
+#include <SFML/System/Vector3.hpp>
+#include <SFML/System/Vector2.hpp>
 
 struct ArgData
 {
@@ -19,7 +19,7 @@ public:
     Program();
 
     double Compute(std::map<std::string, double> arguments);
-    double Compute(Vector3 args);
+    double Compute(sf::Vector3<double> args);
 
     std::vector<ArgData> GetArgs();
     void PrintTreeDepth(int depth);

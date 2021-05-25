@@ -7,7 +7,7 @@
 #include <vector>
 #include <cmath>
 
-#include "langfunctions.h"
+#include "LangFunctions.h"
 
 struct Expression
 {

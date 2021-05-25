@@ -30,12 +30,12 @@ void BaseCalculator::LoadDataFromFile(std::string file)
 
 }
 
-void BaseCalculator::SetVoxelColor(Color color)
+void BaseCalculator::SetVoxelColor(sf::Color color)
 {
     baseColor = color;
 }
 
-Color BaseCalculator::GetVoxelColor()
+sf::Color BaseCalculator::GetVoxelColor()
 {
     return baseColor;
 }
@@ -53,7 +53,7 @@ bool BaseCalculator::CheckZone(Zone zone, ZoneFlags flags) const
     }
 }
 
-ZoneFlags BaseCalculator::GetZoneFlags(const vector<pair<Vector3, double>>& values)
+ZoneFlags BaseCalculator::GetZoneFlags(const vector<pair<sf::Vector3<double>, double>>& values)
 {
     ZoneFlags flags;
     for(int i = 0; i < values.size(); i++)

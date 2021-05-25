@@ -35,14 +35,14 @@ double Program::Compute(std::map<std::string, double> args)
     return res;
 }
 
-double Program::Compute(Vector3 args)
+double Program::Compute(sf::Vector3<double> args)
 {
     auto it = arguments.begin();
-    it->second->SetValue(args.x());
+    it->second->SetValue(args.x);
     it++;
-    it->second->SetValue(args.y());
+    it->second->SetValue(args.y);
     it++;
-    it->second->SetValue(args.z());
+    it->second->SetValue(args.z);
 
     double res = result->GetValue();
 

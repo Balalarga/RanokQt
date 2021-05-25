@@ -1,7 +1,7 @@
 #ifndef RECURCIVECALCULATOR_H
 #define RECURCIVECALCULATOR_H
 
-#include "basecalculator.h"
+#include "BaseCalculator.h"
 
 class RecursiveCalculator: public BaseCalculator
 {
@@ -17,9 +17,9 @@ protected:
     Zone m_zone;
     Program* m_program = nullptr;
 
-    void recursionFunc1(Vector3 coords, Vector3 size, int step, std::function<void (VoxelData &)> iterFunc);
-    void recursionFunc2(Vector3 coords, Vector3 size, int step, std::function<void (VoxelData &)> iterFunc);
-    void recursionFunc3(Vector3 coords, Vector3 size, int step, std::function<void (VoxelData &)> iterFunc);
+    void recursionFunc1(sf::Vector3<double> coords, sf::Vector3<double> size, int step, std::function<void (VoxelData &)> iterFunc);
+    void recursionFunc2(sf::Vector3<double> coords, sf::Vector3<double> size, int step, std::function<void (VoxelData &)> iterFunc);
+    void recursionFunc3(sf::Vector3<double> coords, sf::Vector3<double> size, int step, std::function<void (VoxelData &)> iterFunc);
 
 };
 

@@ -1,6 +1,4 @@
-ARGUMENT X(1),Y(1),Z(1);
-
-const r = 2*10;
+ARGUMENT X(1.1),Y(1.1),Z(1.1);
 
 VARIABLE W = 1 - X*X - Y*Y - Z*Z;
 

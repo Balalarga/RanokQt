@@ -4,10 +4,10 @@
 #include <deque>
 #include <vector>
 #include <functional>
-
-#include "Vectors.h"
-#include "Color.h"
-#include "Language/program.h"
+#include <SFML/Graphics/Color.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <SFML/System/Vector3.hpp>
+#include "Language/Program.h"
 
 enum class Zone
 {
@@ -26,16 +26,16 @@ struct ZoneFlags
 struct VoxelData
 {
     VoxelData(){};
-    VoxelData(const Vector3& center, const Vector3& size,
-              const Color& color, std::vector<std::pair<Vector3, double>> values = {},
+    VoxelData(const sf::Vector3<double>& center, const sf::Vector3<double>& size,
+              const sf::Color& color, std::vector<std::pair<sf::Vector3<double>, double>> values = {},
               int dementions = 3):
         center(center), size(size), color(color), values(values),
         dementions(dementions)
     {}
-    Vector3 center;
-    Vector3 size;
-    Color color;
-    std::vector<std::pair<Vector3, double>> values;
+    sf::Vector3<double> center;
+    sf::Vector3<double> size;
+    sf::Color color;
+    std::vector<std::pair<sf::Vector3<double>, double>> values;
     int dementions;
 };
 
@@ -48,15 +48,15 @@ public:
     const std::deque<VoxelData>& GetResults();
     void SaveDataToFile(std::string file);
     void LoadDataFromFile(std::string file);
-    void SetVoxelColor(Color color);
-    Color GetVoxelColor();
+    void SetVoxelColor(sf::Color color);
+    sf::Color GetVoxelColor();
 
 protected:
     std::deque<VoxelData>* m_results;
-    Color baseColor{1, 1, 1, 0.5};
+    sf::Color baseColor{255, 255, 255, 120};
 
     bool CheckZone(Zone zone, ZoneFlags flags) const;
-    ZoneFlags GetZoneFlags(const std::vector<std::pair<Vector3, double> > &values);
+    ZoneFlags GetZoneFlags(const std::vector<std::pair<sf::Vector3<double>, double> > &values);
 };
 
 #endif // BASECALCULATOR_H

@@ -1,8 +1,8 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "lexer.h"
-#include "program.h"
+#include "Lexer.h"
+#include "Program.h"
 
 class Parser
 {

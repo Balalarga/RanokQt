@@ -1,16 +1,16 @@
 #ifndef MATRIXCALCULATOR_H
 #define MATRIXCALCULATOR_H
 
-#include "basecalculator.h"
+#include "BaseCalculator.h"
 
 class MatrixCalculator: public BaseCalculator
 {
 public:
-    MatrixCalculator(Vector3i step);
+    MatrixCalculator(sf::Vector3i step);
     const std::deque<VoxelData>& Calculate(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc = nullptr) override;
 
 protected:
-    Vector3i m_step;
+    sf::Vector3i m_step;
 
 
     const std::deque<VoxelData>& matrix1(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc);

@@ -3,7 +3,7 @@
 
 #include <string>
 #include <queue>
-#include "token.h"
+#include "Token.h"
 
 class Lexer
 {
