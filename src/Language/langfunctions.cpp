@@ -1,4 +1,4 @@
-#include "langfunctions.h"
+#include "LangFunctions.h"
 #include <cmath>
 
 std::map<std::string, FunctionRef> LangFunctions::functions =

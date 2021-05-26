@@ -290,7 +290,7 @@ const std::deque<MImageData> &MImageMatrixCalculator::matrix3(Program &program, 
                 }
                 else if(type == ImageType::Ct)
                 {
-                    color = 255*(normals[0]+1)/2.;
+                    color = 255*(normals[4]+1)/2.;
                 }
 
                 m_results->push_back(MImageData({x, y, z}, halfSize, sf::Color(color, color, color, 100), wv[0], normals));
