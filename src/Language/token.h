@@ -23,6 +23,7 @@ enum class TokenType
     Union
 };
 
+// Атоманрая единица языка
 struct Token
 {
     TokenType type;

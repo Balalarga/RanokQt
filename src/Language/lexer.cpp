@@ -5,15 +5,6 @@
 
 using namespace std;
 
-Lexer::Lexer()
-{
-
-}
-
-Lexer::~Lexer()
-{
-}
-
 void Lexer::SetText(const std::string& text)
 {
     if(text.empty())
@@ -53,11 +44,6 @@ string Lexer::GetError()
 bool Lexer::IsError()
 {
     return !error.empty();
-}
-
-void Lexer::FillQueue()
-{
-
 }
 
 Token Lexer::ParseNextToken(const std::string& data, unsigned& pivot)

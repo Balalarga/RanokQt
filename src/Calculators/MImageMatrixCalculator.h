@@ -4,6 +4,7 @@
 #include "MImageCalculator.h"
 #include <SFML/System/Vector3.hpp>
 
+// Матричный калькулятор образов, работает по аналогии с MatrixCalculator, но для образов
 class MImageMatrixCalculator: public MImageCalculator
 {
 public:

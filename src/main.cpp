@@ -11,14 +11,14 @@
 
 using namespace std;
 
+// Обертки для удобства
 struct ModelData
 {
-    string filename;
+    Zone zone;
     BaseCalculator* calculator;
 };
 struct ImageCalcData
 {
-    string filename;
     ImageType type;
     MImageCalculator* calculator;
 };
@@ -55,19 +55,20 @@ int matrSize = 20;
 ImageType imageType = ImageType::Cx;
 bool paramsChanged = false;
 
-sf::Thread* modelThread = nullptr;
-sf::Thread* imageThread = nullptr;
 ModelData runData{
-    "../examples/"+string(files[fileId])+".txt",
+    Zone::Zero,
     new RecursiveCalculator(recurDepth)
 };
 
 ImageCalcData imageData{
-    "../examples/"+string(files[fileId])+".txt",
     imageType,
     new MImageMatrixCalculator({matrSize, matrSize, matrSize})
 };
+string sourceFile = "../examples/"+string(files[fileId])+".txt";
 bool mode = false; // true - model, false - image
+
+sf::Thread* modelThread = nullptr;
+sf::Thread* imageThread = nullptr;
 
 MainWindow* mainWindow;
 
@@ -84,6 +85,7 @@ ImageType FromString(string type)
     return ImageType::Ct;
 }
 
+// Остановка расчетов
 void ResetThreads()
 {
     if(modelThread)
@@ -100,11 +102,12 @@ void ResetThreads()
     }
 }
 
+// Функция расчета воксельной модели
 void ModelCalculating(ModelData data)
 {
-    Parser parser(data.filename);
+    Parser parser(sourceFile);
     Program program = parser.GetProgram();
-    auto voxelData = data.calculator->Calculate(program, Zone::Zero,[](VoxelData& voxel)
+    auto voxelData = data.calculator->Calculate(program, data.zone,[](VoxelData& voxel)
     {
         if(voxel.dementions == 3)
             mainWindow->AddObject(new Cube(voxel.center, voxel.size, voxel.color));
@@ -112,12 +115,14 @@ void ModelCalculating(ModelData data)
             mainWindow->AddObject(new Square(voxel.center, voxel.size, voxel.color));
         if(voxel.dementions == 1)
             mainWindow->AddObject(new Square(voxel.center, voxel.size, voxel.color));
-});
+    });
+    data.calculator->SaveDataToFile("Res.model");
 }
 
+// Функция расчета м-образов
 void ImageCalculating(ImageCalcData data)
 {
-    Parser parser(data.filename);
+    Parser parser(sourceFile);
     Program program = parser.GetProgram();
     auto voxelData = data.calculator->Calculate(program, data.type, [](MImageData& voxel)
     {
@@ -127,9 +132,11 @@ void ImageCalculating(ImageCalcData data)
             mainWindow->AddObject(new Square(voxel.center, voxel.size, voxel.color));
         if(voxel.dementions == 1)
             mainWindow->AddObject(new Square(voxel.center, voxel.size, voxel.color));
-});
+    });
+    data.calculator->SaveToFile("Res.mimage");
 }
 
+// Запуск расчетов
 void RunThreads()
 {
     ResetThreads();
@@ -167,7 +174,7 @@ void RunThreads()
         imageThread->launch();
 }
 
-
+// Функция, описывающая элементы меню и их действия
 void MenuConfig()
 {
     ImGui::Begin("Settings");
@@ -180,8 +187,7 @@ void MenuConfig()
             if (ImGui::Selectable(files[n], is_selected))
             {
                 fileId = n;
-                runData.filename = "../examples/"+string(files[fileId])+".txt";
-                imageData.filename = "../examples/"+string(files[fileId])+".txt";
+                sourceFile = "../examples/"+string(files[fileId])+".txt";
             }
             if (is_selected)
                 ImGui::SetItemDefaultFocus();

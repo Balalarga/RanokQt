@@ -6,6 +6,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Graphics/Rect.hpp>
 
+// Обертка над Opengl для удобства использования
 class OpenglSystem
 {
 public:

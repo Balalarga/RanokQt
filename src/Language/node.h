@@ -9,6 +9,8 @@
 
 #include "LangFunctions.h"
 
+// Здесь описаны узлы для построения абстрактного синтаксического дерева
+
 struct Expression
 {
     Expression(){}

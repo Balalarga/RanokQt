@@ -6,6 +6,7 @@
 
 typedef double(*FunctionRef)(double);
 
+// Класс, который содержит информацию о функциях языка Ранока
 class LangFunctions
 {
 public:

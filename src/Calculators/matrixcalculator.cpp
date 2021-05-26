@@ -1,4 +1,4 @@
-#include "matrixcalculator.h"
+#include "MatrixCalculator.h"
 #include <vector>
 
 using namespace std;
@@ -44,12 +44,11 @@ const std::deque<VoxelData> &MatrixCalculator::matrix1(Program &program, Zone zo
         };
         for(int i = 0; i < 2; i++)
             values[i].second = program.Compute(values[i].first);
-        ZoneFlags flags = GetZoneFlags(values);
-        if(CheckZone(zone, flags))
+        Zone voxelZone = GetZone(values);
+        m_results->push_back(VoxelData({x, 0, 0}, halfSize, GetVoxelColor(), voxelZone, values, 1));
+        if(iterFunc && zone == voxelZone)
         {
-            m_results->push_back(VoxelData({x, 0, 0}, halfSize, GetVoxelColor(), values, 1));
-            if(iterFunc)
-                iterFunc(m_results->back());
+            iterFunc(m_results->back());
         }
         x+= size.x;
     }
@@ -84,12 +83,11 @@ const std::deque<VoxelData> &MatrixCalculator::matrix2(Program &program, Zone zo
             };
             for(int i = 0; i < 4; i++)
                 values[i].second = program.Compute(values[i].first);
-            ZoneFlags flags = GetZoneFlags(values);
-            if(CheckZone(zone, flags))
+            Zone voxelZone = GetZone(values);
+            m_results->push_back(VoxelData({x, y, 0}, halfSize, GetVoxelColor(), voxelZone, values, 2));
+            if(iterFunc && zone == voxelZone)
             {
-                m_results->push_back(VoxelData({x, y, 0}, halfSize, GetVoxelColor(), values, 2));
-                if(iterFunc)
-                    iterFunc(m_results->back());
+                iterFunc(m_results->back());
             }
             y+= size.y;
         }
@@ -133,12 +131,11 @@ const std::deque<VoxelData> &MatrixCalculator::matrix3(Program &program, Zone zo
                 };
                 for(int i = 0; i < 8; i++)
                     values[i].second = program.Compute(values[i].first);
-                ZoneFlags flags = GetZoneFlags(values);
-                if(CheckZone(zone, flags))
+                Zone voxelZone = GetZone(values);
+                m_results->push_back(VoxelData({x, y, z}, halfSize, GetVoxelColor(), voxelZone, values));
+                if(iterFunc && voxelZone == zone)
                 {
-                    m_results->push_back(VoxelData({x, y, z}, halfSize, GetVoxelColor(), values));
-                    if(iterFunc)
-                        iterFunc(m_results->back());
+                    iterFunc(m_results->back());
                 }
                 z+= size.z;
             }

@@ -5,18 +5,21 @@
 #include <queue>
 #include "Token.h"
 
+// Класс, разделяющий исходный код на поток Токенов
 class Lexer
 {
 public:
-    Lexer();
-    ~Lexer();
+    Lexer() = default;
+    ~Lexer() = default;
+
     void SetText(const std::string& text);
+
     Token NextToken();
+
     std::string GetError();
     bool IsError();
 
 protected:
-    void FillQueue();
     Token ParseNextToken(const std::string &data, unsigned &pivot);
 
 private:

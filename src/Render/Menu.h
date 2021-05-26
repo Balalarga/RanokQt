@@ -6,6 +6,7 @@
 #include "imgui.h"
 #include <functional>
 
+// Класс, для представления меню
 class Menu
 {
 public:

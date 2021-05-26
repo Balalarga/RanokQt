@@ -3,6 +3,7 @@
 
 #include "IDrawableObject.h"
 
+// 2D квадрат
 class Square: public IDrawableObject
 {
 public:

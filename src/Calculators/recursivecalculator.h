@@ -3,6 +3,7 @@
 
 #include "BaseCalculator.h"
 
+// Рекурсивный калькулятор: с повышением уровня рекурсии делит пространство на все более маленькие подпространства
 class RecursiveCalculator: public BaseCalculator
 {
 public:
@@ -17,6 +18,7 @@ protected:
     Zone m_zone;
     Program* m_program = nullptr;
 
+    // Рекурсивные функции для 1D, 2D, 3D моделей
     void recursionFunc1(sf::Vector3<double> coords, sf::Vector3<double> size, int step, std::function<void (VoxelData &)> iterFunc);
     void recursionFunc2(sf::Vector3<double> coords, sf::Vector3<double> size, int step, std::function<void (VoxelData &)> iterFunc);
     void recursionFunc3(sf::Vector3<double> coords, sf::Vector3<double> size, int step, std::function<void (VoxelData &)> iterFunc);

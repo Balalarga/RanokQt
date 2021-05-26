@@ -4,6 +4,8 @@
 #include <vector>
 #include <mutex>
 
+
+// Вектор с возможностью асинхронного чтения\записи
 template<class T>
 class AsyncVector
 {

@@ -69,12 +69,11 @@ void RecursiveCalculator::recursionFunc1(sf::Vector3<double> coords, sf::Vector3
         };
         for(int i = 0; i < 2; i++)
             values[i].second = m_program->Compute(values[i].first);
-        ZoneFlags flags = GetZoneFlags(values);
-        if(CheckZone(m_zone, flags))
+        Zone voxelZone = GetZone(values);
+        m_results->push_back(VoxelData(coords, size, GetVoxelColor(), voxelZone, values, 1));
+        if(iterFunc && m_zone == voxelZone)
         {
-            m_results->push_back(VoxelData(coords, size, GetVoxelColor(), values, 1));
-            if(iterFunc)
-                iterFunc(m_results->back());
+            iterFunc(m_results->back());
         }
     }
     else
@@ -103,12 +102,11 @@ void RecursiveCalculator::recursionFunc2(sf::Vector3<double> coords, sf::Vector3
         };
         for(int i = 0; i < 4; i++)
             values[i].second = m_program->Compute(values[i].first);
-        ZoneFlags flags = GetZoneFlags(values);
-        if(CheckZone(m_zone, flags))
+        Zone voxelZone = GetZone(values);
+        m_results->push_back(VoxelData(coords, size, GetVoxelColor(), voxelZone, values, 2));
+        if(iterFunc && m_zone == voxelZone)
         {
-            m_results->push_back(VoxelData(coords, size, GetVoxelColor(), values, 2));
-            if(iterFunc)
-                iterFunc(m_results->back());
+            iterFunc(m_results->back());
         }
     }
     else
@@ -143,12 +141,11 @@ void RecursiveCalculator::recursionFunc3(sf::Vector3<double> coords, sf::Vector3
         };
         for(int i = 0; i < 8; i++)
             values[i].second = m_program->Compute(values[i].first);
-        ZoneFlags flags = GetZoneFlags(values);
-        if(CheckZone(m_zone, flags))
+        Zone voxelZone = GetZone(values);
+        m_results->push_back(VoxelData(coords, size, GetVoxelColor(), voxelZone, values));
+        if(iterFunc && m_zone == voxelZone)
         {
-            m_results->push_back(VoxelData(coords, size, GetVoxelColor(), values));
-            if(iterFunc)
-                iterFunc(m_results->back());
+            iterFunc(m_results->back());
         }
     }
     else

@@ -32,28 +32,19 @@ void getCofactor(vector<vector<double>>& mat, vector<vector<double>>& temp,
 
 double determinantOfMatrix(vector<vector<double>> mat, int n)
 {
-    double D = 0; // Initialize result
-
-    //  Base case : if matrix contains single element
     if (n == 1)
         return mat[0][0];
 
-    vector<vector<double>> temp(n, vector<double>(n)); // To store cofactors
-
-    int sign = 1; // To store sign multiplier
-
-    // Iterate for each element of first row
+    double D = 0;
+    vector<vector<double>> temp(n, vector<double>(n));
+    int sign = 1;
     for (int f = 0; f < n; f++)
     {
-        // Getting Cofactor of mat[0][f]
         getCofactor(mat, temp, 0, f, n);
         D += sign * mat[0][f]
              * determinantOfMatrix(temp, n - 1);
-
-        // terms are to be added with alternate sign
         sign = -sign;
     }
-
     return D;
 }
 
@@ -151,47 +142,46 @@ const std::deque<MImageData> &MImageMatrixCalculator::matrix2(Program &program, 
             double detA = -determinantOfMatrix(a, 3);
             double detB = -determinantOfMatrix(b, 3);
             double detC = determinantOfMatrix(c, 3);
-            double detD = determinantOfMatrix(d, 3);
+            double detD = -determinantOfMatrix(d, 3);
 
             detA *= 100;
             detB *= 100;
-            detD *= -1;
 
             double div = sqrt(pow(detA, 2)+pow(detB, 2)+pow(detC, 2)+pow(detD, 2));
 
-            double nA = detA/div;
-            double nB = detB/div;
-            double nC = detC/div;
-            double nD = detD/div;
+            vector<double> normals{
+                detA/div,
+                detB/div,
+                detC/div,
+                detD/div,
+                detD/div,
+            };
 
-            double color;
-            double grad = 500;
+            int color;
             if(type == ImageType::Cx)
             {
-                color = (nA+1)/grad;
+                color = 255*(normals[0]+1)/2.;
             }
             else if(type == ImageType::Cy)
             {
-                color = (nB+1)/grad;
+                color = 255*(normals[1]+1)/2.;
             }
             else if(type == ImageType::Cz)
             {
-                color = (nC+1)/grad;
+                color = 255*(normals[2]+1)/2.;
             }
             else if(type == ImageType::Cw)
             {
-                color = (nD+1)/grad;
+                color = 255*(normals[3]+1)/2.;
             }
             else if(type == ImageType::Ct)
             {
-                color = (nD+1)/grad;
+                color = 255*(normals[4]+1)/2.;
             }
-
             if(flag < 2)
-                m_results->push_back(MImageData({x, y, 0}, halfSize, sf::Color(color*grad/2, 0, color*grad/2, 1), zv[0], 2));
+                m_results->push_back(MImageData({x, y, 0}, halfSize, sf::Color(color, 0, color, 255), zv[0], normals, 2));
             else
-                m_results->push_back(MImageData({x, y, 0}, halfSize, sf::Color(color*grad/2, color*grad/2, color*grad/2, 1), zv[0], 2));
-
+                m_results->push_back(MImageData({x, y, 0}, halfSize, sf::Color(color, color, color, 255), zv[0], normals, 2));
             if(iterFunc)
                 iterFunc(m_results->back());
             y+= size.y;
@@ -199,22 +189,6 @@ const std::deque<MImageData> &MImageMatrixCalculator::matrix2(Program &program, 
         x+= size.x;
     }
     return *m_results;
-}
-
-double det4(vector<vector<double>> m)
-{
-    return m[0][3] * m[1][2] * m[2][1] * m[3][0] - m[0][2] * m[1][3] * m[2][1] * m[3][0] -
-            m[0][3] * m[1][1] * m[2][2] * m[3][0] + m[0][1] * m[1][3] * m[2][2] * m[3][0] +
-            m[0][2] * m[1][1] * m[2][3] * m[3][0] - m[0][1] * m[1][2] * m[2][3] * m[3][0] -
-            m[0][3] * m[1][2] * m[2][0] * m[3][1] + m[0][2] * m[1][3] * m[2][0] * m[3][1] +
-            m[0][3] * m[1][0] * m[2][2] * m[3][1] - m[0][0] * m[1][3] * m[2][2] * m[3][1] -
-            m[0][2] * m[1][0] * m[2][3] * m[3][1] + m[0][0] * m[1][2] * m[2][3] * m[3][1] +
-            m[0][3] * m[1][1] * m[2][0] * m[3][2] - m[0][1] * m[1][3] * m[2][0] * m[3][2] -
-            m[0][3] * m[1][0] * m[2][1] * m[3][2] + m[0][0] * m[1][3] * m[2][1] * m[3][2] +
-            m[0][1] * m[1][0] * m[2][3] * m[3][2] - m[0][0] * m[1][1] * m[2][3] * m[3][2] -
-            m[0][2] * m[1][1] * m[2][0] * m[3][3] + m[0][1] * m[1][2] * m[2][0] * m[3][3] +
-            m[0][2] * m[1][0] * m[2][1] * m[3][3] - m[0][0] * m[1][2] * m[2][1] * m[3][3] -
-            m[0][1] * m[1][0] * m[2][2] * m[3][3] + m[0][0] * m[1][1] * m[2][2] * m[3][3];
 }
 
 const std::deque<MImageData> &MImageMatrixCalculator::matrix3(Program &program, ImageType type, std::function<void (MImageData &)> iterFunc)
@@ -289,35 +263,37 @@ const std::deque<MImageData> &MImageMatrixCalculator::matrix3(Program &program, 
 
                 double div = sqrt(pow(detA, 2)+pow(detB, 2)+pow(detC, 2)+pow(detD, 2)+pow(detF, 2));
 
-                double nA = detA/div;
-                double nB = -detB/div;
-                double nC = -detC/div;
-                double nD = detD/div;
-                double nF = detF/div;
+                vector<double> normals{
+                    detA/div,
+                    -detB/div,
+                    -detC/div,
+                    detD/div,
+                    detF/div
+                };
 
                 unsigned color;
                 if(type == ImageType::Cx)
                 {
-                    color = 255*(nA+1)/2.;
+                    color = 255*(normals[0]+1)/2.;
                 }
                 else if(type == ImageType::Cy)
                 {
-                    color = 255*(nB+1)/2.;
+                    color = 255*(normals[1]+1)/2.;
                 }
                 else if(type == ImageType::Cz)
                 {
-                    color = 255*(nC+1)/2.;
+                    color = 255*(normals[2]+1)/2.;
                 }
                 else if(type == ImageType::Cw)
                 {
-                    color = 255*(nD+1)/2.;
+                    color = 255*(normals[3]+1)/2.;
                 }
                 else if(type == ImageType::Ct)
                 {
-                    color = 255*(nF+1)/2.;
+                    color = 255*(normals[0]+1)/2.;
                 }
 
-                m_results->push_back(MImageData({x, y, z}, halfSize, sf::Color(color, color, color, 100), wv[0]));
+                m_results->push_back(MImageData({x, y, z}, halfSize, sf::Color(color, color, color, 100), wv[0], normals));
 
                 if(iterFunc)
                     iterFunc(m_results->back());
