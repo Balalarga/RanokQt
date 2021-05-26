@@ -1,5 +1,0 @@
-ARGUMENT X(-1.2, 1.2),Y(-1.2, 1.2),Z(-1.2, 1.2);
-
-VARIABLE W = 1 - X*X - Y*Y - Z*Z;
-
-RETURN W;

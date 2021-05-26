@@ -4,9 +4,10 @@
 #include <deque>
 #include <vector>
 #include <functional>
-#include <glm/glm.hpp>
-
-#include "Lang/program.h"
+#include <SFML/Graphics/Color.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <SFML/System/Vector3.hpp>
+#include "Language/Program.h"
 
 enum class Zone
 {
@@ -15,51 +16,45 @@ enum class Zone
     Negative
 };
 
-struct ZoneFlags
-{
-    bool plus = false;
-    bool zero = false;
-    bool minus = false;
-};
-
+// Информация по расчету точки функции
 struct VoxelData
 {
     VoxelData(){};
-    VoxelData(const glm::vec3& center, const glm::vec3& size,
-              const glm::vec4& color, std::vector<std::pair<glm::vec3, double>>& values):
-        center(center), size(size), color(color), values(values)
+    VoxelData(const sf::Vector3<double>& center, const sf::Vector3<double>& size,
+              const sf::Color& color, Zone zone, std::vector<std::pair<sf::Vector3<double>, double>> values = {},
+              int dementions = 3):
+        center(center), size(size), color(color), values(values),
+        dementions(dementions)
     {}
-    glm::vec3 center;
-    glm::vec3 size;
-    glm::vec4 color;
-    std::vector<std::pair<glm::vec3, double>> values;
+    sf::Vector3<double> center;
+    sf::Vector3<double> size;
+    sf::Color color;
+    std::vector<std::pair<sf::Vector3<double>, double>> values; // Значения
+    Zone zone;
+    int dementions;
 };
 
-struct StorageItem
-{
-    glm::vec3 point;
-    friend inline bool operator<(const StorageItem& a, const StorageItem& b);
-};
-
+// Базовый класс калькулятор по зонам
 class BaseCalculator
 {
 public:
     BaseCalculator();
     virtual ~BaseCalculator();
-    virtual const std::deque<VoxelData>& Calculate(Program& program, Zone zone) = 0;
+    // В функцию передается: программа расчета, требуемая зона, и callback для итеративной отрисовки
+    virtual const std::deque<VoxelData>& Calculate(Program& program, Zone zone, std::function<void(VoxelData&)> = nullptr) = 0;
     const std::deque<VoxelData>& GetResults();
-    void SetIterationFunc(std::function<void(VoxelData&)> iterFunc);
     void SaveDataToFile(std::string file);
     void LoadDataFromFile(std::string file);
+    void SetVoxelColor(sf::Color color);
+    sf::Color GetVoxelColor();
 
 protected:
+    // посчитанные данные модели
     std::deque<VoxelData>* m_results;
-    std::map<StorageItem, double> storage;
-    std::function<void(VoxelData&)> m_iterFunc;
+    sf::Color baseColor{255, 255, 255, 120};
 
-    bool CheckZone(Zone zone, ZoneFlags flags) const;
-    ZoneFlags GetZoneFlags(const std::vector<std::pair<glm::vec3, double> > &values);
-
+    // Получение зоны вокселя по его узловым значениям
+    Zone GetZone(const std::vector<std::pair<sf::Vector3<double>, double> > &values) const;
 };
 
 #endif // BASECALCULATOR_H
