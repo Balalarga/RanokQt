@@ -240,7 +240,7 @@ std::shared_ptr<Expression> Parser::Factor(Program& program)
         expr = program.findVariable(prev.name);
         if(expr)
             return expr;
-        auto func = LangFunctions::Find(prev.name);
+        auto func = LangFunctions::FindFunction(prev.name);
         if(func)
             return shared_ptr<FunctionExpr>(new FunctionExpr(func, Term(program)));
     }

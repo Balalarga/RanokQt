@@ -5,6 +5,8 @@
 #include <functional>
 
 typedef double(*FunctionRef)(double);
+typedef double(*BinaryOp)(double, double);
+typedef double(*UnaryOp)(double);
 
 // Класс, который содержит информацию о функциях языка Ранока
 class LangFunctions
@@ -12,8 +14,14 @@ class LangFunctions
 public:
     LangFunctions() = delete;
     static std::map<std::string, FunctionRef> functions;
-    static FunctionRef Find(std::string);
-    static std::string Find(FunctionRef);
+    static std::map<std::string, BinaryOp> binOperations;
+    static std::map<std::string, UnaryOp> unaryOperations;
+    static FunctionRef FindFunction(std::string);
+    static std::string FindFunction(FunctionRef);
+    static BinaryOp FindBinaryOp(std::string);
+    static std::string FindBinaryOp(BinaryOp);
+    static UnaryOp FindUnaryOp(std::string);
+    static std::string FindUnaryOp(UnaryOp);
 };
 
 #endif // LANGFUNCTIONS_H

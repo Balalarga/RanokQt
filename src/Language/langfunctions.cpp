@@ -23,15 +23,59 @@ std::map<std::string, FunctionRef> LangFunctions::functions =
     {"floor", std::floor},
 };
 
-FunctionRef LangFunctions::Find(std::string name)
+std::map<std::string, BinaryOp> LangFunctions::binOperations =
+{
+    {"+", [](double a, double b){return a+b;}},
+    {"-", [](double a, double b){return a-b;}},
+    {"/", [](double a, double b){return a/b;}},
+    {"*", [](double a, double b){return a*b;}},
+    {"&", [](double a, double b){return a + b - sqrt(pow(a, 2) + pow(b, 2));}},
+    {"|", [](double a, double b){return a + b + sqrt(pow(a, 2) + pow(b, 2));}},
+    {"^", [](double a, double b){return pow(a, b);}},
+};
+
+std::map<std::string, UnaryOp> LangFunctions::unaryOperations =
+{
+    {"-", [](double a){return -a;}}
+};
+
+FunctionRef LangFunctions::FindFunction(std::string name)
 {
     auto it = functions.find(name);
     return it == functions.end() ? nullptr: it->second;
 }
 
-std::string LangFunctions::Find(FunctionRef func)
+std::string LangFunctions::FindFunction(FunctionRef func)
 {
     for(auto& i: functions)
+        if(i.second == func)
+            return i.first;
+    return "unknown";
+}
+
+BinaryOp LangFunctions::FindBinaryOp(std::string name)
+{
+    auto it = binOperations.find(name);
+    return it == binOperations.end() ? nullptr: it->second;
+}
+
+std::string LangFunctions::FindBinaryOp(BinaryOp func)
+{
+    for(auto& i: binOperations)
+        if(i.second == func)
+            return i.first;
+    return "unknown";
+}
+
+UnaryOp LangFunctions::FindUnaryOp(std::string name)
+{
+    auto it = unaryOperations.find(name);
+    return it == unaryOperations.end() ? nullptr: it->second;
+}
+
+std::string LangFunctions::FindUnaryOp(UnaryOp func)
+{
+    for(auto& i: unaryOperations)
         if(i.second == func)
             return i.first;
     return "unknown";

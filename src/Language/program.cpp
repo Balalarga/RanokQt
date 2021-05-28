@@ -115,7 +115,7 @@ void Program::PrintNode(Expression *node, set<string>& vars, int currDepth, int 
     }
     else if(auto casted = dynamic_cast<FunctionExpr*>(node))
     {
-        cout<<"FunctionExpr: "<<LangFunctions::Find(casted->func);
+        cout<<"FunctionExpr: "<<LangFunctions::FindFunction(casted->func);
         PrintNode(casted->arg.get(), vars, currDepth+1, maxDepth);
     }
 }

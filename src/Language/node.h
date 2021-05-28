@@ -104,21 +104,20 @@ struct VariableExpr: public Expression
 
 struct UnaryExpr: public Expression
 {
-    UnaryExpr(std::string op, std::shared_ptr<Expression> expr):
-        op(op),
+    UnaryExpr(std::string opName, std::shared_ptr<Expression> expr):
+        opName(opName),
+        op(LangFunctions::FindUnaryOp(opName)),
         expr(expr){}
     virtual double GetValue() override
     {
-        if(op == "-")
+        if(!ready)
         {
-            if(!ready)
-            {
-                SetValue(-expr->GetValue());
-            }
-            return store;
+            if(op)
+                SetValue(op(expr->GetValue()));
+            else
+                error = "Unknown operation: "+opName;
         }
-        error = "Unknown operation "+op;
-        return 0;
+        return store;
     };
     virtual void Reset() override
     {
@@ -126,58 +125,27 @@ struct UnaryExpr: public Expression
         expr->Reset();
     }
 
-    std::string op;
+    std::string opName;
+    UnaryOp op;
     std::shared_ptr<Expression> expr;
 };
 
 struct BinaryExpr: public Expression
 {
-    BinaryExpr(std::string op, std::shared_ptr<Expression> left,
+    BinaryExpr(std::string opName, std::shared_ptr<Expression> left,
                std::shared_ptr<Expression> right):
-        op(op),
+        opName(opName),
+        op(LangFunctions::FindBinaryOp(opName)),
         left(left),
         right(right){}
     virtual double GetValue() override
     {
         if(!ready)
         {
-            double lVal = left->GetValue();
-            double rVal = right->GetValue();
-            if(op == "+")
-            {
-                SetValue(lVal+rVal);
-            }
-            else if(op == "-")
-            {
-                SetValue(lVal-rVal);
-            }
-            else if(op == "*")
-            {
-                SetValue(lVal*rVal);
-            }
-            else if(op == "/")
-            {
-                if(rVal == 0)
-                {
-                    error = "Zero division";
-                    return 0;
-                }
-                SetValue(lVal/rVal);
-            }
-            else if(op == "^")
-            {
-                SetValue(pow(lVal, rVal));
-            }
-            else if(op == "&")
-            {
-                SetValue(lVal + rVal - sqrt(pow(lVal, 2) + pow(rVal, 2)));
-            }
-            else if(op == "|")
-            {
-                SetValue(lVal + rVal + sqrt(pow(lVal, 2) + pow(rVal, 2)));
-            }
+            if(op)
+                SetValue(op(left->GetValue(), right->GetValue()));
             else
-                error = "Unknown operation "+op;
+                error = "Unknown binary operation "+opName;
         }
         return store;
     };
@@ -188,7 +156,8 @@ struct BinaryExpr: public Expression
         right->Reset();
     }
 
-    std::string op;
+    std::string opName;
+    BinaryOp op;
     std::shared_ptr<Expression> left, right;
 };
 
