@@ -3,14 +3,18 @@
 
 #include "Lexer.h"
 #include "Program.h"
+#include "Token.h"
 
 // Класс, который создает абстрактное синтаксическое дерево из токенов Лексера
 class Parser
 {
 public:
-    Parser(const std::string& sourceFile);
+    Parser();
 
-    Program GetProgram();
+    void SetFile(const std::string& sourceFile);
+    void SetText(const std::string& source);
+
+    Program* GetProgram();
 
     bool IsError();
     std::string GetError();
@@ -27,7 +31,7 @@ private:
     void HandleVariable(Program& program);
     void HandleReturn(Program& program);
 
-    void CheckToken(TokenType expect);
+    void CheckToken(Token::Type expect);
 
     // рекурсивные функции построения дерева
     std::shared_ptr<Expression> Term(Program& program);

@@ -4,8 +4,7 @@
 #include "Node.h"
 #include <map>
 #include <set>
-#include <SFML/System/Vector3.hpp>
-#include <SFML/System/Vector2.hpp>
+#include "Utils.h"
 
 struct ArgData
 {
@@ -22,7 +21,7 @@ public:
     Program();
 
     double Compute(std::map<std::string, double> arguments);
-    double Compute(sf::Vector3<double> args);
+    double Compute(Vector3d args);
 
     std::vector<ArgData> GetArgs();
     void PrintTreeDepth(int depth);

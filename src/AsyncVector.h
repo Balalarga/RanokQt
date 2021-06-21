@@ -2,7 +2,7 @@
 #define ASYNCVECTOR_H
 
 #include <vector>
-#include <mutex>
+#include <pthread.h>
 
 
 // Вектор с возможностью асинхронного чтения\записи
@@ -12,31 +12,36 @@ class AsyncVector
 public:
     AsyncVector()
     {
-
+        pthread_mutex_init(&m_mutex, nullptr);
     }
     AsyncVector(const std::vector<T> &data):
         m_data(move(data))
     {
-
+        pthread_mutex_init(&m_mutex, nullptr);
+    }
+    ~AsyncVector()
+    {
+        Clear();
+        pthread_mutex_destroy(&m_mutex);
     }
 
     unsigned Size()
     {
-        m_mutex.lock();
+        pthread_mutex_lock(&m_mutex);
 
         unsigned size = m_data.size();
 
-        m_mutex.unlock();
+        pthread_mutex_unlock(&m_mutex);
 
         return size;
     }
     void PushBack(const T& value)
     {
-        m_mutex.lock();
+        pthread_mutex_lock(&m_mutex);
 
         m_data.push_back(value);
 
-        m_mutex.unlock();
+        pthread_mutex_unlock(&m_mutex);
     }
     const T& Get(unsigned id)
     {
@@ -45,24 +50,24 @@ public:
 
     void Clear()
     {
-        m_mutex.lock();
+        pthread_mutex_lock(&m_mutex);
         m_data.clear();
-        m_mutex.unlock();
+        pthread_mutex_unlock(&m_mutex);
     }
 
     T& At(unsigned id)
     {
-        m_mutex.lock();
+        pthread_mutex_lock(&m_mutex);
 
         T& item = m_data.at(id);
 
-        m_mutex.unlock();
+        pthread_mutex_unlock(&m_mutex);
         return item;
     }
 
 
 private:
-    std::mutex m_mutex;
+    pthread_mutex_t m_mutex;
     std::vector<T> m_data;
 };
 

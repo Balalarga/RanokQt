@@ -2,102 +2,44 @@
 #define MImageCalculator_H
 
 #include <deque>
-#include <vector>
-#include <functional>
-#include <fstream>
-#include <sstream>
 
-#include <SFML/System/Vector3.hpp>
-#include <SFML/Graphics/Color.hpp>
-#include "Language/Program.h"
+#include <QColor>
+
+#include "ICalculator.h"
 
 
-enum class ImageType
+enum class MImageType
 {
     Cx, Cy, Cz, Cw, Ct
 };
+using MImageData = std::vector<std::pair<MImageType, double>>;
 
-// Информация о точке образа
-struct MImageData
-{
-    MImageData(){};
-    MImageData(const sf::Vector3<double>& center,
-               const sf::Vector3<double>& size,
-               const sf::Color& color, double value,
-               const std::vector<double>& normals,
-              int dementions = 3):
-        center(center), size(size), color(color),
-        normals(normals), value(value),
-        dementions(dementions)
-    {}
-    sf::Vector3<double> center;
-    sf::Vector3<double> size;
-    sf::Color color;
-    std::vector<double> normals;
-    double value;
-    int dementions;
-};
 
-// Базовый класс для расчета образов
-class MImageCalculator
+class MImageCalculator: public ICalculator
 {
+    Q_OBJECT
+
 public:
-    MImageCalculator(){m_results = new std::deque<MImageData>();}
-    virtual ~MImageCalculator(){delete m_results;}
-    virtual const std::deque<MImageData>& Calculate(Program& program, ImageType type, std::function<void(MImageData&)> iterFunc = nullptr) = 0;
+    MImageCalculator(QObject* parent = nullptr):
+        ICalculator(parent),
+        m_type(MImageType::Cx)
+    {}
 
-    void SaveToFile(std::string file)
-    {
-        std::ofstream out(file);
-        if(!out)
-        {
-            std::cout<<"Couldn't open file "<<file<<std::endl;
-            return;
-        }
 
-        for(auto& i: *m_results)
-        {
-            out<<i.center.x<<' '<<i.center.y<<' '<<i.center.z<<' ';
-            out<<i.size.x<<' '<<i.size.y<<' '<<i.size.z<<' ';
-            for(auto& n: i.normals)
-                out<<n<<' ';
-            out<<'\n';
-        }
+    inline void SetType(MImageType type){ m_type = type; }
+    inline MImageType GetType(){ return m_type; }
 
-        out.close();
-    }
-    void LoadFromFile(std::string file)
-    {
-        std::ifstream in(file);
-        if(!in)
-        {
-            std::cout<<"Couldn't open file "<<file<<std::endl;
-            return;
-        }
-        MImageData data;
-        std::vector<double> normals;
-        std::string line;
-        while(!in.eof())
-        {
-            std::getline(in, line);
-            std::stringstream lineStream(line);
-            lineStream >> data.center.x >> data.center.y >> data.center.z;
-            lineStream >> data.size.x >> data.size.y >> data.size.z;
-            lineStream >> data.color.r >> data.color.g >> data.color.b >> data.color.a;
-            double n;
-            while(!lineStream.eof())
-            {
-                lineStream >> n;
-                normals.push_back(n);
-            }
-            data.normals = normals;
-            m_results->push_back(data);
-        }
-        in.close();
-    }
 
-protected:
-    std::deque<MImageData>* m_results;
+    inline void AddImageData(MImageData data){ m_imagesData.push_back(data); }
+
+
+    void SaveDataToFile(std::string file) override {}
+    void LoadDataFromFile(std::string file) override {}
+
+
+private:
+    std::vector<MImageData> m_imagesData;
+    MImageType m_type;
 };
 
 #endif // MImageCalculator_H

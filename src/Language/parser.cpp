@@ -1,11 +1,22 @@
 #include "Parser.h"
-#include "langfunctions.h"
+
+#include "LangFunctions.h"
+#include "Token.h"
+
 #include <sstream>
 #include <fstream>
 
+
 using namespace std;
 
-Parser::Parser(const std::string &sourceFile)
+
+Parser::Parser()
+{
+
+}
+
+
+void Parser::SetFile(const std::string &sourceFile)
 {
     fstream file(sourceFile);
     if(!file)
@@ -17,38 +28,43 @@ Parser::Parser(const std::string &sourceFile)
     converter<<file.rdbuf();
 
     file.close();
-
-    lexer.SetText(converter.str());
+    SetText(converter.str());
 }
 
-Program Parser::GetProgram()
+void Parser::SetText(const std::string &source)
 {
-    Program program;
+    lexer.SetText(source);
+}
+
+Program *Parser::GetProgram()
+{
+    Program* program = new Program;
     ToNextToken();
     if(!lexer.IsError() && !IsError())
     {
-        while(token != TokenType::End)
+        while(token != Token::Type::End)
         {
-            if(token == TokenType::Id)
+            if(token == Token::Type::Id)
             {
                 if(token.name == "variable" ||
                         token.name == "var")
-                    HandleVariable(program);
+                    HandleVariable(*program);
                 else if(token.name == "argument" ||
                         token.name == "arg")
-                    HandleArgument(program);
+                    HandleArgument(*program);
                 else if(token.name == "constant" ||
                         token.name == "const")
-                    HandleConstant(program);
+                    HandleConstant(*program);
                 else if(token.name == "return")
-                    HandleReturn(program);
+                    HandleReturn(*program);
                 else
+                {
                     error = "Unknown keyword " + token.name;
+                }
             }
             else
             {
                 error = "Unknown token " + token.name;
-                break;
             }
         }
     }
@@ -58,6 +74,8 @@ Program Parser::GetProgram()
             cout<<"Lexer error: "<<lexer.GetError()<<endl;
         else
             cout<<"Parser error: "<<error<<endl;
+        delete program;
+        program = nullptr;
     }
 
     return program;
@@ -77,36 +95,36 @@ void Parser::HandleArgument(Program &program)
 {
     if(!IsError())
     {
-        while(token != TokenType::Endline)
+        while(token != Token::Type::Endline)
         {
             ToNextToken();
-            CheckToken(TokenType::Id);
+            CheckToken(Token::Type::Id);
             string name = token.name;
             ToNextToken();
             pair<double, double> limit{-5, 5};
-            if(token == TokenType::ParenOpen)
+            if(token == Token::Type::ParenOpen)
             {
                 ToNextToken();
                 bool negative = false;
-                if(token == TokenType::Minus)
+                if(token == Token::Type::Minus)
                 {
                     negative = true;
                     ToNextToken();
                 }
-                CheckToken(TokenType::Number);
+                CheckToken(Token::Type::Number);
                 limit.first = token.value;
                 ToNextToken();
-                if(token == TokenType::Comma)
+                if(token == Token::Type::Comma)
                 {
                     limit.first = negative ? -limit.first : limit.first;
                     ToNextToken();
                     negative = false;
-                    if(token == TokenType::Minus)
+                    if(token == Token::Type::Minus)
                     {
                         negative = true;
                         ToNextToken();
                     }
-                    CheckToken(TokenType::Number);
+                    CheckToken(Token::Type::Number);
                     limit.second = negative ? -token.value : token.value;
                     ToNextToken();
                 }
@@ -115,12 +133,12 @@ void Parser::HandleArgument(Program &program)
                     limit.second = limit.first;
                     limit.first = -limit.second;
                 }
-                CheckToken(TokenType::ParenClose);
+                CheckToken(Token::Type::ParenClose);
                 ToNextToken();
             }
             program.AddArg(name, limit);
         }
-        CheckToken(TokenType::Endline);
+        CheckToken(Token::Type::Endline);
         ToNextToken();
     }
     else
@@ -133,13 +151,13 @@ void Parser::HandleConstant(Program &program)
 {
     if(!IsError())
     {
-        while(token != TokenType::Endline)
+        while(token != Token::Type::Endline)
         {
             ToNextToken();
-            CheckToken(TokenType::Id);
+            CheckToken(Token::Type::Id);
             string name = token.name;
             ToNextToken();
-            CheckToken(TokenType::Assign);
+            CheckToken(Token::Type::Assign);
             ToNextToken();
             auto expr = Expr(program);
             program.AddConst(name, expr);
@@ -157,10 +175,10 @@ void Parser::HandleVariable(Program &program)
     if(!IsError())
     {
         ToNextToken();
-        CheckToken(TokenType::Id);
+        CheckToken(Token::Type::Id);
         string name = token.name;
         ToNextToken();
-        CheckToken(TokenType::Assign);
+        CheckToken(Token::Type::Assign);
         ToNextToken();
         auto expr = Expr(program);
         program.AddVar(name, expr);
@@ -184,7 +202,7 @@ void Parser::HandleReturn(Program &program)
         cout<<"Parser error: "<<error;
 }
 
-void Parser::CheckToken(TokenType expect)
+void Parser::CheckToken(Token::Type expect)
 {
     if(token != expect)
     {
@@ -196,9 +214,9 @@ void Parser::CheckToken(TokenType expect)
 std::shared_ptr<Expression> Parser::Term(Program& program)
 {
     auto node = Factor(program);
-    while(token == TokenType::Pow      ||
-          token == TokenType::Multiply ||
-          token == TokenType::Divide)
+    while(token == Token::Type::Pow      ||
+          token == Token::Type::Multiply ||
+          token == Token::Type::Divide)
     {
         auto prev = token;
         ToNextToken();
@@ -209,25 +227,25 @@ std::shared_ptr<Expression> Parser::Term(Program& program)
 
 std::shared_ptr<Expression> Parser::Factor(Program& program)
 {
-    if(token == TokenType::Number)
+    if(token == Token::Type::Number)
     {
         auto expr = shared_ptr<NumberExpr>(new NumberExpr(token.value));
         ToNextToken();
         return expr;
     }
-    else if(token == TokenType::ParenOpen)
+    else if(token == Token::Type::ParenOpen)
     {
         ToNextToken();
         auto expr = Expr(program);
         ToNextToken();
         return expr;
     }
-    else if(token.type == TokenType::Minus)
+    else if(token.type == Token::Type::Minus)
     {
         ToNextToken();
         return shared_ptr<UnaryExpr>(new UnaryExpr("-", Factor(program)));
     }
-    else if(token.type == TokenType::Id)
+    else if(token.type == Token::Type::Id)
     {
         auto prev = token;
         ToNextToken();
@@ -250,10 +268,10 @@ std::shared_ptr<Expression> Parser::Factor(Program& program)
 std::shared_ptr<Expression> Parser::Expr(Program& program)
 {
     auto node = Term(program);
-    while(token == TokenType::Minus||
-          token == TokenType::Plus ||
-          token == TokenType::Cross ||
-          token == TokenType::Union)
+    while(token == Token::Type::Minus||
+          token == Token::Type::Plus ||
+          token == Token::Type::Cross ||
+          token == Token::Type::Union)
     {
         auto prev = token;
         ToNextToken();

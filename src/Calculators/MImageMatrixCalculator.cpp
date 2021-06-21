@@ -3,11 +3,6 @@
 
 using namespace std;
 
-MImageMatrixCalculator::MImageMatrixCalculator(sf::Vector3i step):
-    m_step(step)
-{
-
-}
 
 void getCofactor(vector<vector<double>>& mat, vector<vector<double>>& temp,
                  int p, int q, int n)
@@ -29,7 +24,6 @@ void getCofactor(vector<vector<double>>& mat, vector<vector<double>>& temp,
         }
     }
 }
-
 double determinantOfMatrix(vector<vector<double>> mat, int n)
 {
     if (n == 1)
@@ -48,70 +42,80 @@ double determinantOfMatrix(vector<vector<double>> mat, int n)
     return D;
 }
 
-const std::deque<MImageData> &MImageMatrixCalculator::Calculate(Program &program, ImageType type, std::function<void(MImageData&)> iterFunc)
-{
-    auto args = program.GetArgs();
 
-    if(args.size() == 1)
-        return matrix1(program, type, iterFunc);
-    else if(args.size() == 2)
-        return matrix2(program, type, iterFunc);
-    else
-        return matrix3(program, type, iterFunc);
+MImageMatrixCalculator::MImageMatrixCalculator(Vector3i step, QObject *parent):
+    MImageCalculator(parent),
+    m_step(step)
+{
+
 }
 
-const std::deque<MImageData> &MImageMatrixCalculator::matrix1(Program &program, ImageType type, std::function<void (MImageData &)> iterFunc)
+void MImageMatrixCalculator::Calculate()
 {
-    auto args = program.GetArgs();
-    sf::Vector3<double> size{
-        (args[0].limits.second-args[0].limits.first)/m_step.x,
-                (args[0].limits.second-args[0].limits.first)/m_step.x,
-                (args[0].limits.second-args[0].limits.first)/m_step.x,
+    ClearResults();
+    auto args = GetProgram()->GetArgs();
+
+    if(args.size() == 1)
+        Calculate1d();
+    else if(args.size() == 2)
+        Calculate2d();
+    else
+        Calculate3d();
+}
+
+void MImageMatrixCalculator::Calculate1d()
+{
+    auto program = GetProgram();
+    auto args = program->GetArgs();
+    Vector3f size{
+        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
+                static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
+                static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
     };
-    sf::Vector3<double> halfSize{
-        size.x/2.,
-                size.x/2.,
-                size.x/2.,
+    Vector3f halfSize{
+        size.x/2.f,
+                size.x/2.f,
+                size.x/2.f,
     };
 
     double x = args[0].limits.first + halfSize.x;
     while(x < args[0].limits.second)
     {
-        vector<pair<sf::Vector3<double>, double>> values{
+        vector<pair<Vector3d, double>> values{
             {{ x+halfSize.x, 0, 0 }, 0},
             {{ x-halfSize.x, 0, 0 }, 0}
         };
         for(int i = 0; i < 2; i++)
-            values[i].second = program.Compute(values[i].first);
+            values[i].second = program->Compute(values[i].first);
         x+= size.x;
     }
-    return *m_results;
 }
 
-const std::deque<MImageData> &MImageMatrixCalculator::matrix2(Program &program, ImageType type, std::function<void (MImageData &)> iterFunc)
+void MImageMatrixCalculator::Calculate2d()
 {
-    auto args = program.GetArgs();
-    sf::Vector3<double> size{
-        (args[0].limits.second-args[0].limits.first)/m_step.x,
-                (args[1].limits.second-args[1].limits.first)/m_step.y,
-                (args[1].limits.second-args[1].limits.first)/m_step.y,
+    auto program = GetProgram();
+    auto args = program->GetArgs();
+    Vector3f size{
+        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
+                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
+                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
     };
-    sf::Vector3<double> halfSize{
-        size.x/2.,
-                size.y/2.,
-                size.y/2.,
+    Vector3f halfSize{
+        size.x/2.f,
+                size.y/2.f,
+                size.y/2.f,
     };
 
     vector<double> zv(3);
-    double x = args[0].limits.first + halfSize.x;
+    float x = args[0].limits.first + halfSize.x;
     while(x < args[0].limits.second)
     {
-        double y = args[1].limits.first + halfSize.y;
+        float y = args[1].limits.first + halfSize.y;
         while(y < args[1].limits.second)
         {
-            zv[0] = program.Compute({x, y, 0});
-            zv[1] = program.Compute({x+size.x, y, 0});
-            zv[2] = program.Compute({x, y+size.y, 0});
+            zv[0] = program->Compute({x, y, 0});
+            zv[1] = program->Compute({x+size.x, y, 0});
+            zv[2] = program->Compute({x, y+size.y, 0});
 
             int flag = 0;
             for(auto& i: zv)
@@ -149,75 +153,79 @@ const std::deque<MImageData> &MImageMatrixCalculator::matrix2(Program &program, 
 
             double div = sqrt(pow(detA, 2)+pow(detB, 2)+pow(detC, 2)+pow(detD, 2));
 
-            vector<double> normals{
-                detA/div,
-                detB/div,
-                detC/div,
-                detD/div,
-                detD/div,
+            MImageData normals{
+                { MImageType::Cx, detA/div},
+                { MImageType::Cy, detB/div},
+                { MImageType::Cz, detC/div},
+                { MImageType::Cw, detD/div},
+                { MImageType::Ct, detD/div}
             };
 
             int color;
-            if(type == ImageType::Cx)
+            auto type = GetType();
+            if(type == MImageType::Cx)
             {
-                color = 255*(normals[0]+1)/2.;
+                color = 255*(normals[0].second+1)/2.;
             }
-            else if(type == ImageType::Cy)
+            else if(type == MImageType::Cy)
             {
-                color = 255*(normals[1]+1)/2.;
+                color = 255*(normals[1].second+1)/2.;
             }
-            else if(type == ImageType::Cz)
+            else if(type == MImageType::Cz)
             {
-                color = 255*(normals[2]+1)/2.;
+                color = 255*(normals[2].second+1)/2.;
             }
-            else if(type == ImageType::Cw)
+            else if(type == MImageType::Cw)
             {
-                color = 255*(normals[3]+1)/2.;
+                color = 255*(normals[3].second+1)/2.;
             }
-            else if(type == ImageType::Ct)
+            else if(type == MImageType::Ct)
             {
-                color = 255*(normals[4]+1)/2.;
+                color = 255*(normals[4].second+1)/2.;
             }
+            VoxelData data;
             if(flag < 2)
-                m_results->push_back(MImageData({x, y, 0}, halfSize, sf::Color(color, 0, color, 255), zv[0], normals, 2));
+                data = VoxelData({x, y, 0}, halfSize, QColor(color, 0, color, 255));
             else
-                m_results->push_back(MImageData({x, y, 0}, halfSize, sf::Color(color, color, color, 255), zv[0], normals, 2));
-            if(iterFunc)
-                iterFunc(m_results->back());
+                data = VoxelData({x, y, 0}, halfSize, QColor(color, color, color, 255));
+            AddVoxel(data);
+            if(m_addVoxelFunc)
+                m_addVoxelFunc(data);
+            AddImageData(normals);
             y+= size.y;
         }
         x+= size.x;
     }
-    return *m_results;
 }
 
-const std::deque<MImageData> &MImageMatrixCalculator::matrix3(Program &program, ImageType type, std::function<void (MImageData &)> iterFunc)
+void MImageMatrixCalculator::Calculate3d()
 {
-    auto args = program.GetArgs();
-    sf::Vector3<double> size{
-        (args[0].limits.second-args[0].limits.first)/m_step.x,
-                (args[1].limits.second-args[1].limits.first)/m_step.y,
-                (args[2].limits.second-args[2].limits.first)/m_step.z,
+    auto program = GetProgram();
+    auto args = program->GetArgs();
+    Vector3f size{
+        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
+                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
+                static_cast<float>((args[2].limits.second-args[2].limits.first)/m_step.z),
     };
-    sf::Vector3<double> halfSize{
-        size.x/2.,
-                size.y/2.,
-                size.z/2.,
+    Vector3f halfSize{
+        size.x/2.f,
+                size.y/2.f,
+                size.z/2.f,
     };
     vector<double> wv(4);
-    double x = args[0].limits.first + halfSize.x;
+    float x = args[0].limits.first + halfSize.x;
     while(x < args[0].limits.second)
     {
-        double y = args[1].limits.first + halfSize.y;
+        float y = args[1].limits.first + halfSize.y;
         while(y < args[1].limits.second)
         {
-            double z = args[2].limits.first + halfSize.z;
+            float z = args[2].limits.first + halfSize.z;
             while(z < args[2].limits.second)
             {
-                wv[0] = program.Compute({x, y, z});
-                wv[1] = program.Compute({x+size.x, y, z});
-                wv[2] = program.Compute({x, y+size.y, z});
-                wv[3] = program.Compute({x, y, z+size.z});
+                wv[0] = program->Compute({x, y, z});
+                wv[1] = program->Compute({x+size.x, y, z});
+                wv[2] = program->Compute({x, y+size.y, z});
+                wv[3] = program->Compute({x, y, z+size.z});
 
                 int flag = 0;
                 for(auto& i: wv)
@@ -263,45 +271,45 @@ const std::deque<MImageData> &MImageMatrixCalculator::matrix3(Program &program, 
 
                 double div = sqrt(pow(detA, 2)+pow(detB, 2)+pow(detC, 2)+pow(detD, 2)+pow(detF, 2));
 
-                vector<double> normals{
-                    detA/div,
-                    -detB/div,
-                    -detC/div,
-                    detD/div,
-                    detF/div
+                MImageData normals{
+                    { MImageType::Cx, detA/div  },
+                    { MImageType::Cy, -detB/div },
+                    { MImageType::Cz, -detC/div },
+                    { MImageType::Cw, detD/div  },
+                    { MImageType::Ct, detF/div  }
                 };
 
                 unsigned color;
-                if(type == ImageType::Cx)
+                auto type = GetType();
+                if(type == MImageType::Cx)
                 {
-                    color = 255*(normals[0]+1)/2.;
+                    color = 255*(normals[0].second+1)/2.;
                 }
-                else if(type == ImageType::Cy)
+                else if(type == MImageType::Cy)
                 {
-                    color = 255*(normals[1]+1)/2.;
+                    color = 255*(normals[1].second+1)/2.;
                 }
-                else if(type == ImageType::Cz)
+                else if(type == MImageType::Cz)
                 {
-                    color = 255*(normals[2]+1)/2.;
+                    color = 255*(normals[2].second+1)/2.;
                 }
-                else if(type == ImageType::Cw)
+                else if(type == MImageType::Cw)
                 {
-                    color = 255*(normals[3]+1)/2.;
+                    color = 255*(normals[3].second+1)/2.;
                 }
-                else if(type == ImageType::Ct)
+                else if(type == MImageType::Ct)
                 {
-                    color = 255*(normals[4]+1)/2.;
+                    color = 255*(normals[4].second+1)/2.;
                 }
-
-                m_results->push_back(MImageData({x, y, z}, halfSize, sf::Color(color, color, color, 100), wv[0], normals));
-
-                if(iterFunc)
-                    iterFunc(m_results->back());
+                AddVoxel(VoxelData({x, y, z}, halfSize, QColor(color, color, color, 100)));
+                if(m_addVoxelFunc)
+                    m_addVoxelFunc(VoxelData({x, y, z}, halfSize, QColor(color, color, color, 100)));
+                AddImageData(normals);
                 z+= size.z;
             }
             y+= size.y;
         }
         x+= size.x;
     }
-    return *m_results;
 }
+

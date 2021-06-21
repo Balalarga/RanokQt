@@ -3,139 +3,149 @@
 
 using namespace std;
 
-MatrixCalculator::MatrixCalculator(sf::Vector3i step):
+MatrixCalculator::MatrixCalculator(Vector3i step, QObject *parent):
+    ModelCalculator(parent),
     m_step(step)
 {
 
 }
 
-const std::deque<VoxelData> &MatrixCalculator::Calculate(Program &program, Zone zone, std::function<void(VoxelData&)> iterFunc)
+void MatrixCalculator::Calculate()
 {
-    auto args = program.GetArgs();
+    ClearResults();
+    auto args = GetProgram()->GetArgs();
 
     if(args.size() == 1)
-        return matrix1(program, zone, iterFunc);
+        Calculate1d();
     else if(args.size() == 2)
-        return matrix2(program, zone, iterFunc);
+        Calculate2d();
     else
-        return matrix3(program, zone, iterFunc);
+        Calculate3d();
 }
 
-const std::deque<VoxelData> &MatrixCalculator::matrix1(Program &program, Zone zone, std::function<void (VoxelData &)> iterFunc)
+void MatrixCalculator::Calculate1d()
 {
-    auto args = program.GetArgs();
-    sf::Vector3<double> size{
-        (args[0].limits.second-args[0].limits.first)/m_step.x,
-        (args[0].limits.second-args[0].limits.first)/m_step.x,
-        (args[0].limits.second-args[0].limits.first)/m_step.x,
+    auto program = GetProgram();
+    auto args = program->GetArgs();
+    Vector3f size{
+        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
+                static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
+                static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
     };
-    sf::Vector3<double> halfSize{
-        size.x/2.,
-        size.x/2.,
-        size.x/2.,
+    Vector3f halfSize{
+        size.x/2.f,
+                size.x/2.f,
+                size.x/2.f,
     };
 
-    double x = args[0].limits.first + halfSize.x;
+    float x = args[0].limits.first + halfSize.x;
     while(x < args[0].limits.second)
     {
-        vector<pair<sf::Vector3<double>, double>> values{
-            {{ x+halfSize.x, 0, 0 }, 0},
-            {{ x-halfSize.x, 0, 0 }, 0}
+        vector<Vector3d> vertices{
+            { x+halfSize.x, 0, 0 },
+            { x-halfSize.x, 0, 0 }
         };
-        for(int i = 0; i < 2; i++)
-            values[i].second = program.Compute(values[i].first);
-        Zone voxelZone = GetZone(values);
-        m_results->push_back(VoxelData({x, 0, 0}, halfSize, GetVoxelColor(), voxelZone, values, 1));
-        if(iterFunc && zone == voxelZone)
+        VoxelValues values(vertices.size());
+        for(size_t i = 0; i < vertices.size(); i++)
+            values[i]= program->Compute(vertices[i]);
+        if(CheckZone(values) == GetZone())
         {
-            iterFunc(m_results->back());
+            AddVoxel(VoxelData({x, 0, 0}, halfSize, GetVoxelColor()));
+            AddVoxelValues(values);
+            if(m_addVoxelFunc)
+                m_addVoxelFunc(VoxelData({x, 0, 0}, halfSize, GetVoxelColor()));
         }
         x+= size.x;
     }
-    return *m_results;
 }
 
-const std::deque<VoxelData> &MatrixCalculator::matrix2(Program &program, Zone zone, std::function<void (VoxelData &)> iterFunc)
+void MatrixCalculator::Calculate2d()
 {
-    auto args = program.GetArgs();
-    sf::Vector3<double> size{
-        (args[0].limits.second-args[0].limits.first)/m_step.x,
-        (args[1].limits.second-args[1].limits.first)/m_step.y,
-        (args[1].limits.second-args[1].limits.first)/m_step.y,
+    auto program = GetProgram();
+    auto args = program->GetArgs();
+    Vector3f size{
+        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
+                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
+                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
     };
-    sf::Vector3<double> halfSize{
-        size.x/2.,
-        size.y/2.,
-        size.y/2.,
+    Vector3f halfSize{
+        size.x/2.f,
+                size.y/2.f,
+                size.y/2.f,
     };
 
-    double x = args[0].limits.first + halfSize.x;
+    float x = args[0].limits.first + halfSize.x;
     while(x < args[0].limits.second)
     {
-        double y = args[1].limits.first + halfSize.y;
+        float y = args[1].limits.first + halfSize.y;
         while(y < args[1].limits.second)
         {
-            vector<pair<sf::Vector3<double>, double>> values{
-                {{ x+halfSize.x, y+halfSize.y, 0 }, 0},
-                {{ x+halfSize.x, y-halfSize.y, 0 }, 0},
-                {{ x-halfSize.x, y+halfSize.y, 0 }, 0},
-                {{ x-halfSize.x, y-halfSize.y, 0 }, 0}
-            };
-            for(int i = 0; i < 4; i++)
-                values[i].second = program.Compute(values[i].first);
-            Zone voxelZone = GetZone(values);
-            m_results->push_back(VoxelData({x, y, 0}, halfSize, GetVoxelColor(), voxelZone, values, 2));
-            if(iterFunc && zone == voxelZone)
+            vector<Vector3d> vertices
             {
-                iterFunc(m_results->back());
+                { x+halfSize.x, y+halfSize.y, 0 },
+                { x+halfSize.x, y-halfSize.y, 0 },
+                { x-halfSize.x, y+halfSize.y, 0 },
+                { x-halfSize.x, y-halfSize.y, 0 },
+            };
+            VoxelValues values(vertices.size());
+            for(size_t i = 0; i < vertices.size(); i++)
+                values[i]= program->Compute(vertices[i]);
+            if(CheckZone(values) == GetZone())
+            {
+                AddVoxel(VoxelData({x, y, 0}, halfSize, GetVoxelColor()));
+                AddVoxelValues(values);
+                if(m_addVoxelFunc)
+                    m_addVoxelFunc(VoxelData({x, 0, 0}, halfSize, GetVoxelColor()));
             }
             y+= size.y;
         }
         x+= size.x;
     }
-    return *m_results;
 }
 
-const std::deque<VoxelData> &MatrixCalculator::matrix3(Program &program, Zone zone, std::function<void (VoxelData &)> iterFunc)
+void MatrixCalculator::Calculate3d()
 {
-    auto args = program.GetArgs();
-    sf::Vector3<double> size{
-        (args[0].limits.second-args[0].limits.first)/m_step.x,
-                (args[1].limits.second-args[1].limits.first)/m_step.y,
-                (args[2].limits.second-args[2].limits.first)/m_step.z,
+    auto program = GetProgram();
+    auto args = program->GetArgs();
+    Vector3f size{
+        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
+                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
+                static_cast<float>((args[2].limits.second-args[2].limits.first)/m_step.z),
     };
-    sf::Vector3<double> halfSize{
-        size.x/2.,
-                size.y/2.,
-                size.z/2.,
+    Vector3f halfSize{
+        size.x/2.f,
+                size.y/2.f,
+                size.z/2.f,
     };
 
-    double x = args[0].limits.first + halfSize.x;
+    float x = args[0].limits.first + halfSize.x;
     while(x < args[0].limits.second)
     {
-        double y = args[1].limits.first + halfSize.y;
+        float y = args[1].limits.first + halfSize.y;
         while(y < args[1].limits.second)
         {
-            double z = args[2].limits.first + halfSize.z;
+            float z = args[2].limits.first + halfSize.z;
             while(z < args[2].limits.second)
             {
-                vector<pair<sf::Vector3<double>, double>> values{
-                    {{ x+halfSize.x, y+halfSize.y, z+halfSize.z }, 0},
-                    {{ x+halfSize.x, y+halfSize.y, z-halfSize.z }, 0},
-                    {{ x+halfSize.x, y-halfSize.y, z+halfSize.z }, 0},
-                    {{ x+halfSize.x, y-halfSize.y, z-halfSize.z }, 0},
-                    {{ x-halfSize.x, y+halfSize.y, z+halfSize.z }, 0},
-                    {{ x-halfSize.x, y+halfSize.y, z-halfSize.z }, 0},
-                    {{ x-halfSize.x, y-halfSize.y, z+halfSize.z }, 0},
-                    {{ x-halfSize.x, y-halfSize.y, z-halfSize.z }, 0}
+                vector<Vector3d> vertices{
+                    { x+halfSize.x, y+halfSize.y, z+halfSize.z },
+                    { x+halfSize.x, y+halfSize.y, z-halfSize.z },
+                    { x+halfSize.x, y-halfSize.y, z+halfSize.z },
+                    { x+halfSize.x, y-halfSize.y, z-halfSize.z },
+                    { x-halfSize.x, y+halfSize.y, z+halfSize.z },
+                    { x-halfSize.x, y+halfSize.y, z-halfSize.z },
+                    { x-halfSize.x, y-halfSize.y, z+halfSize.z },
+                    { x-halfSize.x, y-halfSize.y, z-halfSize.z }
                 };
-                for(int i = 0; i < 8; i++)
-                    values[i].second = program.Compute(values[i].first);
-                Zone voxelZone = GetZone(values);
-                m_results->push_back(VoxelData({x, y, z}, halfSize, GetVoxelColor(), voxelZone, values));
-                if(iterFunc && voxelZone == zone)
+                VoxelValues values(vertices.size());
+                for(size_t i = 0; i < vertices.size(); i++)
+                    values[i]= program->Compute(vertices[i]);
+                if(CheckZone(values) == GetZone())
                 {
-                    iterFunc(m_results->back());
+                    AddVoxel(VoxelData({x, y, z}, halfSize, GetVoxelColor()));
+                    AddVoxelValues(values);
+                    if(m_addVoxelFunc)
+                        m_addVoxelFunc(VoxelData({x, 0, 0}, halfSize, GetVoxelColor()));
                 }
                 z+= size.z;
             }
@@ -143,5 +153,4 @@ const std::deque<VoxelData> &MatrixCalculator::matrix3(Program &program, Zone zo
         }
         x+= size.x;
     }
-    return *m_results;
 }

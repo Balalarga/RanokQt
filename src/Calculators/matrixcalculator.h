@@ -1,23 +1,27 @@
 #ifndef MATRIXCALCULATOR_H
 #define MATRIXCALCULATOR_H
 
-#include "BaseCalculator.h"
+#include "modelcalculator.h"
 
-// Матричный калькулятор: делит пространство исследования на части
-class MatrixCalculator: public BaseCalculator
+
+
+class MatrixCalculator: public ModelCalculator
 {
+    Q_OBJECT
 public:
-    MatrixCalculator(sf::Vector3i step);
-    const std::deque<VoxelData>& Calculate(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc = nullptr) override;
+    MatrixCalculator(Vector3i step, QObject* parent = nullptr);
+
+
+public slots:
+    void Calculate() override;
+
 
 protected:
-    sf::Vector3i m_step;
+    Vector3i m_step;
 
-    // Функции для 1D, 2D, 3D
-    const std::deque<VoxelData>& matrix1(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc);
-    const std::deque<VoxelData>& matrix2(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc);
-    const std::deque<VoxelData>& matrix3(Program& program, Zone zone, std::function<void(VoxelData&)> iterFunc);
-
+    void Calculate1d();
+    void Calculate2d();
+    void Calculate3d();
 };
 
 #endif // MATRIXCALCULATOR_H

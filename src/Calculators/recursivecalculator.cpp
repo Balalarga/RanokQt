@@ -3,116 +3,117 @@
 #include <iostream>
 using namespace std;
 
-RecursiveCalculator::RecursiveCalculator(int depth):
+RecursiveCalculator::RecursiveCalculator(int depth, QObject *parent):
+    ModelCalculator(parent),
     m_depth(depth)
 {
 }
 
-const std::deque<VoxelData> &RecursiveCalculator::Calculate(Program &program, Zone zone, std::function<void (VoxelData &)> iterFunc)
+void RecursiveCalculator::Calculate()
 {
-    m_results->clear();
-    m_program = &program;
-    m_zone = zone;
+    ClearResults();
+    auto args = GetProgram()->GetArgs();
 
-    auto args = program.GetArgs();
-    stepsAmount = pow(pow(2, args.size()), m_depth);
-
-    sf::Vector3<double> voxelSize;
-    sf::Vector3<double> coords;
+    Vector3f voxelSize;
+    Vector3f coords;
     if(args.size() == 3)
     {
         voxelSize = {
-            (args[0].limits.second-args[0].limits.first)/2.,
-            (args[1].limits.second-args[1].limits.first)/2.,
-            (args[2].limits.second-args[2].limits.first)/2.,};
+            static_cast<float>((args[0].limits.second-args[0].limits.first)/2.f),
+            static_cast<float>((args[1].limits.second-args[1].limits.first)/2.f),
+            static_cast<float>((args[2].limits.second-args[2].limits.first)/2.f),};
         coords = {
-            args[0].limits.first+voxelSize.x,
-            args[1].limits.first+voxelSize.y,
-            args[2].limits.first+voxelSize.z};
-        recursionFunc3(coords, voxelSize, m_depth, iterFunc);
+            static_cast<float>(args[0].limits.first+voxelSize.x),
+            static_cast<float>(args[1].limits.first+voxelSize.y),
+            static_cast<float>(args[2].limits.first+voxelSize.z)};
+        Calculate3d(coords, voxelSize, m_depth);
     }
     else if(args.size() == 2)
     {
         voxelSize = {
-            (args[0].limits.second-args[0].limits.first)/2.,
-            (args[1].limits.second-args[1].limits.first)/2.,
-            (args[1].limits.second-args[1].limits.first)/2.};
+            static_cast<float>((args[0].limits.second-args[0].limits.first)/2.f),
+            static_cast<float>((args[1].limits.second-args[1].limits.first)/2.f),
+            static_cast<float>((args[1].limits.second-args[1].limits.first)/2.f)};
         coords = {
-            args[0].limits.first+voxelSize.x,
-            args[1].limits.first+voxelSize.y,
+            static_cast<float>(args[0].limits.first+voxelSize.x),
+            static_cast<float>(args[1].limits.first+voxelSize.y),
             0};
-        recursionFunc2(coords, voxelSize, m_depth, iterFunc);
+        Calculate2d(coords, voxelSize, m_depth);
     }
     else if(args.size() == 1)
     {
         voxelSize = {
-            (args[0].limits.second-args[0].limits.first)/2.,
-            (args[0].limits.second-args[0].limits.first)/2.,
-            (args[0].limits.second-args[0].limits.first)/2.};
+            static_cast<float>((args[0].limits.second-args[0].limits.first)/2.f),
+            static_cast<float>((args[0].limits.second-args[0].limits.first)/2.f),
+            static_cast<float>((args[0].limits.second-args[0].limits.first)/2.f)};
         coords = {
-            args[0].limits.first+voxelSize.x,
+            static_cast<float>(args[0].limits.first+voxelSize.x),
             0,
             0};
-        recursionFunc1(coords, voxelSize, m_depth, iterFunc);
+        Calculate1d(coords, voxelSize, m_depth);
     }
-
-    return *m_results;
 }
 
-void RecursiveCalculator::recursionFunc1(sf::Vector3<double> coords, sf::Vector3<double> size, int step, std::function<void (VoxelData &)> iterFunc)
+void RecursiveCalculator::Calculate1d(Vector3f coords, Vector3f size, int step)
 {
     if(step == 0)
     {
-        vector<pair<sf::Vector3<double>, double>> values{
-            {{ coords.x+size.x, 0, 0 }, 0},
-            {{ coords.x-size.x, 0, 0 }, 0}
+        auto program = GetProgram();
+        vector<Vector3d> vertices{
+            { coords.x+size.x, 0, 0 },
+            { coords.x-size.x, 0, 0 }
         };
-        for(int i = 0; i < 2; i++)
-            values[i].second = m_program->Compute(values[i].first);
-        Zone voxelZone = GetZone(values);
-        m_results->push_back(VoxelData(coords, size, GetVoxelColor(), voxelZone, values, 1));
-        if(iterFunc && m_zone == voxelZone)
+        VoxelValues values(vertices.size());
+        for(size_t i = 0; i < vertices.size(); i++)
+            values[i]= program->Compute(vertices[i]);
+        if(CheckZone(values) == GetZone())
         {
-            iterFunc(m_results->back());
+            AddVoxel(VoxelData(coords, size, GetVoxelColor()));
+            AddVoxelValues(values);
+            if(m_addVoxelFunc)
+                m_addVoxelFunc(VoxelData(coords, size, GetVoxelColor()));
         }
     }
     else
     {
-        sf::Vector3<double> newSize = {size.x/2., size.x/2., size.x/2.};
-        sf::Vector3<double> newCubes[] = {
+        Vector3f newSize = {size.x/2.f, size.x/2.f, size.x/2.f};
+        Vector3f newCubes[] = {
             { coords.x+newSize.x, 0, 0 },
             { coords.x-newSize.x, 0, 0 }
         };
         for(int i = 0; i < 2; i++)
         {
-            recursionFunc1(newCubes[i], newSize, step-1, iterFunc);
+            Calculate1d(newCubes[i], newSize, step-1);
         }
     }
 }
 
-void RecursiveCalculator::recursionFunc2(sf::Vector3<double> coords, sf::Vector3<double> size, int step, std::function<void (VoxelData &)> iterFunc)
+void RecursiveCalculator::Calculate2d(Vector3f coords, Vector3f size, int step)
 {
     if(step == 0)
     {
-        vector<pair<sf::Vector3<double>, double>> values{
-            {{ coords.x+size.x, coords.y+size.y, 0 }, 0},
-            {{ coords.x+size.x, coords.y-size.y, 0 }, 0},
-            {{ coords.x-size.x, coords.y+size.y, 0 }, 0},
-            {{ coords.x-size.x, coords.y-size.y, 0 }, 0}
+        auto program = GetProgram();
+        vector<Vector3d> vertices{
+            { coords.x+size.x, coords.y+size.y, 0 },
+            { coords.x+size.x, coords.y-size.y, 0 },
+            { coords.x-size.x, coords.y+size.y, 0 },
+            { coords.x-size.x, coords.y-size.y, 0 }
         };
-        for(int i = 0; i < 4; i++)
-            values[i].second = m_program->Compute(values[i].first);
-        Zone voxelZone = GetZone(values);
-        m_results->push_back(VoxelData(coords, size, GetVoxelColor(), voxelZone, values, 2));
-        if(iterFunc && m_zone == voxelZone)
+        VoxelValues values(vertices.size());
+        for(size_t i = 0; i < vertices.size(); i++)
+            values[i]= program->Compute(vertices[i]);
+        if(CheckZone(values) == GetZone())
         {
-            iterFunc(m_results->back());
+            AddVoxel(VoxelData(coords, size, GetVoxelColor()));
+            AddVoxelValues(values);
+            if(m_addVoxelFunc)
+                m_addVoxelFunc(VoxelData(coords, size, GetVoxelColor()));
         }
     }
     else
     {
-        sf::Vector3<double> newSize = {size.x/2., size.y/2., size.y/2. };
-        sf::Vector3<double> newCubes[] = {
+        Vector3f newSize = {size.x/2.f, size.y/2.f, size.y/2.f };
+        Vector3f newCubes[] = {
             { coords.x+newSize.x, coords.y+newSize.y, 0 },
             { coords.x+newSize.x, coords.y-newSize.y, 0 },
             { coords.x-newSize.x, coords.y+newSize.y, 0 },
@@ -120,38 +121,41 @@ void RecursiveCalculator::recursionFunc2(sf::Vector3<double> coords, sf::Vector3
         };
         for(int i = 0; i < 4; i++)
         {
-            recursionFunc2(newCubes[i], newSize, step-1, iterFunc);
+            Calculate2d(newCubes[i], newSize, step-1);
         }
     }
 }
 
-void RecursiveCalculator::recursionFunc3(sf::Vector3<double> coords, sf::Vector3<double> size, int step, std::function<void (VoxelData &)> iterFunc)
+void RecursiveCalculator::Calculate3d(Vector3f coords, Vector3f size, int step)
 {
     if(step == 0)
     {
-        vector<pair<sf::Vector3<double>, double>> values{
-            {{ coords.x+size.x, coords.y+size.y, coords.z+size.z }, 0},
-            {{ coords.x+size.x, coords.y+size.y, coords.z-size.z }, 0},
-            {{ coords.x+size.x, coords.y-size.y, coords.z+size.z }, 0},
-            {{ coords.x+size.x, coords.y-size.y, coords.z-size.z }, 0},
-            {{ coords.x-size.x, coords.y+size.y, coords.z+size.z }, 0},
-            {{ coords.x-size.x, coords.y+size.y, coords.z-size.z }, 0},
-            {{ coords.x-size.x, coords.y-size.y, coords.z+size.z }, 0},
-            {{ coords.x-size.x, coords.y-size.y, coords.z-size.z }, 0}
+        auto program = GetProgram();
+        vector<Vector3d> vertices{
+            { coords.x+size.x, coords.y+size.y, coords.z+size.z },
+            { coords.x+size.x, coords.y+size.y, coords.z-size.z },
+            { coords.x+size.x, coords.y-size.y, coords.z+size.z },
+            { coords.x+size.x, coords.y-size.y, coords.z-size.z },
+            { coords.x-size.x, coords.y+size.y, coords.z+size.z },
+            { coords.x-size.x, coords.y+size.y, coords.z-size.z },
+            { coords.x-size.x, coords.y-size.y, coords.z+size.z },
+            { coords.x-size.x, coords.y-size.y, coords.z-size.z }
         };
-        for(int i = 0; i < 8; i++)
-            values[i].second = m_program->Compute(values[i].first);
-        Zone voxelZone = GetZone(values);
-        m_results->push_back(VoxelData(coords, size, GetVoxelColor(), voxelZone, values));
-        if(iterFunc && m_zone == voxelZone)
+        VoxelValues values(vertices.size());
+        for(size_t i = 0; i < vertices.size(); i++)
+            values[i]= program->Compute(vertices[i]);
+        if(CheckZone(values) == GetZone())
         {
-            iterFunc(m_results->back());
+            AddVoxel(VoxelData(coords, size, GetVoxelColor()));
+            AddVoxelValues(values);
+            if(m_addVoxelFunc)
+                m_addVoxelFunc(VoxelData(coords, size, GetVoxelColor()));
         }
     }
     else
     {
-        sf::Vector3<double> newSize = {size.x/2., size.y/2., size.z/2.};
-        sf::Vector3<double> newCubes[] = {
+        Vector3f newSize = {size.x/2.f, size.y/2.f, size.z/2.f};
+        Vector3f newCubes[] = {
             { coords.x+newSize.x, coords.y+newSize.y, coords.z+newSize.z },
             { coords.x+newSize.x, coords.y+newSize.y, coords.z-newSize.z },
             { coords.x+newSize.x, coords.y-newSize.y, coords.z+newSize.z },
@@ -163,7 +167,7 @@ void RecursiveCalculator::recursionFunc3(sf::Vector3<double> coords, sf::Vector3
         };
         for(int i = 0; i < 8; i++)
         {
-            recursionFunc3(newCubes[i], newSize, step-1, iterFunc);
+            Calculate3d(newCubes[i], newSize, step-1);
         }
     }
 }

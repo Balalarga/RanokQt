@@ -1,36 +1,71 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(PROJECT_NAME Ranok)
+set(PROJECT_NAME RanokQt)
 
-project(${PROJECT_NAME} LANGUAGES CXX)
+project(${PROJECT_NAME} VERSION 0.1 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories(include src)
-include_directories(thirdParty/imgui thirdParty/imgui-sfml)
+# QtCreator supports the following variables for Android, which are identical to qmake Android variables.
+# Check https://doc.qt.io/qt/deployment-android.html for more information.
+# They need to be set before the find_package( ...) calls below.
 
-if(WIN32)
-    link_directories(lib)
-    set (PROJECT_LIBS mingw32 glew32 opengl32 glu32 Imm32)
-else(WIN32)
-    set (PROJECT_LIBS gl glew glu)
-endif(WIN32)
+#if(ANDROID)
+#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
+#    if (ANDROID_ABI STREQUAL "armeabi-v7a")
+#        set(ANDROID_EXTRA_LIBS
+#            ${CMAKE_CURRENT_SOURCE_DIR}/path/to/libcrypto.so
+#            ${CMAKE_CURRENT_SOURCE_DIR}/path/to/libssl.so)
+#    endif()
+#endif()
 
-set(IMGUI_SOURCES
-    thirdParty/imgui/imgui.cpp
-    thirdParty/imgui/imgui_widgets.cpp
-    thirdParty/imgui/imgui_draw.cpp
-    thirdParty/imgui/imgui_tables.cpp
-    thirdParty/imgui-sfml/imgui-SFML.cpp)
+include_directories(src)
 
-set (PROJECT_LIBS ${PROJECT_LIBS} sfml-graphics sfml-window sfml-audio sfml-system sfml-network)
-link_libraries(${PROJECT_LIBS})
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS OpenGL REQUIRED)
 
-file(GLOB_RECURSE PROJECT_SOURCES src/*.cpp src/*.h examples/*.txt)
+file(GLOB_RECURSE PROJECT_SOURCES src/*.cpp src/*.h examples/*.txt *.qrc)
 
-add_executable(${PROJECT_NAME} ${PROJECT_SOURCES} ${IMGUI_SOURCES})
+if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    qt_add_executable(${PROJECT_NAME}
+        MANUAL_FINALIZATION
+        ${PROJECT_SOURCES}
+    )
+else()
+    if(ANDROID)
+        add_library(${PROJECT_NAME} SHARED
+            ${PROJECT_SOURCES}
+        )
+    else()
+        add_executable(${PROJECT_NAME}
+            ${PROJECT_SOURCES}
+        )
+    endif()
+endif()
+
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::OpenGL
+    opengl32 glu32)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
+    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+)
 
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                       ${CMAKE_SOURCE_DIR}/bin/ $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+                       ${CMAKE_SOURCE_DIR}/assets/ $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets/)
+
+
+if(QT_VERSION_MAJOR EQUAL 6)
+    qt_finalize_executable(${PROJECT_NAME})
+endif()

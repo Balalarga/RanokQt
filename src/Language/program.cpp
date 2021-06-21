@@ -1,5 +1,6 @@
 #include "Program.h"
 #include <list>
+#include <queue>
 
 using namespace std;
 
@@ -35,7 +36,7 @@ double Program::Compute(std::map<std::string, double> args)
     return res;
 }
 
-double Program::Compute(sf::Vector3<double> args)
+double Program::Compute(Vector3d args)
 {
     auto it = arguments.begin();
     it->second->SetValue(args.x);

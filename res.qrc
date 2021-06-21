@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/">
+        <file>assets/images/playIcon.svg</file>
+        <file>assets/styles/AMOLED.qss</file>
+        <file>assets/styles/Aqua.qss</file>
+        <file>assets/styles/ConsoleStyle.qss</file>
+        <file>assets/styles/Cstartpage.qss</file>
+        <file>assets/styles/dark.qss</file>
+        <file>assets/styles/darkfunsion.qss</file>
+        <file>assets/styles/ElegantDark.qss</file>
+        <file>assets/styles/LICENSE</file>
+        <file>assets/styles/MacOS.qss</file>
+        <file>assets/styles/ManjaroMix.qss</file>
+        <file>assets/styles/MaterialDark.qss</file>
+        <file>assets/styles/moreqtdark.qss</file>
+        <file>assets/styles/NeonButtons.qss</file>
+        <file>assets/styles/QTDark.qss</file>
+        <file>assets/styles/Ubuntu.qss</file>
+    </qresource>
+</RCC>

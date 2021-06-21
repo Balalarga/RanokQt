@@ -1,7 +1,10 @@
 #include "Lexer.h"
+
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+
+#include "Token.h"
 
 using namespace std;
 
@@ -17,7 +20,7 @@ void Lexer::SetText(const std::string& text)
         [](unsigned char c){ return std::tolower(c); });
     unsigned pivot = 0;
     Token token;
-    while(token != TokenType::End)
+    while(token != Token::Type::End)
     {
         token = ParseNextToken(data, pivot);
         m_tokens.push(token);
@@ -33,7 +36,7 @@ Token Lexer::NextToken()
         m_tokens.pop();
         return first;
     }
-    return Token(TokenType::End);
+    return Token(Token::Type::End);
 }
 
 string Lexer::GetError()
@@ -59,11 +62,11 @@ Token Lexer::ParseNextToken(const std::string& data, unsigned& pivot)
     }
 
     if(pivot >= data.size() || data[pivot] == '\0')
-        return Token(TokenType::End, "\\0");
+        return Token(Token::Type::End, "\\0");
     if(data[pivot] == ';')
     {
         pivot++;
-        return Token(TokenType::Endline, ';');
+        return Token(Token::Type::Endline, ';');
     }
     unsigned begin = pivot;
     if ((data[pivot+1] == '.')
@@ -93,49 +96,49 @@ Token Lexer::ParseNextToken(const std::string& data, unsigned& pivot)
         if (is.fail () && !is.eof ())
         {
             error = "Unexpected eof";
-            return Token(TokenType::End);
+            return Token(Token::Type::End);
         }
-        return Token(TokenType::Number, val);
+        return Token(Token::Type::Number, val);
     }
 
     char symbol = data[pivot++];
     switch (symbol)
     {
     case '=':
-        return Token(TokenType::Assign, symbol);
+        return Token(Token::Type::Assign, symbol);
     case '(':
-        return Token(TokenType::ParenOpen, symbol);
+        return Token(Token::Type::ParenOpen, symbol);
     case ')':
-        return Token(TokenType::ParenClose, symbol);
+        return Token(Token::Type::ParenClose, symbol);
     case '+':
-        return Token(TokenType::Plus, symbol);
+        return Token(Token::Type::Plus, symbol);
     case '-':
-        return Token(TokenType::Minus, symbol);
+        return Token(Token::Type::Minus, symbol);
     case '*':
-        return Token(TokenType::Multiply, symbol);
+        return Token(Token::Type::Multiply, symbol);
     case '/':
     case '\\':
-        return Token(TokenType::Divide, symbol);
+        return Token(Token::Type::Divide, symbol);
     case '&':
-        return Token(TokenType::Union, symbol);
+        return Token(Token::Type::Union, symbol);
     case '|':
-        return Token(TokenType::Cross, symbol);
+        return Token(Token::Type::Cross, symbol);
     case ',':
-        return Token(TokenType::Comma, symbol);
+        return Token(Token::Type::Comma, symbol);
     case '^':
-        return Token(TokenType::Pow, symbol);
+        return Token(Token::Type::Pow, symbol);
     }
     pivot--;
 
     if (!isalpha (data[pivot]))
     {
         error = "Unexpected symbol "+string(1, data[pivot]);
-        return Token(TokenType::End);
+        return Token(Token::Type::End);
     }
 
     // we have a word (starting with A-Z) - pull it out
     while (isalnum (data[pivot]) || data[pivot] == '_')
         pivot++;
     auto word = data.substr(begin, pivot-begin);
-    return Token(TokenType::Id, word);
+    return Token(Token::Type::Id, word);
 }

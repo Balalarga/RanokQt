@@ -3,7 +3,8 @@
 
 #include <string>
 #include <queue>
-#include "Token.h"
+
+class Token;
 
 // Класс, разделяющий исходный код на поток Токенов
 class Lexer
