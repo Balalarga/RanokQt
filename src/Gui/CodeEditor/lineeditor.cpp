@@ -7,12 +7,14 @@
 
 
 LineEditor::LineEditor(QWidget *parent):
-    QTableView(parent),
+    QTableWidget(parent),
     m_model(new QStringListModel(QStringList()<<"// Start code here", this))
 {
-    setModel(m_model);
+    setColumnCount(2);
     horizontalHeader()->hide();
-    m_model->insertColumn(1);
+    horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    horizontalHeader()[0].setMaximumWidth(30);
+
     QString stylesheet = R"(
 QListView
 {
@@ -34,22 +36,16 @@ QStringList LineEditor::getLines()
 
 void LineEditor::addItem()
 {
-    if(m_model->insertRow(m_model->rowCount()))
-    {
-
-    }
+    int row = rowCount();
+    insertRow(row);
+    setItem(row, 0, new QTableWidgetItem(""));
+    QPushButton* btn = new QPushButton("+");
+    btn->setMaximumWidth(30);
+    setCellWidget(row, 1, btn);
+    connect(btn, &QPushButton::clicked, this, [this, row](){ emit runLine(this->item(row, 0)->text()); });
 }
 
 void LineEditor::resizeEvent(QResizeEvent *)
 {
-    if(width()*0.2 < 50)
-    {
-        setColumnWidth(0, width()*0.8);
-        setColumnWidth(1, width()*0.2);
-    }
-    else
-    {
-        setColumnWidth(0, width()-50);
-        setColumnWidth(1, 50);
-    }
+
 }

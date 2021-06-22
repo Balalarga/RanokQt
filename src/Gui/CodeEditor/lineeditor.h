@@ -2,11 +2,11 @@
 #define LINEEDITOR_H
 
 #include <QListView>
-#include <QTableView>
 #include <QPushButton>
+#include <QTableWidget>
 #include <QStringListModel>
 
-class LineEditor : public QTableView
+class LineEditor : public QTableWidget
 {
     Q_OBJECT
 public:
