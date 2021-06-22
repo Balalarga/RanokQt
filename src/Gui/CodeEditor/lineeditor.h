@@ -11,8 +11,8 @@ class LineEditor : public QTableWidget
     Q_OBJECT
 public:
     LineEditor(QWidget *parent = nullptr);
-    QStringList getLines();
 
+    bool eventFilter(QObject *obj, QEvent *evt) override;
 
 signals:
     void runLine(QString line);
@@ -21,13 +21,6 @@ signals:
 public slots:
     void addItem();
 
-
-protected:
-    void resizeEvent(QResizeEvent*);
-
-
-private:
-    QStringListModel* m_model;
 };
 
 #endif // LINEEDITOR_H

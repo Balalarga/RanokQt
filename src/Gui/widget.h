@@ -55,7 +55,7 @@ private slots:
     void OpenFile();
     void Compute();
     void SwitchMode();
-
+    void ComputeLine(QString line);
 
 private:
     Mode m_mode;
@@ -70,6 +70,9 @@ private:
 
     Parser m_parser;
     Program* m_program;
+    Parser m_lineParser;
+    Program* m_lineProgram;
+
     QPushButton* m_modeButton;
     QPushButton* m_addLineButton;
 };

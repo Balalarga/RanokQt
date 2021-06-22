@@ -39,6 +39,8 @@ public:
 
     void AddResult(std::shared_ptr<Expression> expr);
 
+    bool MergeProgram(const Program* program);
+
 private:
     std::string error = "";
 

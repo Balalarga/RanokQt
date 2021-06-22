@@ -184,3 +184,34 @@ void Program::AddResult(std::shared_ptr<Expression> expr)
         result = expr;
 }
 
+bool Program::MergeProgram(const Program *program)
+{
+    if(result.get() && program->result)
+        return false;
+    else
+        result = program->result;
+
+    for(auto& v: program->variables)
+    {
+        if(findVariable(v.first))
+            return false;
+        else
+            variables[v.first] = v.second;
+    }
+    for(auto& v: program->arguments)
+    {
+        if(findArgument(v.first))
+            return false;
+        else
+            arguments[v.first] = v.second;
+    }
+    for(auto& v: program->constants)
+    {
+        if(findConstant(v.first))
+            return false;
+        else
+            constants[v.first] = v.second;
+    }
+    return true;
+}
+

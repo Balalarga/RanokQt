@@ -1,14 +1,14 @@
 #include "lineeditor.h"
 
 #include <QStyle>
+#include <QKeyEvent>
 #include <QVBoxLayout>
 #include <QHeaderView>
 #include <QTableWidgetItem>
 
 
 LineEditor::LineEditor(QWidget *parent):
-    QTableWidget(parent),
-    m_model(new QStringListModel(QStringList()<<"// Start code here", this))
+    QTableWidget(parent)
 {
     setColumnCount(2);
     horizontalHeader()->hide();
@@ -29,23 +29,35 @@ QItemDelegate
     setStyleSheet(stylesheet);
 }
 
-QStringList LineEditor::getLines()
-{
-    return m_model->stringList();
-}
 
 void LineEditor::addItem()
 {
     int row = rowCount();
     insertRow(row);
     setItem(row, 0, new QTableWidgetItem(""));
-    QPushButton* btn = new QPushButton("+");
+    QPushButton* btn = new QPushButton(QPixmap("assets/images/playIcon.svg"), "");
     btn->setMaximumWidth(30);
     setCellWidget(row, 1, btn);
     connect(btn, &QPushButton::clicked, this, [this, row](){ emit runLine(this->item(row, 0)->text()); });
 }
 
-void LineEditor::resizeEvent(QResizeEvent *)
+bool LineEditor::eventFilter(QObject *obj, QEvent *evt)
 {
-
+    if (evt->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(evt);
+        if (keyEvent->key() == Qt::Key_Enter)
+        {
+            emit runLine(this->item(rowCount()-1, 0)->text());
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        return QObject::eventFilter(obj, evt);
+    }
 }

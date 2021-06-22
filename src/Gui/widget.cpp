@@ -16,6 +16,7 @@ Widget::Widget(QWidget *parent)
       m_lineEditor(new LineEditor(this)),
       m_modelCalculator(new RecursiveCalculator(6)),
       m_program(nullptr),
+      m_lineProgram(nullptr),
       m_modeButton(new QPushButton("Обычный режим", this)),
       m_addLineButton(new QPushButton("Добавить строку", this))
 {
@@ -68,6 +69,7 @@ Widget::Widget(QWidget *parent)
 
     connect(m_modeButton, &QPushButton::clicked, this, &Widget::SwitchMode);
     connect(m_addLineButton, &QPushButton::clicked, m_lineEditor, &LineEditor::addItem);
+    connect(m_lineEditor, &LineEditor::runLine, this, &Widget::ComputeLine);
 }
 
 
@@ -124,6 +126,31 @@ void Widget::SwitchMode()
     }
 }
 
+void Widget::ComputeLine(QString line)
+{
+    m_lineParser.SetText(line.toStdString());
+
+    Program* lineProg = m_lineParser.GetProgram();
+    if(m_lineProgram)
+    {
+        if(m_lineProgram->MergeProgram(lineProg))
+        {
+            delete lineProg;
+        }
+        else
+        {
+            qDebug()<<"Program merging error:"<<line;
+            return;
+        }
+    }
+    else
+        m_lineProgram = lineProg;
+    if(!m_lineProgram->GetArgs().empty())
+    {
+        m_modelCalculator->SetProgram(m_lineProgram);
+        m_execThread->start();
+    }
+}
 
 void Widget::OpenFile()
 {
