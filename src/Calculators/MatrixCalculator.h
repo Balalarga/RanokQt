@@ -1,7 +1,7 @@
 #ifndef MATRIXCALCULATOR_H
 #define MATRIXCALCULATOR_H
 
-#include "modelcalculator.h"
+#include "ModelCalculator.h"
 
 
 

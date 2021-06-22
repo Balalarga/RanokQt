@@ -52,8 +52,15 @@ else()
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::OpenGL
-    opengl32 glu32)
+    Qt${QT_VERSION_MAJOR}::OpenGL)
+
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        opengl32 glu32)
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        GL GLU)
+endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com

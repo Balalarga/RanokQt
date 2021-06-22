@@ -1,4 +1,4 @@
-#include "modelcalculator.h"
+#include "ModelCalculator.h"
 
 ModelCalculator::ModelCalculator(QObject *parent):
     ICalculator(parent),

@@ -1,7 +1,7 @@
 #ifndef RECURCIVECALCULATOR_H
 #define RECURCIVECALCULATOR_H
 
-#include "modelcalculator.h"
+#include "ModelCalculator.h"
 
 
 class RecursiveCalculator: public ModelCalculator

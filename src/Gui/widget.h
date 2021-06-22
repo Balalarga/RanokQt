@@ -13,7 +13,7 @@
 #include "CodeEditor/lineeditor.h"
 
 #include "Calculators/MImageCalculator.h"
-#include "Calculators/modelcalculator.h"
+#include "Calculators/ModelCalculator.h"
 #include "Calculators/MImageMatrixCalculator.h"
 #include "Calculators/RecursiveCalculator.h"
 #include "Calculators/MatrixCalculator.h"
