@@ -13,7 +13,8 @@
 
 struct Expression
 {
-    Expression(){}
+    friend class NodeCreator;
+public:
     virtual ~Expression(){}
     virtual double GetValue() = 0;
     virtual void Reset(){};
@@ -29,6 +30,10 @@ struct Expression
     std::string error = "";
 
 protected:
+    Expression(){}
+    void operator delete(void * ptr) {
+        std::free(ptr);
+    }
     bool ready = false;
     double store = 0;
 };
@@ -36,26 +41,27 @@ protected:
 
 struct NumberExpr: public Expression
 {
+    friend class NodeCreator;
+public:
+    virtual double GetValue() override
+    {
+        return store;
+    };
+
+protected:
     NumberExpr(double value)
     {
         ready = true;
         store = value;
     }
-    virtual double GetValue() override
-    {
-        return store;
-    };
+    using Expression::operator delete;
 };
 
 
 struct ConstExpr: public Expression
 {
-    ConstExpr(std::string name, std::shared_ptr<Expression> expr):
-        name(name),
-        expr(expr)
-    {
-        ready = false;
-    }
+    friend class NodeCreator;
+public:
     virtual double GetValue() override
     {
         if(!ready)
@@ -64,14 +70,22 @@ struct ConstExpr: public Expression
     };
 
     std::string name;
-    std::shared_ptr<Expression> expr;
+    Expression* expr;
+
+protected:
+    ConstExpr(std::string name, Expression* expr):
+        name(name),
+        expr(expr)
+    {
+        ready = false;
+    }
+    using Expression::operator delete;
 };
 
 struct ArgumentExpr: public Expression
 {
-    ArgumentExpr(std::string name, std::pair<double, double> lims):
-        name(name),
-        limits(lims){}
+    friend class NodeCreator;
+public:
     virtual double GetValue() override
     {
         return store;
@@ -79,13 +93,18 @@ struct ArgumentExpr: public Expression
 
     std::string name;
     std::pair<double, double> limits;
+
+protected:
+    ArgumentExpr(std::string name, std::pair<double, double> lims):
+        name(name),
+        limits(lims){}
+    using Expression::operator delete;
 };
 
 struct VariableExpr: public Expression
 {
-    VariableExpr(std::string name, std::shared_ptr<Expression> expr):
-        name(name),
-        expr(expr){}
+    friend class NodeCreator;
+public:
     virtual double GetValue() override
     {
         if(!ready)
@@ -99,15 +118,19 @@ struct VariableExpr: public Expression
     }
 
     std::string name;
-    std::shared_ptr<Expression> expr;
+    Expression* expr;
+
+protected:
+    VariableExpr(std::string name, Expression* expr):
+        name(name),
+        expr(expr){}
+    using Expression::operator delete;
 };
 
 struct UnaryExpr: public Expression
 {
-    UnaryExpr(std::string opName, std::shared_ptr<Expression> expr):
-        opName(opName),
-        op(LangFunctions::FindUnaryOp(opName)),
-        expr(expr){}
+    friend class NodeCreator;
+public:
     virtual double GetValue() override
     {
         if(!ready)
@@ -127,17 +150,21 @@ struct UnaryExpr: public Expression
 
     std::string opName;
     UnaryOp op;
-    std::shared_ptr<Expression> expr;
+    Expression* expr;
+
+protected:
+    UnaryExpr(std::string opName, Expression* expr):
+        opName(opName),
+        op(LangFunctions::FindUnaryOp(opName)),
+        expr(expr){}
+    using Expression::operator delete;
 };
 
 struct BinaryExpr: public Expression
 {
-    BinaryExpr(std::string opName, std::shared_ptr<Expression> left,
-               std::shared_ptr<Expression> right):
-        opName(opName),
-        op(LangFunctions::FindBinaryOp(opName)),
-        left(left),
-        right(right){}
+
+    friend class NodeCreator;
+public:
     virtual double GetValue() override
     {
         if(!ready)
@@ -158,14 +185,22 @@ struct BinaryExpr: public Expression
 
     std::string opName;
     BinaryOp op;
-    std::shared_ptr<Expression> left, right;
+    Expression* left, *right;
+
+protected:
+    BinaryExpr(std::string opName, Expression* left,
+               Expression* right):
+        opName(opName),
+        op(LangFunctions::FindBinaryOp(opName)),
+        left(left),
+        right(right){}
+    using Expression::operator delete;
 };
 
 struct FunctionExpr: public Expression
 {
-    FunctionExpr(FunctionRef func, std::shared_ptr<Expression> arg):
-        func(func),
-        arg(arg){}
+    friend class NodeCreator;
+public:
     virtual double GetValue() override
     {
         if(!ready)
@@ -179,7 +214,13 @@ struct FunctionExpr: public Expression
     }
 
     FunctionRef func;
-    std::shared_ptr<Expression> arg;
+    Expression* arg;
+
+protected:
+    FunctionExpr(FunctionRef func, Expression* arg):
+        func(func),
+        arg(arg){}
+    using Expression::operator delete;
 };
 
 #endif // NODE_H

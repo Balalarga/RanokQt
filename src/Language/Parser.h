@@ -26,17 +26,17 @@ private:
     std::string error = "";
 
     // Функции обработки главных элементов языка
-    void HandleArgument(Program& program);
-    void HandleConstant(Program& program);
-    void HandleVariable(Program& program);
-    void HandleReturn(Program& program);
+    Expression* HandleArgument(SymbolTable& table);
+    Expression* HandleConstant(SymbolTable& table);
+    Expression* HandleVariable(SymbolTable& table);
+    Expression* HandleReturn(SymbolTable& table);
 
     void CheckToken(Token::Type expect);
 
     // рекурсивные функции построения дерева
-    std::shared_ptr<Expression> Term(Program& program);
-    std::shared_ptr<Expression> Factor(Program& program);
-    std::shared_ptr<Expression> Expr(Program& program);
+    Expression *Term(SymbolTable& table);
+    Expression *Factor(SymbolTable& table);
+    Expression *Expr(SymbolTable& table);
 
     void ToNextToken();
 };

@@ -53,7 +53,7 @@ MImageMatrixCalculator::MImageMatrixCalculator(Vector3i step, QObject *parent):
 void MImageMatrixCalculator::Calculate()
 {
     ClearResults();
-    auto args = GetProgram()->GetArgs();
+    auto args = GetProgram()->GetSymbolTable().GetAllArgs();
 
     if(args.size() == 1)
         Calculate1d();
@@ -66,11 +66,11 @@ void MImageMatrixCalculator::Calculate()
 void MImageMatrixCalculator::Calculate1d()
 {
     auto program = GetProgram();
-    auto args = program->GetArgs();
+    auto args = program->GetSymbolTable().GetAllArgs();
     Vector3f size{
-        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
-                static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
-                static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
+        static_cast<float>((args[0]->limits.second-args[0]->limits.first)/m_step.x),
+                static_cast<float>((args[0]->limits.second-args[0]->limits.first)/m_step.x),
+                static_cast<float>((args[0]->limits.second-args[0]->limits.first)/m_step.x),
     };
     Vector3f halfSize{
         size.x/2.f,
@@ -78,8 +78,8 @@ void MImageMatrixCalculator::Calculate1d()
                 size.x/2.f,
     };
 
-    double x = args[0].limits.first + halfSize.x;
-    while(x < args[0].limits.second)
+    double x = args[0]->limits.first + halfSize.x;
+    while(x < args[0]->limits.second)
     {
         vector<pair<Vector3d, double>> values{
             {{ x+halfSize.x, 0, 0 }, 0},
@@ -94,11 +94,11 @@ void MImageMatrixCalculator::Calculate1d()
 void MImageMatrixCalculator::Calculate2d()
 {
     auto program = GetProgram();
-    auto args = program->GetArgs();
+    auto args = program->GetSymbolTable().GetAllArgs();
     Vector3f size{
-        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
-                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
-                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
+        static_cast<float>((args[0]->limits.second-args[0]->limits.first)/m_step.x),
+                static_cast<float>((args[1]->limits.second-args[1]->limits.first)/m_step.y),
+                static_cast<float>((args[1]->limits.second-args[1]->limits.first)/m_step.y),
     };
     Vector3f halfSize{
         size.x/2.f,
@@ -107,11 +107,11 @@ void MImageMatrixCalculator::Calculate2d()
     };
 
     vector<double> zv(3);
-    float x = args[0].limits.first + halfSize.x;
-    while(x < args[0].limits.second)
+    float x = args[0]->limits.first + halfSize.x;
+    while(x < args[0]->limits.second)
     {
-        float y = args[1].limits.first + halfSize.y;
-        while(y < args[1].limits.second)
+        float y = args[1]->limits.first + halfSize.y;
+        while(y < args[1]->limits.second)
         {
             zv[0] = program->Compute({x, y, 0});
             zv[1] = program->Compute({x+size.x, y, 0});
@@ -201,11 +201,11 @@ void MImageMatrixCalculator::Calculate2d()
 void MImageMatrixCalculator::Calculate3d()
 {
     auto program = GetProgram();
-    auto args = program->GetArgs();
+    auto args = program->GetSymbolTable().GetAllArgs();
     Vector3f size{
-        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
-                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
-                static_cast<float>((args[2].limits.second-args[2].limits.first)/m_step.z),
+        static_cast<float>((args[0]->limits.second-args[0]->limits.first)/m_step.x),
+                static_cast<float>((args[1]->limits.second-args[1]->limits.first)/m_step.y),
+                static_cast<float>((args[2]->limits.second-args[2]->limits.first)/m_step.z),
     };
     Vector3f halfSize{
         size.x/2.f,
@@ -213,14 +213,14 @@ void MImageMatrixCalculator::Calculate3d()
                 size.z/2.f,
     };
     vector<double> wv(4);
-    float x = args[0].limits.first + halfSize.x;
-    while(x < args[0].limits.second)
+    float x = args[0]->limits.first + halfSize.x;
+    while(x < args[0]->limits.second)
     {
-        float y = args[1].limits.first + halfSize.y;
-        while(y < args[1].limits.second)
+        float y = args[1]->limits.first + halfSize.y;
+        while(y < args[1]->limits.second)
         {
-            float z = args[2].limits.first + halfSize.z;
-            while(z < args[2].limits.second)
+            float z = args[2]->limits.first + halfSize.z;
+            while(z < args[2]->limits.second)
             {
                 wv[0] = program->Compute({x, y, z});
                 wv[1] = program->Compute({x+size.x, y, z});

@@ -3,24 +3,24 @@
 
 std::map<std::string, FunctionRef> LangFunctions::functions =
 {
-    {"abs",   std::abs},
-    {"sqrt",  std::sqrt},
-    {"sin",   std::sin},
-    {"cos",   std::cos},
-    {"tan",   std::tan},
-    {"arctan",  std::atan},
-    {"arcsin",  std::asin},
-    {"arccos",  std::acos},
-    {"cosh",  std::cosh},
-    {"sinh",  std::sinh},
-    {"tanh",  std::tanh},
-    {"exp",   std::exp},
-    {"ln",    std::log},
-    {"log",   std::log},
-    {"log10", std::log10},
-    {"log2",  std::log2},
-    {"ceil",  std::ceil},
-    {"floor", std::floor},
+    {"abs",    std::abs},
+    {"sqrt",   std::sqrt},
+    {"sin",    std::sin},
+    {"cos",    std::cos},
+    {"tan",    std::tan},
+    {"arctan", std::atan},
+    {"arcsin", std::asin},
+    {"arccos", std::acos},
+    {"cosh",   std::cosh},
+    {"sinh",   std::sinh},
+    {"tanh",   std::tanh},
+    {"exp",    std::exp},
+    {"ln",     std::log},
+    {"log",    std::log},
+    {"log10",  std::log10},
+    {"log2",   std::log2},
+    {"ceil",   std::ceil},
+    {"floor",  std::floor},
 };
 
 std::map<std::string, BinaryOp> LangFunctions::binOperations =
@@ -39,6 +39,7 @@ std::map<std::string, UnaryOp> LangFunctions::unaryOperations =
     {"-", [](double a){return -a;}}
 };
 
+
 FunctionRef LangFunctions::FindFunction(std::string name)
 {
     auto it = functions.find(name);
@@ -53,6 +54,7 @@ std::string LangFunctions::FindFunction(FunctionRef func)
     return "unknown";
 }
 
+
 BinaryOp LangFunctions::FindBinaryOp(std::string name)
 {
     auto it = binOperations.find(name);
@@ -66,6 +68,7 @@ std::string LangFunctions::FindBinaryOp(BinaryOp func)
             return i.first;
     return "unknown";
 }
+
 
 UnaryOp LangFunctions::FindUnaryOp(std::string name)
 {

@@ -2,7 +2,6 @@
 #define LANGFUNCTIONS_H
 
 #include <map>
-#include <functional>
 
 typedef double(*FunctionRef)(double);
 typedef double(*BinaryOp)(double, double);
@@ -16,10 +15,14 @@ public:
     static std::map<std::string, FunctionRef> functions;
     static std::map<std::string, BinaryOp> binOperations;
     static std::map<std::string, UnaryOp> unaryOperations;
+
+
     static FunctionRef FindFunction(std::string);
     static std::string FindFunction(FunctionRef);
+
     static BinaryOp FindBinaryOp(std::string);
     static std::string FindBinaryOp(BinaryOp);
+
     static UnaryOp FindUnaryOp(std::string);
     static std::string FindUnaryOp(UnaryOp);
 };

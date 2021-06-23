@@ -145,7 +145,7 @@ void Widget::ComputeLine(QString line)
     }
     else
         m_lineProgram = lineProg;
-    if(!m_lineProgram->GetArgs().empty())
+    if(!m_lineProgram->GetSymbolTable().GetAllArgs().empty())
     {
         m_modelCalculator->SetProgram(m_lineProgram);
         m_execThread->start();

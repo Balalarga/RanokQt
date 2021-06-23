@@ -39,6 +39,7 @@ void Parser::SetText(const std::string &source)
 Program *Parser::GetProgram()
 {
     Program* program = new Program;
+    auto table = program->GetSymbolTable();
     ToNextToken();
     if(!lexer.IsError() && !IsError())
     {
@@ -46,17 +47,33 @@ Program *Parser::GetProgram()
         {
             if(token == Token::Type::Id)
             {
-                if(token.name == "variable" ||
-                        token.name == "var")
-                    HandleVariable(*program);
+                if((token.name == "variable" ||
+                        token.name == "var"))
+                {
+                    auto expr = HandleVariable(program->GetSymbolTable());
+                    if(expr)
+                        table.Add(expr);
+                }
                 else if(token.name == "argument" ||
                         token.name == "arg")
-                    HandleArgument(*program);
+                {
+                    auto expr = HandleArgument(program->GetSymbolTable());
+                    if(expr)
+                        table.Add(expr);
+                }
                 else if(token.name == "constant" ||
                         token.name == "const")
-                    HandleConstant(*program);
+                {
+                    auto expr = HandleConstant(program->GetSymbolTable());
+                    if(expr)
+                        table.Add(expr);
+                }
                 else if(token.name == "return")
-                    HandleReturn(*program);
+                {
+                    auto expr = HandleReturn(program->GetSymbolTable());
+                    if(expr)
+                        table.Add(expr);
+                }
                 else
                 {
                     error = "Unknown keyword " + token.name;
@@ -91,8 +108,9 @@ string Parser::GetError()
     return error;
 }
 
-void Parser::HandleArgument(Program &program)
+Expression* Parser::HandleArgument(SymbolTable &table)
 {
+    Expression* expr = nullptr;
     if(!IsError())
     {
         while(token != Token::Type::Endline)
@@ -136,7 +154,7 @@ void Parser::HandleArgument(Program &program)
                 CheckToken(Token::Type::ParenClose);
                 ToNextToken();
             }
-            program.AddArg(name, limit);
+            expr =  NodeCreator::Instance().Create<ArgumentExpr>(name, limit);
         }
         CheckToken(Token::Type::Endline);
         ToNextToken();
@@ -145,10 +163,12 @@ void Parser::HandleArgument(Program &program)
     {
         cout<<"Parser error: "<<error;
     }
+    return expr;
 }
 
-void Parser::HandleConstant(Program &program)
+Expression* Parser::HandleConstant(SymbolTable &table)
 {
+    Expression* expr = nullptr;
     if(!IsError())
     {
         while(token != Token::Type::Endline)
@@ -159,19 +179,18 @@ void Parser::HandleConstant(Program &program)
             ToNextToken();
             CheckToken(Token::Type::Assign);
             ToNextToken();
-            auto expr = Expr(program);
-            program.AddConst(name, expr);
+            auto expr = Expr(table);
         }
         ToNextToken();
     }
     else
-    {
         cout<<"Parser error: "<<error;
-    }
+    return expr;
 }
 
-void Parser::HandleVariable(Program &program)
+Expression* Parser::HandleVariable(SymbolTable &table)
 {
+    Expression* expr = nullptr;
     if(!IsError())
     {
         ToNextToken();
@@ -180,26 +199,26 @@ void Parser::HandleVariable(Program &program)
         ToNextToken();
         CheckToken(Token::Type::Assign);
         ToNextToken();
-        auto expr = Expr(program);
-        program.AddVar(name, expr);
+        auto expr = Expr(table);
         ToNextToken();
     }
     else
-    {
         cout<<"Parser error: "<<error;
-    }
+    return expr;
 }
 
-void Parser::HandleReturn(Program &program)
+Expression *Parser::HandleReturn(SymbolTable &table)
 {
+    Expression* expr = nullptr;
     if(!IsError())
     {
         ToNextToken();
-        program.AddResult(Expr(program));
+        expr = Expr(table);
         ToNextToken();
     }
     else
         cout<<"Parser error: "<<error;
+    return expr;
 }
 
 void Parser::CheckToken(Token::Type expect)
@@ -211,63 +230,63 @@ void Parser::CheckToken(Token::Type expect)
     }
 }
 
-std::shared_ptr<Expression> Parser::Term(Program& program)
+Expression* Parser::Term(SymbolTable &table)
 {
-    auto node = Factor(program);
+    auto node = Factor(table);
     while(token == Token::Type::Pow      ||
           token == Token::Type::Multiply ||
           token == Token::Type::Divide)
     {
         auto prev = token;
         ToNextToken();
-        node = shared_ptr<BinaryExpr>(new BinaryExpr(prev.name, node, Factor(program)));
+        node = NodeCreator::Instance().Create<BinaryExpr>(prev.name, node, Factor(table));
     }
     return node;
 }
 
-std::shared_ptr<Expression> Parser::Factor(Program& program)
+Expression* Parser::Factor(SymbolTable &table)
 {
     if(token == Token::Type::Number)
     {
-        auto expr = shared_ptr<NumberExpr>(new NumberExpr(token.value));
+        auto expr = NodeCreator::Instance().Create<NumberExpr>(token.value);
         ToNextToken();
         return expr;
     }
     else if(token == Token::Type::ParenOpen)
     {
         ToNextToken();
-        auto expr = Expr(program);
+        auto expr = Expr(table);
         ToNextToken();
         return expr;
     }
     else if(token.type == Token::Type::Minus)
     {
         ToNextToken();
-        return shared_ptr<UnaryExpr>(new UnaryExpr("-", Factor(program)));
+        return NodeCreator::Instance().Create<UnaryExpr>("-", Factor(table));
     }
     else if(token.type == Token::Type::Id)
     {
         auto prev = token;
         ToNextToken();
-        shared_ptr<Expression> expr = program.findArgument(prev.name);
+        Expression* expr = table.GetArgument(prev.name);
         if(expr)
             return expr;
-        expr = program.findConstant(prev.name);
+        expr = table.GetConst(prev.name);
         if(expr)
             return expr;
-        expr = program.findVariable(prev.name);
+        expr = table.Get(prev.name);
         if(expr)
             return expr;
         auto func = LangFunctions::FindFunction(prev.name);
         if(func)
-            return shared_ptr<FunctionExpr>(new FunctionExpr(func, Term(program)));
+            return NodeCreator::Instance().Create<FunctionExpr>(func, Term(table));
     }
     return nullptr;
 }
 
-std::shared_ptr<Expression> Parser::Expr(Program& program)
+Expression* Parser::Expr(SymbolTable &table)
 {
-    auto node = Term(program);
+    auto node = Term(table);
     while(token == Token::Type::Minus||
           token == Token::Type::Plus ||
           token == Token::Type::Cross ||
@@ -275,7 +294,7 @@ std::shared_ptr<Expression> Parser::Expr(Program& program)
     {
         auto prev = token;
         ToNextToken();
-        node = shared_ptr<BinaryExpr>(new BinaryExpr(prev.name, node, Term(program)));
+        node = NodeCreator::Instance().Create<BinaryExpr>(prev.name, node, Term(table));
     }
     return node;
 }

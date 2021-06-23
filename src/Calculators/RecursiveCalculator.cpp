@@ -12,42 +12,42 @@ RecursiveCalculator::RecursiveCalculator(int depth, QObject *parent):
 void RecursiveCalculator::Calculate()
 {
     ClearResults();
-    auto args = GetProgram()->GetArgs();
+    auto args = GetProgram()->GetSymbolTable().GetAllArgs();
 
     Vector3f voxelSize;
     Vector3f coords;
     if(args.size() == 3)
     {
         voxelSize = {
-            static_cast<float>((args[0].limits.second-args[0].limits.first)/2.f),
-            static_cast<float>((args[1].limits.second-args[1].limits.first)/2.f),
-            static_cast<float>((args[2].limits.second-args[2].limits.first)/2.f),};
+            static_cast<float>((args[0]->limits.second-args[0]->limits.first)/2.f),
+            static_cast<float>((args[1]->limits.second-args[1]->limits.first)/2.f),
+            static_cast<float>((args[2]->limits.second-args[2]->limits.first)/2.f),};
         coords = {
-            static_cast<float>(args[0].limits.first+voxelSize.x),
-            static_cast<float>(args[1].limits.first+voxelSize.y),
-            static_cast<float>(args[2].limits.first+voxelSize.z)};
+            static_cast<float>(args[0]->limits.first+voxelSize.x),
+            static_cast<float>(args[1]->limits.first+voxelSize.y),
+            static_cast<float>(args[2]->limits.first+voxelSize.z)};
         Calculate3d(coords, voxelSize, m_depth);
     }
     else if(args.size() == 2)
     {
         voxelSize = {
-            static_cast<float>((args[0].limits.second-args[0].limits.first)/2.f),
-            static_cast<float>((args[1].limits.second-args[1].limits.first)/2.f),
-            static_cast<float>((args[1].limits.second-args[1].limits.first)/2.f)};
+            static_cast<float>((args[0]->limits.second-args[0]->limits.first)/2.f),
+            static_cast<float>((args[1]->limits.second-args[1]->limits.first)/2.f),
+            static_cast<float>((args[1]->limits.second-args[1]->limits.first)/2.f)};
         coords = {
-            static_cast<float>(args[0].limits.first+voxelSize.x),
-            static_cast<float>(args[1].limits.first+voxelSize.y),
+            static_cast<float>(args[0]->limits.first+voxelSize.x),
+            static_cast<float>(args[1]->limits.first+voxelSize.y),
             0};
         Calculate2d(coords, voxelSize, m_depth);
     }
     else if(args.size() == 1)
     {
         voxelSize = {
-            static_cast<float>((args[0].limits.second-args[0].limits.first)/2.f),
-            static_cast<float>((args[0].limits.second-args[0].limits.first)/2.f),
-            static_cast<float>((args[0].limits.second-args[0].limits.first)/2.f)};
+            static_cast<float>((args[0]->limits.second-args[0]->limits.first)/2.f),
+            static_cast<float>((args[0]->limits.second-args[0]->limits.first)/2.f),
+            static_cast<float>((args[0]->limits.second-args[0]->limits.first)/2.f)};
         coords = {
-            static_cast<float>(args[0].limits.first+voxelSize.x),
+            static_cast<float>(args[0]->limits.first+voxelSize.x),
             0,
             0};
         Calculate1d(coords, voxelSize, m_depth);

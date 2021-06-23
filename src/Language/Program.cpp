@@ -12,8 +12,9 @@ Program::Program()
     };
     for(const auto& i: stdConstant)
     {
-        shared_ptr<Expression> expr(new NumberExpr(i.second));
-        constants[i.first] = shared_ptr<ConstExpr>(new ConstExpr(i.first, expr));
+        auto numberExpr = NodeCreator::Instance().Create<NumberExpr>(i.second);
+        auto constExpr = NodeCreator::Instance().Create<ConstExpr>(i.first, numberExpr);
+        m_symbolTable.Add(constExpr);
     }
 }
 
@@ -21,7 +22,7 @@ double Program::Compute(std::map<std::string, double> args)
 {
     for(auto& i: args)
     {
-        auto node = findArgument(i.first);
+        auto node = m_symbolTable.GetArgument(i.first);
         if(!node)
         {
             error = "Unknown argument "+i.first;
@@ -30,46 +31,41 @@ double Program::Compute(std::map<std::string, double> args)
         node->SetValue(i.second);
     }
 
-    double res = result->GetValue();
-    result->Reset();
+    double res = resultNode->GetValue();
+    resultNode->Reset();
 
     return res;
 }
 
 double Program::Compute(Vector3d args)
 {
-    auto it = arguments.begin();
-    it->second->SetValue(args.x);
-    it++;
-    it->second->SetValue(args.y);
-    it++;
-    it->second->SetValue(args.z);
+    if(auto item = m_symbolTable.GetArgAt(0))
+        item->SetValue(args.x);
 
-    double res = result->GetValue();
+    if(auto item = m_symbolTable.GetArgAt(1))
+        item->SetValue(args.y);
 
-    result->Reset();
+    if(auto item = m_symbolTable.GetArgAt(2))
+        item->SetValue(args.z);
+
+    double res = resultNode->GetValue();
+
+    resultNode->Reset();
 
     return res;
 }
 
-std::vector<ArgData> Program::GetArgs()
-{
-    vector<ArgData> data;
-    for(auto i = arguments.begin(); i != arguments.end(); i++)
-    {
-        ArgData aData;
-        aData.limits = i->second->limits;
-        aData.name = i->first;
-        data.push_back(aData);
-    }
-    return data;
-}
 
 void Program::PrintTreeDepth(int depth)
 {
     set<string> vars;
-    PrintNode(result.get(), vars, 0, depth);
+    PrintNode(resultNode, vars, 0, depth);
     cout<<endl;
+}
+
+SymbolTable &Program::GetSymbolTable()
+{
+    return m_symbolTable;
 }
 
 void Program::PrintNode(Expression *node, set<string>& vars, int currDepth, int maxDepth)
@@ -100,24 +96,24 @@ void Program::PrintNode(Expression *node, set<string>& vars, int currDepth, int 
         if(vars.find(casted->name) == vars.end())
         {
             vars.insert(casted->name);
-            PrintNode(casted->expr.get(), vars, currDepth+1, maxDepth);
+            PrintNode(casted->expr, vars, currDepth+1, maxDepth);
         }
     }
     else if(auto casted = dynamic_cast<UnaryExpr*>(node))
     {
         cout<<"UnaryExpr: "<<casted->op;
-        PrintNode(casted->expr.get(), vars, currDepth+1, maxDepth);
+        PrintNode(casted->expr, vars, currDepth+1, maxDepth);
     }
     else if(auto casted = dynamic_cast<BinaryExpr*>(node))
     {
         cout<<"BinaryExpr: "<<casted->op;
-        PrintNode(casted->left.get(), vars, currDepth+1, maxDepth);
-        PrintNode(casted->right.get(), vars, currDepth+1, maxDepth);
+        PrintNode(casted->left, vars, currDepth+1, maxDepth);
+        PrintNode(casted->right, vars, currDepth+1, maxDepth);
     }
     else if(auto casted = dynamic_cast<FunctionExpr*>(node))
     {
         cout<<"FunctionExpr: "<<LangFunctions::FindFunction(casted->func);
-        PrintNode(casted->arg.get(), vars, currDepth+1, maxDepth);
+        PrintNode(casted->arg, vars, currDepth+1, maxDepth);
     }
 }
 string Program::GetError()
@@ -130,88 +126,20 @@ bool Program::IsError()
     return !error.empty();
 }
 
-shared_ptr<ArgumentExpr> Program::findArgument(const std::string& name)
+void Program::SetResult(Expression *expr)
 {
-    auto it = arguments.find(name);
-    if(it == arguments.end())
-        return nullptr;
-    return it->second;
-}
-
-shared_ptr<VariableExpr> Program::findVariable(const std::string& name)
-{
-    auto it = variables.find(name);
-    if(it == variables.end())
-        return nullptr;
-    return it->second;
-}
-
-shared_ptr<ConstExpr> Program::findConstant(const std::string& name)
-{
-    auto it = constants.find(name);
-    if(it == constants.end())
-        return nullptr;
-    return it->second;
-}
-
-void Program::AddArg(string& name, std::pair<double, double> limits)
-{
-    if(!findArgument(name))
-        arguments[name] = shared_ptr<ArgumentExpr>(new ArgumentExpr(name, limits));
-    else
-        error = "Argument "+name+" alredy exists";
-}
-
-void Program::AddVar(string& name, std::shared_ptr<Expression> expr)
-{
-    if(!findVariable(name))
-        variables[name] = shared_ptr<VariableExpr>(new VariableExpr(name, expr));
-    else
-        error = "Variable "+name+" alredy exists";
-}
-
-void Program::AddConst(string& name, std::shared_ptr<Expression> expr)
-{
-    if(!findArgument(name))
-        constants[name] = shared_ptr<ConstExpr>(new ConstExpr(name, expr));
-    else
-        error = "Constant "+name+" alredy exists";
-}
-
-void Program::AddResult(std::shared_ptr<Expression> expr)
-{
-    if(!result.get())
-        result = expr;
+    if(!resultNode)
+        resultNode = expr;
 }
 
 bool Program::MergeProgram(const Program *program)
 {
-    if(result.get() && program->result)
+    if(resultNode && program->resultNode)
         return false;
     else
-        result = program->result;
+        resultNode = program->resultNode;
 
-    for(auto& v: program->variables)
-    {
-        if(findVariable(v.first))
-            return false;
-        else
-            variables[v.first] = v.second;
-    }
-    for(auto& v: program->arguments)
-    {
-        if(findArgument(v.first))
-            return false;
-        else
-            arguments[v.first] = v.second;
-    }
-    for(auto& v: program->constants)
-    {
-        if(findConstant(v.first))
-            return false;
-        else
-            constants[v.first] = v.second;
-    }
+    m_symbolTable.Merge(program->m_symbolTable);
+
     return true;
 }
-

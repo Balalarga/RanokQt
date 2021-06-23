@@ -13,7 +13,7 @@ MatrixCalculator::MatrixCalculator(Vector3i step, QObject *parent):
 void MatrixCalculator::Calculate()
 {
     ClearResults();
-    auto args = GetProgram()->GetArgs();
+    auto args = GetProgram()->GetSymbolTable().GetAllArgs();
 
     if(args.size() == 1)
         Calculate1d();
@@ -26,11 +26,11 @@ void MatrixCalculator::Calculate()
 void MatrixCalculator::Calculate1d()
 {
     auto program = GetProgram();
-    auto args = program->GetArgs();
+    auto args = program->GetSymbolTable().GetAllArgs();
     Vector3f size{
-        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
-                static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
-                static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
+        static_cast<float>((args[0]->limits.second-args[0]->limits.first)/m_step.x),
+                static_cast<float>((args[0]->limits.second-args[0]->limits.first)/m_step.x),
+                static_cast<float>((args[0]->limits.second-args[0]->limits.first)/m_step.x),
     };
     Vector3f halfSize{
         size.x/2.f,
@@ -38,8 +38,8 @@ void MatrixCalculator::Calculate1d()
                 size.x/2.f,
     };
 
-    float x = args[0].limits.first + halfSize.x;
-    while(x < args[0].limits.second)
+    float x = args[0]->limits.first + halfSize.x;
+    while(x < args[0]->limits.second)
     {
         vector<Vector3d> vertices{
             { x+halfSize.x, 0, 0 },
@@ -62,11 +62,11 @@ void MatrixCalculator::Calculate1d()
 void MatrixCalculator::Calculate2d()
 {
     auto program = GetProgram();
-    auto args = program->GetArgs();
+    auto args = program->GetSymbolTable().GetAllArgs();
     Vector3f size{
-        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
-                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
-                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
+        static_cast<float>((args[0]->limits.second-args[0]->limits.first)/m_step.x),
+                static_cast<float>((args[1]->limits.second-args[1]->limits.first)/m_step.y),
+                static_cast<float>((args[1]->limits.second-args[1]->limits.first)/m_step.y),
     };
     Vector3f halfSize{
         size.x/2.f,
@@ -74,11 +74,11 @@ void MatrixCalculator::Calculate2d()
                 size.y/2.f,
     };
 
-    float x = args[0].limits.first + halfSize.x;
-    while(x < args[0].limits.second)
+    float x = args[0]->limits.first + halfSize.x;
+    while(x < args[0]->limits.second)
     {
-        float y = args[1].limits.first + halfSize.y;
-        while(y < args[1].limits.second)
+        float y = args[1]->limits.first + halfSize.y;
+        while(y < args[1]->limits.second)
         {
             vector<Vector3d> vertices
             {
@@ -106,11 +106,11 @@ void MatrixCalculator::Calculate2d()
 void MatrixCalculator::Calculate3d()
 {
     auto program = GetProgram();
-    auto args = program->GetArgs();
+    auto args = program->GetSymbolTable().GetAllArgs();
     Vector3f size{
-        static_cast<float>((args[0].limits.second-args[0].limits.first)/m_step.x),
-                static_cast<float>((args[1].limits.second-args[1].limits.first)/m_step.y),
-                static_cast<float>((args[2].limits.second-args[2].limits.first)/m_step.z),
+        static_cast<float>((args[0]->limits.second-args[0]->limits.first)/m_step.x),
+                static_cast<float>((args[1]->limits.second-args[1]->limits.first)/m_step.y),
+                static_cast<float>((args[2]->limits.second-args[2]->limits.first)/m_step.z),
     };
     Vector3f halfSize{
         size.x/2.f,
@@ -118,14 +118,14 @@ void MatrixCalculator::Calculate3d()
                 size.z/2.f,
     };
 
-    float x = args[0].limits.first + halfSize.x;
-    while(x < args[0].limits.second)
+    float x = args[0]->limits.first + halfSize.x;
+    while(x < args[0]->limits.second)
     {
-        float y = args[1].limits.first + halfSize.y;
-        while(y < args[1].limits.second)
+        float y = args[1]->limits.first + halfSize.y;
+        while(y < args[1]->limits.second)
         {
-            float z = args[2].limits.first + halfSize.z;
-            while(z < args[2].limits.second)
+            float z = args[2]->limits.first + halfSize.z;
+            while(z < args[2]->limits.second)
             {
                 vector<Vector3d> vertices{
                     { x+halfSize.x, y+halfSize.y, z+halfSize.z },
