@@ -12,7 +12,8 @@ RecursiveCalculator::RecursiveCalculator(int depth, QObject *parent):
 void RecursiveCalculator::Calculate()
 {
     ClearResults();
-    auto args = GetProgram()->GetSymbolTable().GetAllArgs();
+    auto program = GetProgram();
+    auto args = program->GetSymbolTable().GetAllArgs();
 
     Vector3f voxelSize;
     Vector3f coords;

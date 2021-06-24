@@ -26,8 +26,8 @@ private:
     std::string error = "";
 
     // Функции обработки главных элементов языка
-    Expression* HandleArgument(SymbolTable& table);
-    Expression* HandleConstant(SymbolTable& table);
+    void HandleArgument(SymbolTable& table);
+    void HandleConstant(SymbolTable& table);
     Expression* HandleVariable(SymbolTable& table);
     Expression* HandleReturn(SymbolTable& table);
 
