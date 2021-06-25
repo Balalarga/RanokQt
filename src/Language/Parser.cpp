@@ -39,7 +39,7 @@ void Parser::SetText(const std::string &source)
 Program *Parser::GetProgram()
 {
     Program* program = new Program;
-    auto table = program->GetSymbolTable();
+    SymbolTable& table = program->GetSymbolTable();
     ToNextToken();
     if(!lexer.IsError() && !IsError())
     {
@@ -50,29 +50,24 @@ Program *Parser::GetProgram()
                 if((token.name == "variable" ||
                         token.name == "var"))
                 {
-                    auto expr = HandleVariable(program->GetSymbolTable());
+                    auto expr = HandleVariable(table);
                     if(expr)
                         table.Add(expr);
                 }
                 else if(token.name == "argument" ||
                         token.name == "arg")
                 {
-                    auto expr = HandleArgument(program->GetSymbolTable());
-                    if(expr)
-                        table.Add(expr);
+                    HandleArgument(table);
                 }
                 else if(token.name == "constant" ||
                         token.name == "const")
                 {
-                    auto expr = HandleConstant(program->GetSymbolTable());
-                    if(expr)
-                        table.Add(expr);
+                    HandleConstant(table);
                 }
                 else if(token.name == "return")
                 {
-                    auto expr = HandleReturn(program->GetSymbolTable());
-                    if(expr)
-                        table.Add(expr);
+                    auto expr = HandleReturn(table);
+                    program->SetResult(expr);
                 }
                 else
                 {
@@ -108,7 +103,7 @@ string Parser::GetError()
     return error;
 }
 
-Expression* Parser::HandleArgument(SymbolTable &table)
+void Parser::HandleArgument(SymbolTable &table)
 {
     Expression* expr = nullptr;
     if(!IsError())
@@ -155,18 +150,17 @@ Expression* Parser::HandleArgument(SymbolTable &table)
                 ToNextToken();
             }
             expr =  NodeCreator::Instance().Create<ArgumentExpr>(name, limit);
+            table.Add(expr);
         }
         CheckToken(Token::Type::Endline);
         ToNextToken();
     }
     else
-    {
         cout<<"Parser error: "<<error;
-    }
-    return expr;
 }
 
-Expression* Parser::HandleConstant(SymbolTable &table)
+
+void Parser::HandleConstant(SymbolTable &table)
 {
     Expression* expr = nullptr;
     if(!IsError())
@@ -180,12 +174,13 @@ Expression* Parser::HandleConstant(SymbolTable &table)
             CheckToken(Token::Type::Assign);
             ToNextToken();
             auto expr = Expr(table);
+            expr = NodeCreator::Instance().Create<ConstExpr>(name, expr);
+            table.Add(expr);
         }
         ToNextToken();
     }
     else
         cout<<"Parser error: "<<error;
-    return expr;
 }
 
 Expression* Parser::HandleVariable(SymbolTable &table)
@@ -199,7 +194,8 @@ Expression* Parser::HandleVariable(SymbolTable &table)
         ToNextToken();
         CheckToken(Token::Type::Assign);
         ToNextToken();
-        auto expr = Expr(table);
+        expr = Expr(table);
+        expr = NodeCreator::Instance().Create<VariableExpr>(name, expr);
         ToNextToken();
     }
     else
@@ -274,7 +270,7 @@ Expression* Parser::Factor(SymbolTable &table)
         expr = table.GetConst(prev.name);
         if(expr)
             return expr;
-        expr = table.Get(prev.name);
+        expr = table.GetVariable(prev.name);
         if(expr)
             return expr;
         auto func = LangFunctions::FindFunction(prev.name);

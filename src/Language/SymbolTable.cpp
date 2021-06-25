@@ -9,17 +9,17 @@ void SymbolTable::Add(Expression *expr)
 {
     if(auto it = dynamic_cast<ConstExpr*>(expr))
     {
-        if(HasName(it->name))
+        if(!HasName(it->name))
             m_constants[it->name] = it;
     }
     else if(auto it = dynamic_cast<VariableExpr*>(expr))
     {
-        if(HasName(it->name))
+        if(!HasName(it->name))
             m_variables[it->name] = it;
     }
     else if(auto it = dynamic_cast<ArgumentExpr*>(expr))
     {
-        if(HasName(it->name))
+        if(!HasName(it->name))
             m_arguments[it->name] = it;
     }
 }

@@ -4,7 +4,8 @@
 
 using namespace std;
 
-Program::Program()
+Program::Program():
+    resultNode(nullptr)
 {
     map<string, double> stdConstant{
         {"pi", 3.14159265358979323846},
@@ -128,8 +129,7 @@ bool Program::IsError()
 
 void Program::SetResult(Expression *expr)
 {
-    if(!resultNode)
-        resultNode = expr;
+    resultNode = expr;
 }
 
 bool Program::MergeProgram(const Program *program)
