@@ -14,7 +14,7 @@ Widget::Widget(QWidget *parent)
       m_sceneView(new SceneView(this)),
       m_codeEditor(new CodeEditor(this)),
       m_lineEditor(new LineEditor(this)),
-      m_modelCalculator(new RecursiveCalculator(6)),
+      m_modelCalculator(new RecursiveCalculator(4)),
       m_program(nullptr),
       m_lineProgram(nullptr),
       m_modeButton(new QPushButton("Обычный режим", this)),
@@ -130,11 +130,12 @@ void Widget::ComputeLine(QString line)
 {
     m_lineParser.SetText(line.toStdString());
 
-    Program* lineProg = m_lineParser.GetProgram();
     if(m_lineProgram)
     {
-        if(m_lineProgram->MergeProgram(lineProg))
+        Program* lineProg = m_lineParser.GetProgram(&m_lineProgram->GetSymbolTable());
+        if(auto res = m_lineProgram->MergeProgram(lineProg))
         {
+            m_lineProgram->SetResult(res);
             delete lineProg;
         }
         else
@@ -144,10 +145,14 @@ void Widget::ComputeLine(QString line)
         }
     }
     else
-        m_lineProgram = lineProg;
+    {
+        m_lineProgram = m_lineParser.GetProgram();
+    }
+
     if(!m_lineProgram->GetSymbolTable().GetAllArgs().empty())
     {
         m_modelCalculator->SetProgram(m_lineProgram);
+        m_sceneView->ClearObjects();
         m_execThread->start();
     }
 }
@@ -160,7 +165,6 @@ void Widget::OpenFile()
     if(!fileName.isEmpty())
         m_codeEditor->AddFile(fileName);
 }
-
 
 bool Widget::eventFilter(QObject *obj, QEvent *event)
 {

@@ -21,33 +21,17 @@ public:
     void Merge(const SymbolTable& oth);
     void Concat(const SymbolTable& oth);
 
-    ConstExpr* GetConst(const std::string& name) const
-    {
-        auto it = m_constants.find(name);
-        if(it != m_constants.end())
-            return it->second;
-        return nullptr;
-    }
-    ArgumentExpr* GetArgument(const std::string& name) const
-    {
-        auto it = m_arguments.find(name);
-        if(it != m_arguments.end())
-            return it->second;
-        return nullptr;
-    }
-    VariableExpr* GetVariable(const std::string& name) const
-    {
-        auto it = m_variables.find(name);
-        if(it != m_variables.end())
-            return it->second;
-        return nullptr;
-    }
+    ConstExpr* GetConst(const std::string& name) const;
+    ArgumentExpr* GetArgument(const std::string& name) const;
+    VariableExpr* GetVariable(const std::string& name) const;
+    VariableExpr* GetLastVar() const;
+
 
 private:
     std::unordered_map<std::string, ArgumentExpr*> m_arguments;
     std::map<std::string, VariableExpr*> m_variables;
     std::map<std::string, ConstExpr*> m_constants;
-
+    VariableExpr* m_lastAddedVariable;
     bool HasName(const std::string& name) const;
 };
 

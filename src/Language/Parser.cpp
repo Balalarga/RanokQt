@@ -34,11 +34,14 @@ void Parser::SetFile(const std::string &sourceFile)
 void Parser::SetText(const std::string &source)
 {
     lexer.SetText(source);
+    token.type = Token::Type::Begin;
 }
 
-Program *Parser::GetProgram()
+Program *Parser::GetProgram(SymbolTable* baseTable)
 {
     Program* program = new Program;
+    if(baseTable)
+        program->GetSymbolTable().Concat(*baseTable);
     SymbolTable& table = program->GetSymbolTable();
     ToNextToken();
     if(!lexer.IsError() && !IsError())

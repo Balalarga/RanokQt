@@ -14,7 +14,7 @@ public:
     void SetFile(const std::string& sourceFile);
     void SetText(const std::string& source);
 
-    Program* GetProgram();
+    Program* GetProgram(SymbolTable *baseTable = nullptr);
 
     bool IsError();
     std::string GetError();

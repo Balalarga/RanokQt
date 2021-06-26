@@ -18,6 +18,8 @@ void Lexer::SetText(const std::string& text)
     std::string data = text;
     std::transform(data.begin(), data.end(), data.begin(),
         [](unsigned char c){ return std::tolower(c); });
+    while(!m_tokens.empty())
+          m_tokens.pop();
     unsigned pivot = 0;
     Token token;
     while(token != Token::Type::End)

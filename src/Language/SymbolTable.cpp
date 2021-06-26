@@ -1,6 +1,7 @@
 #include "SymbolTable.h"
 
-SymbolTable::SymbolTable()
+SymbolTable::SymbolTable():
+    m_lastAddedVariable(nullptr)
 {
 
 }
@@ -81,21 +82,61 @@ void SymbolTable::Merge(const SymbolTable &oth)
 
     for(auto& i: oth.m_constants)
         m_constants[i.first] = i.second;
+
+    m_lastAddedVariable = oth.m_lastAddedVariable;
 }
 
 void SymbolTable::Concat(const SymbolTable &oth)
 {
     for(auto& i: oth.m_arguments)
+    {
         if(m_arguments.find(i.first) == m_arguments.end())
             m_arguments[i.first] = i.second;
+    }
 
     for(auto& i: oth.m_variables)
+    {
         if(m_variables.find(i.first) == m_variables.end())
+        {
             m_variables[i.first] = i.second;
+            m_lastAddedVariable = i.second;
+        }
+    }
 
     for(auto& i: oth.m_constants)
+    {
         if(m_constants.find(i.first) == m_constants.end())
             m_constants[i.first] = i.second;
+    }
+}
+
+ConstExpr *SymbolTable::GetConst(const std::string &name) const
+{
+    auto it = m_constants.find(name);
+    if(it != m_constants.end())
+        return it->second;
+    return nullptr;
+}
+
+ArgumentExpr *SymbolTable::GetArgument(const std::string &name) const
+{
+    auto it = m_arguments.find(name);
+    if(it != m_arguments.end())
+        return it->second;
+    return nullptr;
+}
+
+VariableExpr *SymbolTable::GetVariable(const std::string &name) const
+{
+    auto it = m_variables.find(name);
+    if(it != m_variables.end())
+        return it->second;
+    return nullptr;
+}
+
+VariableExpr *SymbolTable::GetLastVar() const
+{
+    return m_lastAddedVariable;
 }
 
 bool SymbolTable::HasName(const std::string &name) const

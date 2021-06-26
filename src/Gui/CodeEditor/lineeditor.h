@@ -14,6 +14,9 @@ public:
 
     bool eventFilter(QObject *obj, QEvent *evt) override;
 
+protected:
+    void resizeEvent(QResizeEvent*) override;
+
 signals:
     void runLine(QString line);
 

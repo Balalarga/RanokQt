@@ -21,6 +21,8 @@ Program::Program():
 
 double Program::Compute(std::map<std::string, double> args)
 {
+    if(!resultNode)
+        return 0;
     for(auto& i: args)
     {
         auto node = m_symbolTable.GetArgument(i.first);
@@ -40,6 +42,8 @@ double Program::Compute(std::map<std::string, double> args)
 
 double Program::Compute(Vector3d args)
 {
+    if(!resultNode)
+        return 0;
     if(auto item = m_symbolTable.GetArgAt(0))
         item->SetValue(args.x);
 
@@ -132,14 +136,11 @@ void Program::SetResult(Expression *expr)
     resultNode = expr;
 }
 
-bool Program::MergeProgram(const Program *program)
+Expression* Program::MergeProgram(const Program *program)
 {
-    if(resultNode && program->resultNode)
-        return false;
-    else
-        resultNode = program->resultNode;
-
     m_symbolTable.Merge(program->m_symbolTable);
-
-    return true;
+    if(program->resultNode)
+        return program->resultNode;
+    else
+        return m_symbolTable.GetLastVar();
 }

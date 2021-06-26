@@ -13,7 +13,6 @@ LineEditor::LineEditor(QWidget *parent):
     setColumnCount(2);
     horizontalHeader()->hide();
     horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-    horizontalHeader()[0].setMaximumWidth(30);
 
     QString stylesheet = R"(
 QListView
@@ -60,4 +59,10 @@ bool LineEditor::eventFilter(QObject *obj, QEvent *evt)
     {
         return QObject::eventFilter(obj, evt);
     }
+}
+
+void LineEditor::resizeEvent(QResizeEvent *)
+{
+    setColumnWidth(0, width()-70);
+    setColumnWidth(1, 50);
 }
