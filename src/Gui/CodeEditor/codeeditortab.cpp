@@ -11,7 +11,7 @@ CodeEditorTab::CodeEditorTab(QWidget *parent):
     QTextEdit(parent)
 {
     _completer = new QCompleter(this);
-    _completer->setModel(ModelFromFile("assets/language/ranok_words.txt"));
+    _completer->setModel(ModelFromFile(":/assets/language/ranok_words.txt"));
     _completer->setCaseSensitivity(Qt::CaseInsensitive);
     _completer->setCompletionMode(QCompleter::PopupCompletion);
     _completer->setCaseSensitivity(Qt::CaseInsensitive);

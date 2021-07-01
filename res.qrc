@@ -16,5 +16,6 @@
         <file>assets/styles/NeonButtons.qss</file>
         <file>assets/styles/QTDark.qss</file>
         <file>assets/styles/Ubuntu.qss</file>
+        <file>assets/language/ranok_words.txt</file>
     </qresource>
 </RCC>
