@@ -29,7 +29,6 @@ void SceneView::initializeGL()
 {
     qglClearColor(qRgb(20, 20, 20));
 
-
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
@@ -62,9 +61,10 @@ void SceneView::paintGL()
     glRotatef(m_camera.xAngle-90, 1, 0, 0);
     glRotatef(m_camera.zAngle, 0, 0, 1);
 
-    glBegin(GL_LINES);
     // grid
     qglColor(qRgba(40, 40, 40, 150));
+
+    glBegin(GL_LINES);
     for(int i = -100; i < 100; i++)
     {
         glVertex3i(i, -100, 0);

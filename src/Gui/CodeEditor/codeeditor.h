@@ -15,6 +15,9 @@ public:
     void AddFile(const QString& sourceFile);
     QString GetActiveText();
 
+protected:
+    void keyEvent(QKeyEvent* e);
+
 private slots:
     void closeTab(int index);
 

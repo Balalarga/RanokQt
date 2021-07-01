@@ -50,6 +50,11 @@ QString CodeEditor::GetActiveText()
     return "";
 }
 
+void CodeEditor::keyEvent(QKeyEvent *e)
+{
+
+}
+
 void CodeEditor::closeTab(int index)
 {
     auto tab = m_tabs[index];
