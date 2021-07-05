@@ -19,7 +19,7 @@ Program::Program():
     }
 }
 
-double Program::Compute(std::map<std::string, double> args)
+double Program::Compute(std::map<std::string, double> args) const
 {
     if(!resultNode)
         return 0;
@@ -28,7 +28,7 @@ double Program::Compute(std::map<std::string, double> args)
         auto node = m_symbolTable.GetArgument(i.first);
         if(!node)
         {
-            error = "Unknown argument "+i.first;
+            error += "Unknown argument " + i.first;
             return 0;
         }
         node->SetValue(i.second);
@@ -40,7 +40,7 @@ double Program::Compute(std::map<std::string, double> args)
     return res;
 }
 
-double Program::Compute(Vector3d args)
+double Program::Compute(Vector3d args) const
 {
     if(!resultNode)
         return 0;

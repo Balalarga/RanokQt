@@ -29,8 +29,6 @@ OpenglSquare::OpenglSquare(Vector3f pos, Vector3f size, QColor color, QObject *p
 
 void OpenglSquare::Render()
 {
-    glBegin(GL_QUADS);
-
     glColor4f(GetColor().redF(), GetColor().greenF(),
               GetColor().blueF(), GetColor().alphaF());
     glNormal3f(0, 0, -1);
@@ -38,6 +36,4 @@ void OpenglSquare::Render()
         glVertex3f(verticies[j].x,
                    verticies[j].y,
                    verticies[j].z);
-    glEnd();
-
 }

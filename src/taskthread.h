@@ -2,23 +2,65 @@
 #define TASKTHREAD_H
 
 #include <QThread>
-#include "Calculators/ICalculator.h"
+#include <QDebug>
 
-class TaskThread : public QThread
+#include "Space/VoxelData.h"
+#include "Space/VoxelImageData.h"
+#include "Space/spacecalculator.h"
+
+class ModelThread : public QThread
 {
     Q_OBJECT
 public:
-    TaskThread(ICalculator* task, QObject *parent = nullptr);
+    ModelThread(std::function<void(VoxelData)> adder, QObject *parent = nullptr):
+        QThread(parent),
+        _adder(adder)
+    {
+    }
+    void SetProgram(Program* program)
+    {
+        _program = program;
+    }
 
 
 protected:
-    void run() override;
+    void run() override
+    {
+        if(_program)
+            SpaceCalculator::GetModel(*_program, _adder);
+        else
+            qDebug()<<"[ModelThread] Program is null";
+    }
+    std::function<void(VoxelData)> _adder;
+    Program* _program = nullptr;
+};
 
 
-private:
-    ICalculator* m_task;
+class ImageThread : public QThread
+{
+    Q_OBJECT
+public:
+    ImageThread(std::function<void(VoxelImageData)> adder, QObject *parent = nullptr):
+        QThread(parent),
+        _adder(adder)
+    {
+    }
+    void SetProgram(Program* program)
+    {
+        if(_program)
+            _program = program;
+        else
+            qDebug()<<"[ImageThread] Program is null";
+    }
 
 
+protected:
+    void run() override
+    {
+        SpaceCalculator::GetMImage(*_program, _adder);
+    }
+    std::function<void(VoxelImageData)> _adder;
+    Program* _program = nullptr;
 };
 
 #endif // TASKTHREAD_H

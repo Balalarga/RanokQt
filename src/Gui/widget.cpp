@@ -4,6 +4,7 @@
 
 #include "Opengl/openglcube.h"
 #include "Opengl/openglsquare.h"
+#include "Space/spacebuilder.h"
 
 #include <QFileDialog>
 
@@ -14,11 +15,11 @@ Widget::Widget(QWidget *parent)
       m_sceneView(new SceneView(this)),
       m_codeEditor(new CodeEditor(this)),
       m_lineEditor(new LineEditor(this)),
-      m_modelCalculator(new RecursiveCalculator(4)),
       m_program(nullptr),
       m_lineProgram(nullptr),
       m_modeButton(new QPushButton("Обычный режим", this)),
-      m_addLineButton(new QPushButton("Добавить строку", this))
+      m_addLineButton(new QPushButton("Добавить строку", this)),
+      _currentZone(Zone::Zero)
 {
     QVBoxLayout* m_toolVLayout = new QVBoxLayout(this);
     m_toolVLayout->addWidget(m_toolBar);
@@ -58,12 +59,15 @@ Widget::Widget(QWidget *parent)
 
     m_toolVLayout->setMenuBar(menuBar);
 
-    m_modelCalculator->SetAddVoxelFunc([this](VoxelData data){
-        m_sceneView->AddObject(new OpenglCube(data.position, data.size, data.color));
-    });
-
-    m_execThread = new TaskThread(m_modelCalculator, this);
-
+    m_imageThread = new ImageThread([this](VoxelImageData data){
+            m_sceneView->AddObject(new OpenglCube(data.position, data.size, SpaceCalculator::GetVoxelColor()));
+        }, this);
+    m_modelThread = new ModelThread([this](VoxelData data){
+            auto obj = new OpenglCube(data.position, data.size, SpaceCalculator::GetVoxelColor());
+            if(data.zone != _currentZone)
+                obj->SetVisible(false);
+            m_sceneView->AddObject(obj);
+        }, this);
 
     StyleLoader::attach("../assets/styles/dark.qss");
 
@@ -79,12 +83,6 @@ Widget::~Widget()
 }
 
 
-void Widget::AddVoxel(VoxelData data)
-{
-    m_sceneView->AddObject(new OpenglCube(data.position, data.size, data.color));
-}
-
-
 void Widget::Compute()
 {
     QString source = m_codeEditor->GetActiveText();
@@ -92,16 +90,19 @@ void Widget::Compute()
     {
         m_parser.SetText(source.toStdString());
 
-        m_execThread->terminate();
+        m_modelThread->terminate();
         if(m_program)
             delete m_program;
 
         m_program = m_parser.GetProgram();
-        m_modelCalculator->SetProgram(m_program);
+        m_modelThread->SetProgram(m_program);
 
         m_sceneView->ClearObjects();
+        SpaceBuilder::Instance().DeleteSpace();
 
-        m_execThread->start();
+        auto args = m_program->GetSymbolTable().GetAllArgs();
+        SpaceBuilder::Instance().Create3dSpace(args[0]->limits, args[1]->limits, args[2]->limits, 6);
+        m_modelThread->start();
     }
 }
 
@@ -151,9 +152,9 @@ void Widget::ComputeLine(QString line)
 
     if(!m_lineProgram->GetSymbolTable().GetAllArgs().empty())
     {
-        m_modelCalculator->SetProgram(m_lineProgram);
+        m_modelThread->SetProgram(m_lineProgram);
         m_sceneView->ClearObjects();
-        m_execThread->start();
+        m_modelThread->start();
     }
 }
 

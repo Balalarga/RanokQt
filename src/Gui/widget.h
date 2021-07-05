@@ -12,12 +12,6 @@
 #include "CodeEditor/codeeditor.h"
 #include "CodeEditor/lineeditor.h"
 
-#include "Calculators/MImageCalculator.h"
-#include "Calculators/ModelCalculator.h"
-#include "Calculators/MImageMatrixCalculator.h"
-#include "Calculators/RecursiveCalculator.h"
-#include "Calculators/MatrixCalculator.h"
-
 #include "Language/Parser.h"
 
 #include "taskthread.h"
@@ -47,15 +41,12 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 
-public slots:
-    void AddVoxel(VoxelData data);
-
-
 private slots:
     void OpenFile();
     void Compute();
     void SwitchMode();
     void ComputeLine(QString line);
+
 
 private:
     Mode m_mode;
@@ -65,13 +56,14 @@ private:
 
     CodeEditor* m_codeEditor;
     LineEditor* m_lineEditor;
-    TaskThread* m_execThread;
-    ModelCalculator* m_modelCalculator;
+    ModelThread* m_modelThread;
+    ImageThread* m_imageThread;
 
     Parser m_parser;
     Program* m_program;
     Parser m_lineParser;
     Program* m_lineProgram;
+    Zone _currentZone;
 
     QPushButton* m_modeButton;
     QPushButton* m_addLineButton;

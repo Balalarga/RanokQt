@@ -16,8 +16,8 @@ class Program
 public:
     Program();
 
-    double Compute(std::map<std::string, double> arguments);
-    double Compute(Vector3d args);
+    double Compute(std::map<std::string, double> arguments) const;
+    double Compute(Vector3d args) const;
 
     std::string GetError();
     bool IsError();
@@ -33,7 +33,7 @@ private:
     Expression* resultNode;
     SymbolTable m_symbolTable;
 
-    std::string error = "";
+    mutable std::string error = "";
 
     void PrintNode(Expression* node, std::set<std::string>& vars, int currDepth, int maxDepth);
 };

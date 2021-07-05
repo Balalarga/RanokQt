@@ -13,6 +13,7 @@ SceneView::SceneView(QWidget *parent):
 
 SceneView::~SceneView()
 {
+    ClearObjects();
 }
 
 void SceneView::AddObject(OpenglObject *obj)
@@ -22,6 +23,8 @@ void SceneView::AddObject(OpenglObject *obj)
 
 void SceneView::ClearObjects()
 {
+    for(int i = 0; i < m_objects.Size(); i++)
+        delete m_objects.At(i);
     m_objects.Clear();
 }
 
@@ -36,6 +39,7 @@ void SceneView::initializeGL()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
@@ -74,8 +78,11 @@ void SceneView::paintGL()
     }
     glEnd();
 
+    glBegin(GL_QUADS);
     for(int i = 0; i < m_objects.Size(); i++)
-        m_objects.At(i)->Render();
+        if(m_objects.At(i)->IsVisible())
+            m_objects.At(i)->Render();
+    glEnd();
 
     glBegin(GL_LINES);
     // x

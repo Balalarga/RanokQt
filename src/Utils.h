@@ -9,6 +9,13 @@ public:
     {}
     Vector2(T x, T y):x(x), y(y)
     {}
+    template<class U>
+    operator Vector2<U>()
+    {
+        return Vector2<U>(static_cast<U>(x),
+                          static_cast<U>(y));
+    }
+
 
     T x, y;
 };
@@ -26,6 +33,14 @@ public:
     {}
     Vector3(T x, T y, T z):x(x), y(y), z(z)
     {}
+    template<class U>
+    operator Vector3<U>()
+    {
+        return Vector3<U>(static_cast<U>(x),
+                          static_cast<U>(y),
+                          static_cast<U>(z));
+    }
+
 
     T x, y, z;
 };
@@ -33,5 +48,7 @@ public:
 using Vector3i = Vector3<int>;
 using Vector3f = Vector3<float>;
 using Vector3d = Vector3<double>;
+
+
 
 #endif // UTILS_H

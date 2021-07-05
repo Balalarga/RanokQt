@@ -60,8 +60,6 @@ OpenglCube::OpenglCube(Vector3f pos, Vector3f size, QColor color, QObject *paren
 
 void OpenglCube::Render()
 {
-    glBegin(GL_QUADS);
-
     glColor4f(GetColor().redF(), GetColor().greenF(),
               GetColor().blueF(), GetColor().alphaF());
     for(int i = 0; i < 6; i++)
@@ -73,5 +71,4 @@ void OpenglCube::Render()
                     verticies[verId+j].y,
                     verticies[verId+j].z);
     }
-    glEnd();
 }
