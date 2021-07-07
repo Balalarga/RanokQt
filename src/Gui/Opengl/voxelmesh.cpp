@@ -1,4 +1,4 @@
-#include "voxelmesh.h"
+#include "VoxelMesh.h"
 
 VoxelMesh::VoxelMesh(int count, QObject *parent) :
     QObject(parent),

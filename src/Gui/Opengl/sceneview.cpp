@@ -1,4 +1,4 @@
-#include "sceneview.h"
+#include "SceneView.h"
 
 #include <GL/glu.h>
 

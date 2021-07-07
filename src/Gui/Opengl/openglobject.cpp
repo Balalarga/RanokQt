@@ -1,4 +1,4 @@
-#include "openglobject.h"
+#include "OpenglObject.h"
 
 OpenglObject::OpenglObject(QColor color, QObject *parent) :
     QObject(parent),

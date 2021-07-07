@@ -1,4 +1,4 @@
-#include "codeeditor.h"
+#include "CodeEditor.h"
 
 #include <QMessageBox>
 #include <QScrollBar>

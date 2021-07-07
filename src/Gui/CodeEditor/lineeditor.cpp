@@ -1,4 +1,4 @@
-#include "lineeditor.h"
+#include "LineEditor.h"
 
 #include <QStyle>
 #include <QKeyEvent>

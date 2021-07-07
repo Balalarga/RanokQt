@@ -1,4 +1,4 @@
-#include "openglsquare.h"
+#include "OpenglSquare.h"
 
 
 OpenglSquare::OpenglSquare(Vector2f pos, Vector2f size, QColor color, QObject *parent):

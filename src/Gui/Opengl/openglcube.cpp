@@ -1,4 +1,4 @@
-#include "openglcube.h"
+#include "OpenglCube.h"
 
 OpenglCube::OpenglCube(Vector3f pos, Vector3f size, QColor color, QObject *parent):
     OpenglObject(color, parent)

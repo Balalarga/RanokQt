@@ -4,7 +4,7 @@
 #include <QPlainTextEdit>
 #include <QCompleter>
 
-#include "highlighter.h"
+#include "Highlighter.h"
 
 class CodeEditorTab : public QTextEdit
 {

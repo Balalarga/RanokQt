@@ -4,7 +4,7 @@
 #include <QTabWidget>
 #include <QVector>
 
-#include "codeeditortab.h"
+#include "CodeEditorTab.h"
 
 class CodeEditor: public QTabWidget
 {

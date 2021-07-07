@@ -1,10 +1,10 @@
-#include "widget.h"
+#include "Widget.h"
 
-#include "styleloader.h"
+#include "StyleLoader.h"
 
-#include "Opengl/openglcube.h"
-#include "Opengl/openglsquare.h"
-#include "Space/spacebuilder.h"
+#include "Opengl/OpenglCube.h"
+#include "Opengl/OpenglSquare.h"
+#include "Space/SpaceBuilder.h"
 
 #include <QFileDialog>
 

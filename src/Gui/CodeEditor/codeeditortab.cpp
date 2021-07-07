@@ -1,4 +1,4 @@
-#include "codeeditortab.h"
+#include "CodeEditorTab.h"
 
 #include <QPainter>
 #include <QTextBlock>

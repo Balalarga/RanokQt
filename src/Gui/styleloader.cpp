@@ -1,4 +1,4 @@
-#include "styleloader.h"
+#include "StyleLoader.h"
 #include <QApplication>
 #include <QFile>
 #include <QFileDialog>

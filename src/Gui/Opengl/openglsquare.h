@@ -1,7 +1,7 @@
 #ifndef OPENGLSQUARE_H
 #define OPENGLSQUARE_H
 
-#include "openglobject.h"
+#include "OpenglObject.h"
 
 class OpenglSquare: public OpenglObject
 {

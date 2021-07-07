@@ -8,13 +8,13 @@
 #include <QSplitter>
 #include <QPushButton>
 
-#include "Opengl/sceneview.h"
-#include "CodeEditor/codeeditor.h"
-#include "CodeEditor/lineeditor.h"
+#include "Opengl/SceneView.h"
+#include "CodeEditor/CodeEditor.h"
+#include "CodeEditor/LineEditor.h"
 
 #include "Language/Parser.h"
 
-#include "taskthread.h"
+#include "TaskThread.h"
 
 
 enum class ObjectType

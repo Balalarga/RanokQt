@@ -2,7 +2,7 @@
 #define OPENGLCUBE_H
 
 #include <QObject>
-#include "openglobject.h"
+#include "OpenglObject.h"
 
 class OpenglCube : public OpenglObject
 {

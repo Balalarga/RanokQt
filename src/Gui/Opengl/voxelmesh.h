@@ -6,7 +6,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 
-#include "voxelobject.h"
+#include "VoxelObject.h"
 
 
 class VoxelMesh : public QObject

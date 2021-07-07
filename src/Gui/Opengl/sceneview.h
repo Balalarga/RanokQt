@@ -6,7 +6,7 @@
 #include <QTimer>
 
 #include "AsyncVector.h"
-#include "openglobject.h"
+#include "OpenglObject.h"
 
 #include <pthread.h>
 

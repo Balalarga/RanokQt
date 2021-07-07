@@ -6,7 +6,7 @@
 
 #include "Space/VoxelData.h"
 #include "Space/VoxelImageData.h"
-#include "Space/spacecalculator.h"
+#include "Space/SpaceCalculator.h"
 
 
 class ModelThread : public QThread
