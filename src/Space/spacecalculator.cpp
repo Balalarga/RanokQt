@@ -72,7 +72,7 @@ QColor SpaceCalculator::_voxelColor = {255, 255, 255, 20};
 
 bool SpaceCalculator::GetModel(const Program &program, std::function<void (VoxelData)> adder)
 {
-    auto space = SpaceBuilder::Instance().GetSpace();
+    auto space = SpaceBuilder::Instance().Get3dSpace();
     if(!space)
         return false;
     Vector3f halfSize(space->pointSize.x/2.f,
@@ -102,7 +102,7 @@ bool SpaceCalculator::GetModel(const Program &program, std::function<void (Voxel
 
 bool SpaceCalculator::GetMImage(const Program &program, std::function<void (VoxelImageData)> adder)
 {
-    auto space = SpaceBuilder::Instance().GetSpace();
+    auto space = SpaceBuilder::Instance().Get3dSpace();
     if(!space)
         return false;
     Vector3f size = space->pointSize;

@@ -8,6 +8,7 @@
 #include "Space/VoxelImageData.h"
 #include "Space/spacecalculator.h"
 
+
 class ModelThread : public QThread
 {
     Q_OBJECT

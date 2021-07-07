@@ -98,10 +98,10 @@ void Widget::Compute()
         m_modelThread->SetProgram(m_program);
 
         m_sceneView->ClearObjects();
-        SpaceBuilder::Instance().DeleteSpace();
+        SpaceBuilder::Instance().Delete3dSpace();
 
         auto args = m_program->GetSymbolTable().GetAllArgs();
-        SpaceBuilder::Instance().Create3dSpace(args[0]->limits, args[1]->limits, args[2]->limits, 6);
+        SpaceBuilder::Instance().CreateSpace(args[0]->limits, args[1]->limits, args[2]->limits, 6);
         m_modelThread->start();
     }
 }
