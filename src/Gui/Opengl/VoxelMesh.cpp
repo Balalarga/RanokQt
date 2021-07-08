@@ -21,8 +21,8 @@ void VoxelMesh::Create(QOpenGLShaderProgram *shaderProgramm)
     _vbo.create();
     _vbo.bind();
     _vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-    int vertexMemSize = _objects.size()*VoxelObject::sizeOfVertices*sizeof(float);
-    qDebug() << "BoxObject - VertexBuffer size =" << vertexMemSize/1024.0 << "kByte";
+//    int vertexMemSize = _objects.size()*VoxelObject::sizeOfVertices*sizeof(float);
+//    qDebug() << "BoxObject - VertexBuffer size =" << vertexMemSize/1024.0 << "kByte";
 //    _vbo.allocate(m_vertexBufferData.data(), vertexMemSize);
 
     _ebo.create();

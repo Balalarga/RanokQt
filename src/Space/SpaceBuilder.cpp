@@ -1,4 +1,4 @@
-#include "spacebuilder.h"
+#include "SpaceBuilder.h"
 #include <cmath>
 
 using namespace std;

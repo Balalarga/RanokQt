@@ -48,10 +48,7 @@ public:
     }
     void SetProgram(Program* program)
     {
-        if(_program)
-            _program = program;
-        else
-            qDebug()<<"[ImageThread] Program is null";
+        _program = program;
     }
 
 

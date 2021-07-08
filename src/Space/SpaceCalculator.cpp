@@ -1,5 +1,5 @@
-#include "spacecalculator.h"
-#include "spacebuilder.h"
+#include "SpaceCalculator.h"
+#include "SpaceBuilder.h"
 
 
 using namespace std;

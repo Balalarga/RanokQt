@@ -15,6 +15,7 @@
 #include "Language/Parser.h"
 
 #include "TaskThread.h"
+#include "LinearGradientModel.h"
 
 
 enum class ObjectType
@@ -63,7 +64,10 @@ private:
     Program* m_program;
     Parser m_lineParser;
     Program* m_lineProgram;
+    LinearGradientModel* _linearGradModel;
+
     Zone _currentZone;
+    MImageType _currentType;
 
     QPushButton* m_modeButton;
     QPushButton* m_addLineButton;

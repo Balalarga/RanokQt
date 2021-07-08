@@ -7,6 +7,7 @@
 #include "Space/SpaceBuilder.h"
 
 #include <QFileDialog>
+#include <QLinearGradient>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
@@ -19,14 +20,19 @@ Widget::Widget(QWidget *parent)
       m_lineProgram(nullptr),
       m_modeButton(new QPushButton("Обычный режим", this)),
       m_addLineButton(new QPushButton("Добавить строку", this)),
-      _currentZone(Zone::Zero)
+      _currentZone(Zone::Zero),
+      _currentType(MImageType::Cx)
 {
+    QVector<QColor> gradColors;
+    gradColors.push_back(QColor(255, 0, 0, 5));
+    gradColors.push_back(QColor(100, 0, 123, 5));
+    _linearGradModel = new LinearGradientModel(gradColors, this);
+
     QVBoxLayout* m_toolVLayout = new QVBoxLayout(this);
     m_toolVLayout->addWidget(m_toolBar);
 
     m_toolBar->addAction(QPixmap("assets/images/playIcon.svg"),
                          "Run", this, &Widget::Compute);
-
 
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
     QWidget* wrapWidget = new QWidget(this);
@@ -60,10 +66,15 @@ Widget::Widget(QWidget *parent)
     m_toolVLayout->setMenuBar(menuBar);
 
     m_imageThread = new ImageThread([this](VoxelImageData data){
-            m_sceneView->AddObject(new OpenglCube(data.position, data.size, SpaceCalculator::GetVoxelColor()));
+            double value = data.images[_currentType];
+            value = (1. + value)/2.;
+            unsigned uValue = UINT_MAX*value;
+            m_sceneView->AddObject(new OpenglCube(data.position, data.size,
+                                                  _linearGradModel->GetColor(uValue)));
         }, this);
     m_modelThread = new ModelThread([this](VoxelData data){
-            auto obj = new OpenglCube(data.position, data.size, SpaceCalculator::GetVoxelColor());
+            auto obj = new OpenglCube(data.position, data.size,
+                                      SpaceCalculator::GetVoxelColor());
             if(data.zone != _currentZone)
                 obj->SetVisible(false);
             m_sceneView->AddObject(obj);
@@ -79,7 +90,12 @@ Widget::Widget(QWidget *parent)
 
 Widget::~Widget()
 {
-
+    if(m_modelThread &&
+            m_modelThread->isRunning())
+        m_modelThread->terminate();
+    if(m_imageThread &&
+            m_imageThread->isRunning())
+        m_imageThread->terminate();
 }
 
 
@@ -90,19 +106,20 @@ void Widget::Compute()
     {
         m_parser.SetText(source.toStdString());
 
-        m_modelThread->terminate();
+        m_imageThread->terminate();
         if(m_program)
             delete m_program;
 
         m_program = m_parser.GetProgram();
-        m_modelThread->SetProgram(m_program);
+        m_imageThread->SetProgram(m_program);
 
         m_sceneView->ClearObjects();
         SpaceBuilder::Instance().Delete3dSpace();
 
         auto args = m_program->GetSymbolTable().GetAllArgs();
-        SpaceBuilder::Instance().CreateSpace(args[0]->limits, args[1]->limits, args[2]->limits, 6);
-        m_modelThread->start();
+        SpaceBuilder::Instance().CreateSpace(args[0]->limits,
+                args[1]->limits, args[2]->limits, 5);
+        m_imageThread->start();
     }
 }
 

@@ -6,7 +6,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 
-#include "VoxelObject.h"
+//#include "VoxelObject.h"
 
 
 class VoxelMesh : public QObject
@@ -27,7 +27,7 @@ private:
     QOpenGLBuffer _vbo;
     QOpenGLBuffer _ebo;
     QOpenGLVertexArrayObject _vao;
-    QVector<VoxelObject> _objects;
+//    QVector<VoxelObject> _objects;
 };
 
 #endif // BOXMESH_H
