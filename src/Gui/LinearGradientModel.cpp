@@ -28,16 +28,14 @@ QColor LinearGradientModel::interpolate(QColor c1, QColor c2,
     if( normalized_value <= 0.0 ){ return c1; }
     if( normalized_value >= 1.0 ){ return c2; }
 
-    uint8_t red = (uint8_t)((1.0-normalized_value)*c1.red() +
-                            normalized_value*c2.red());
-    uint8_t green = (uint8_t)((1.0-normalized_value)*c1.green() +
-                              normalized_value*c2.green());
-    uint8_t blue = (uint8_t)((1.0-normalized_value)*c1.blue() +
-                             normalized_value*c2.blue());
-
-
-    uint8_t alpha = (uint8_t)((1.0-normalized_value)*c1.alpha() +
-                             normalized_value*c2.alpha());
-
-    return QColor{red, green, blue, alpha};
+    QColor result;
+    result.setRedF((1.0-normalized_value)*c1.redF() +
+                            normalized_value*c2.redF());
+    result.setGreenF((1.0-normalized_value)*c1.greenF() +
+                              normalized_value*c2.greenF());
+    result.setBlueF((1.0-normalized_value)*c1.blueF() +
+                             normalized_value*c2.blueF());
+    result.setAlphaF((1.0-normalized_value)*c1.alphaF() +
+                             normalized_value*c2.alphaF());
+    return result;
 }

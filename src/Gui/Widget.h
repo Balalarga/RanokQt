@@ -8,6 +8,8 @@
 #include <QSplitter>
 #include <QPushButton>
 
+#include "ToggleButton.h"
+
 #include "Opengl/SceneView.h"
 #include "CodeEditor/CodeEditor.h"
 #include "CodeEditor/LineEditor.h"
@@ -69,7 +71,10 @@ private:
     Zone _currentZone;
     MImageType _currentType;
 
-    QPushButton* m_modeButton;
+    QLabel* _mode1Label;
+    QLabel* _mode2Label;
+
+    ToggleButton* m_modeButton;
     QPushButton* m_addLineButton;
 };
 #endif // WIDGET_H

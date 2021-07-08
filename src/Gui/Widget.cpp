@@ -18,7 +18,7 @@ Widget::Widget(QWidget *parent)
       m_lineEditor(new LineEditor(this)),
       m_program(nullptr),
       m_lineProgram(nullptr),
-      m_modeButton(new QPushButton("Обычный режим", this)),
+      m_modeButton(new ToggleButton(8, 10, this)),
       m_addLineButton(new QPushButton("Добавить строку", this)),
       _currentZone(Zone::Zero),
       _currentType(MImageType::Cx)
@@ -39,8 +39,22 @@ Widget::Widget(QWidget *parent)
     QVBoxLayout* modeLayout = new QVBoxLayout(wrapWidget);
     modeLayout->addWidget(m_codeEditor);
     modeLayout->addWidget(m_lineEditor);
-    modeLayout->addWidget(m_modeButton);
     modeLayout->addWidget(m_addLineButton);
+
+
+    QHBoxLayout* modeBtnLayout = new QHBoxLayout;
+    modeBtnLayout->setContentsMargins(0, 10, 0, 0);
+    _mode1Label = new QLabel("Обычный режим");
+    _mode1Label->setAlignment(Qt::AlignRight);
+    _mode1Label->setStyleSheet("QLabel { color : #ffffff; }");
+    _mode2Label = new QLabel("Построчный режим");
+    _mode2Label->setStyleSheet("QLabel { color : #888888; }");
+    modeBtnLayout->addWidget(_mode1Label);
+    modeBtnLayout->addWidget(m_modeButton);
+    modeBtnLayout->addWidget(_mode2Label);
+    modeLayout->addLayout(modeBtnLayout);
+
+
     m_addLineButton->setVisible(false);
     wrapWidget->setLayout(modeLayout);
     m_lineEditor->setVisible(false);
@@ -53,6 +67,8 @@ Widget::Widget(QWidget *parent)
 
     m_sceneView->AddObject(new OpenglCube({0, 0, 0}, {1, 1, 1},
                                           QColor(255, 255, 255, 100)));
+
+    m_modeButton->setText("Выбор режима");
 
     QMenuBar* menuBar = new QMenuBar(this);
     QMenu *fileMenu = new QMenu("Файл");
@@ -132,7 +148,9 @@ void Widget::SwitchMode()
         m_lineEditor->setVisible(true);
         m_addLineButton->setVisible(true);
         m_mode = Mode::Line;
-        m_modeButton->setText("Построчный режим");
+//        m_modeButton->setText("Построчный режим");
+        _mode1Label->setStyleSheet("QLabel { color : #888888; }");
+        _mode2Label->setStyleSheet("QLabel { color : #ffffff; }");
     }
     else
     {
@@ -140,7 +158,9 @@ void Widget::SwitchMode()
         m_lineEditor->setVisible(false);
         m_addLineButton->setVisible(false);
         m_mode = Mode::Common;
-        m_modeButton->setText("Обычный режим");
+//        m_modeButton->setText("Обычный режим");
+        _mode1Label->setStyleSheet("QLabel { color : #ffffff; }");
+        _mode2Label->setStyleSheet("QLabel { color : #888888; }");
     }
 }
 
