@@ -7,6 +7,7 @@
 #include <QToolBar>
 #include <QSplitter>
 #include <QPushButton>
+#include <QComboBox>
 
 #include "ToggleButton.h"
 
@@ -47,7 +48,9 @@ protected:
 private slots:
     void OpenFile();
     void Compute();
-    void SwitchMode();
+    void SwitchEditorMode();
+    void SwitchModelMode();
+    void ImageChanged(QString name);
     void ComputeLine(QString line);
 
 
@@ -71,10 +74,18 @@ private:
     Zone _currentZone;
     MImageType _currentType;
 
-    QLabel* _mode1Label;
-    QLabel* _mode2Label;
+    QLabel* _editorMode1Label;
+    QLabel* _editorMode2Label;
+    ToggleButton* m_editorModeButton;
 
-    ToggleButton* m_modeButton;
+    QLabel* _modelLabel;
+    QLabel* _imageLabel;
+    ToggleButton* m_imageModeButton;
+
+    QComboBox* _imageType;
+    QStringListModel* _imageTypeModel;
+
+
     QPushButton* m_addLineButton;
 };
 #endif // WIDGET_H
