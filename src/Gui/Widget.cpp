@@ -5,6 +5,7 @@
 #include "Opengl/OpenglCube.h"
 #include "Opengl/OpenglSquare.h"
 #include "Space/SpaceBuilder.h"
+#include "OpenclGenerator.h"
 
 #include <QFileDialog>
 #include <QLinearGradient>
@@ -117,26 +118,99 @@ Widget::~Widget()
 
 void Widget::Compute()
 {
-    QString source = m_codeEditor->GetActiveText();
-    if(!source.isEmpty())
+    QString source = R"(
+
+char checkZone(double8 values)
+{
+    bool plus = false;
+    bool zero = false;
+    bool minus = false;
+
+    for(int i = 0; i < 8; i++)
     {
-        m_parser.SetText(source.toStdString());
-
-        m_imageThread->terminate();
-        if(m_program)
-            delete m_program;
-
-        m_program = m_parser.GetProgram();
-        m_imageThread->SetProgram(m_program);
-
-        m_sceneView->ClearObjects();
-        SpaceBuilder::Instance().Delete3dSpace();
-
-        auto args = m_program->GetSymbolTable().GetAllArgs();
-        SpaceBuilder::Instance().CreateSpace(args[0]->limits,
-                args[1]->limits, args[2]->limits, 5);
-        m_imageThread->start();
+        if(values[i] == 0)
+            zero = true;
+        else if(values[i] < 0)
+            minus = true;
+        else if(values[i] > 0)
+            plus = true;
     }
+
+    if(zero || (plus && minus))
+        return 0;
+    if(plus)
+        return 1;
+    return -1;
+}
+
+double func(double3 p)
+{
+    return 1 - p.x*p.x + p.y*p.y + p.z*p.z;
+}
+
+
+__kernel void model_calculate(__global const double *points,
+                              double pointSize,
+                              __global char *result)
+{
+    int id = get_global_id(0);
+    double x = points[id*3];
+    double y = points[id*3+1];
+    double z = points[id*3+2];
+
+    double3 p0 = {x+pointSize, y+pointSize, z+pointSize};
+    double3 p1 = {x+pointSize, y+pointSize, z-pointSize};
+    double3 p2 = {x+pointSize, y-pointSize, z+pointSize};
+    double3 p3 = {x+pointSize, y-pointSize, z-pointSize};
+    double3 p4 = {x-pointSize, y+pointSize, z+pointSize};
+    double3 p5 = {x-pointSize, y+pointSize, z-pointSize};
+    double3 p6 = {x-pointSize, y-pointSize, z+pointSize};
+    double3 p7 = {x-pointSize, y-pointSize, z-pointSize};
+
+    double8 values;
+    values[0] = func(p0);
+    values[1] = func(p1);
+    values[2] = func(p2);
+    values[3] = func(p3);
+    values[4] = func(p4);
+    values[5] = func(p5);
+    values[6] = func(p6);
+    values[7] = func(p7);
+
+    result[id] = checkZone(values);
+}
+)";
+
+    SpaceBuilder::Instance().CreateSpace({-1, 1}, {-1, 1}, {-1, 1}, 5);
+    OpenclGenerator::Instance().Compute(source.toStdString(), [this](VoxelData data){
+//        auto obj = new OpenglCube(data.position, data.size,
+//                                  SpaceCalculator::GetVoxelColor());
+        if(data.zone == _currentZone)
+            m_sceneView->AddObject(new OpenglCube(data.position, data.size,
+                                                  SpaceCalculator::GetVoxelColor()));
+//            obj->SetVisible(false);
+    });
+
+//    QString source = m_codeEditor->GetActiveText();
+//    if(!source.isEmpty())
+//    {
+//        m_parser.SetText(source.toStdString());
+
+//        m_imageThread->terminate();
+//        if(m_program)
+//            delete m_program;
+
+//        m_program = m_parser.GetProgram();
+//        m_imageThread->SetProgram(m_program);
+
+//        m_sceneView->ClearObjects();
+//        SpaceBuilder::Instance().Delete3dSpace();
+
+//        auto args = m_program->GetSymbolTable().GetAllArgs();
+//        SpaceBuilder::Instance().CreateSpace(args[0]->limits,
+//                args[1]->limits, args[2]->limits, 5);
+//        m_imageThread->start();
+//    }
 }
 
 

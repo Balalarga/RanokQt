@@ -41,6 +41,15 @@ public:
                           static_cast<U>(z));
     }
 
+    Vector3<T> operator*(double m)
+    {
+        return Vector3<T>(x*m, y*m, z*m);
+    }
+    Vector3<T> operator/(double m)
+    {
+        return Vector3<T>(x/m, y/m, z/m);
+    }
+
 
     T x, y, z;
 };

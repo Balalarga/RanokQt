@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     Widget w;
-    w.resize(1280, 800);
+    w.resize(1280, 720);
 
     qApp->installEventFilter(&w);
 

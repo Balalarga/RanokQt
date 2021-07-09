@@ -52,9 +52,9 @@ Zone CheckZone(const std::vector<double> &values)
     {
         if(values[i] == 0)
             zero = true;
-        if(values[i] < 0)
+        else if(values[i] < 0)
             minus = true;
-        if(values[i] > 0)
+        else if(values[i] > 0)
             plus = true;
     }
 
