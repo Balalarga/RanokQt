@@ -23,6 +23,7 @@ Widget::Widget(QWidget *parent)
       m_imageModeButton(new ToggleButton(8, 10, this)),
       m_addLineButton(new QPushButton("Добавить строку", this)),
       _imageType(new QComboBox(this)),
+      _spaceDepth(new QSpinBox(this)),
       _currentZone(Zone::Zero),
       _currentType(MImageType::Cx)
 {
@@ -43,10 +44,15 @@ Widget::Widget(QWidget *parent)
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
     QWidget* wrapWidget = new QWidget(this);
     QVBoxLayout* modeLayout = new QVBoxLayout(wrapWidget);
+    QHBoxLayout* spinLayout = new QHBoxLayout();
+    QLabel* spinLabel = new QLabel("Глубина рекурсии");
+    spinLayout->addWidget(spinLabel);
+    spinLayout->addWidget(_spaceDepth);
+
+    modeLayout->addLayout(spinLayout);
     modeLayout->addWidget(m_codeEditor);
     modeLayout->addWidget(m_lineEditor);
     modeLayout->addWidget(m_addLineButton);
-
 
     QHBoxLayout* editorModeBtnLayout = new QHBoxLayout;
     editorModeBtnLayout->setContentsMargins(0, 10, 0, 0);
@@ -80,6 +86,7 @@ Widget::Widget(QWidget *parent)
     modeLayout->addWidget(_imageType);
     _imageType->setVisible(false);
 
+    _spaceDepth->setRange(1, 10);
 
     m_addLineButton->setVisible(false);
     wrapWidget->setLayout(modeLayout);
@@ -221,7 +228,7 @@ void Widget::Compute()
         SpaceBuilder::Instance().Delete3dSpace();
         auto args = m_program->GetSymbolTable().GetAllArgs();
         SpaceBuilder::Instance().CreateSpace(args[0]->limits,
-                args[1]->limits, args[2]->limits, 5);
+                args[1]->limits, args[2]->limits, _spaceDepth->value());
         if(m_imageModeButton->isChecked())
         {
             m_imageThread->SetProgram(m_program);

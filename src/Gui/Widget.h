@@ -8,6 +8,7 @@
 #include <QSplitter>
 #include <QPushButton>
 #include <QComboBox>
+#include <QSpinBox>
 
 #include "ToggleButton.h"
 
@@ -84,6 +85,7 @@ private:
 
     QComboBox* _imageType;
     QStringListModel* _imageTypeModel;
+    QSpinBox* _spaceDepth;
 
 
     QPushButton* m_addLineButton;
