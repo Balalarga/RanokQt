@@ -179,7 +179,6 @@ double func(double3 p)
 }
 kernel void calcualteModel(global int *resultZones,
                            global const double3 *points,
-                           global double3 *decoy,
                            const double3 pointSize)
 {
     int id = get_global_id(0);
@@ -202,7 +201,6 @@ kernel void calcualteModel(global int *resultZones,
     values[6] = func(p6);
     values[7] = func(p7);
 
-    decoy[id] = points[id];
     resultZones[id] = checkZone(values);
 }
 )";

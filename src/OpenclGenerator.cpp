@@ -88,11 +88,9 @@ void OpenclGenerator::Compute(const string& kernelName, const string& source,
     // Create gpu buffers
     cl_mem in_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
                 space->points.size() * sizeof(cl_double3), NULL, &ret);
-    cl_mem decoy_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
-                space->points.size() * sizeof(cl_double3), NULL, &ret);
     cl_mem out_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
                 space->points.size() * sizeof(cl_int), NULL, &ret);
-    if (!in_mem_obj || !out_mem_obj || !decoy_mem_obj)
+    if (!in_mem_obj || !out_mem_obj)
     {
         delete[] inputPoints;
         qDebug()<<"Error: Failed to allocate device memory!";
@@ -110,8 +108,7 @@ void OpenclGenerator::Compute(const string& kernelName, const string& source,
     }
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&out_mem_obj);
     ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&in_mem_obj);
-    ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&decoy_mem_obj);
-    ret = clSetKernelArg(kernel, 3, sizeof(cl_double3), &inputPointSize);
+    ret = clSetKernelArg(kernel, 2, sizeof(cl_double3), &inputPointSize);
     if (ret != CL_SUCCESS)
     {
         delete[] inputPoints;
@@ -147,12 +144,9 @@ void OpenclGenerator::Compute(const string& kernelName, const string& source,
     }
     clFinish(command_queue);
 
-    cl_double3* decoyRes = new cl_double3[space->points.size()];
     int* result = new int[space->points.size()];
     ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0,
                 space->points.size() * sizeof(int), result, 0, NULL, NULL);
-    ret = clEnqueueReadBuffer(command_queue, decoy_mem_obj, CL_TRUE, 0,
-                space->points.size() * sizeof(cl_double3), decoyRes, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
         delete[] inputPoints;
@@ -163,22 +157,17 @@ void OpenclGenerator::Compute(const string& kernelName, const string& source,
     Zone zone;
     for(int i = 0; i < space->points.size(); i++)
     {
-        Vector3f decoyPos = {static_cast<float>(decoyRes[i].x),
-                             static_cast<float>(decoyRes[i].y),
-                             static_cast<float>(decoyRes[i].z)};
         if(result[i] == 0)
             zone = Zone::Zero;
         else if(result[i] == 1)
             zone = Zone::Positive;
         else
             zone = Zone::Negative;
-        adder(VoxelData(decoyPos, space->pointSize/2.,
+        adder(VoxelData(space->points[i], space->pointSize/2.,
                         zone, {255, 255, 255, 20}));
     }
     ret = clReleaseMemObject(in_mem_obj);
     ret = clReleaseMemObject(out_mem_obj);
-    ret = clReleaseMemObject(decoy_mem_obj);
-    delete[] decoyRes;
     delete[] inputPoints;
     delete[] result;
     qDebug()<<"Complete\n";
