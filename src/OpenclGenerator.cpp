@@ -1,122 +1,188 @@
 #include "OpenclGenerator.h"
-
+#include <QDebug>
 
 using namespace std;
 
-
 OpenclGenerator::~OpenclGenerator()
 {
-    ret = clFlush(command_queue);                   // отчищаем очередь команд
-    ret = clFinish(command_queue);                  // завершаем выполнение всех команд в очереди
-    ret = clReleaseCommandQueue(command_queue);     // удаляем очередь команд
-    ret = clReleaseContext(context);                // удаляем контекст OpenCL
+    ret = clFlush(command_queue);
+    ret = clFinish(command_queue);
+    ret = clReleaseProgram(program);
+    ret = clReleaseKernel(kernel);
+    ret = clReleaseCommandQueue(command_queue);
+    ret = clReleaseContext(context);
 }
 
 OpenclGenerator::OpenclGenerator()
 {
     ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
     if(ret != CL_SUCCESS)
-        cout<<endl<<ret<<endl<<endl;
-    cout<<"platform_id: "<<platform_id<<endl;
-    cout<<"ret_num_platforms: "<<ret_num_platforms<<endl;
+        qDebug()<<Qt::endl<<ret<<Qt::endl;
+    qDebug()<<"platform_id: "<<platform_id;
     ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1,
                 &device_id, &ret_num_devices);
     if(ret != CL_SUCCESS)
-        cout<<endl<<ret<<endl<<endl;
-    cout<<"device_id: "<<device_id<<endl;
-    cout<<"ret_num_devices: "<<ret_num_devices<<endl;
+        qDebug()<<Qt::endl<<ret;
+    qDebug()<<"device_id: "<<device_id;
     context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
-    cout<<"context: "<<context<<endl;
+    qDebug()<<"context: "<<context;
     command_queue = clCreateCommandQueueWithProperties(context, device_id, 0, &ret);
-
-    char *driver_version;
-    clGetDeviceInfo(0, CL_DRIVER_VERSION, sizeof(char*), &driver_version, NULL);
-    std::cout <<  driver_version << std::endl;
 }
 
 
-void OpenclGenerator::Compute(const string& source, std::function<void(VoxelData)> adder)
+void OpenclGenerator::Compute(const string& kernelName, const string& source,
+                              std::function<void(VoxelData)> adder)
 {
     auto space = SpaceBuilder::Instance().Get3dSpace();
 
     const char* src_str = source.c_str();
-    const size_t src_size = source.size();
 
     if(source != prevSource)
     {
         if(!prevSource.empty())
         {
-            ret = clReleaseKernel(kernel);   // удаляем кернель
-            ret = clReleaseProgram(program); // удаляем программу OpenCL
+            ret = clReleaseProgram(program);
+            ret = clReleaseKernel(kernel);
         }
 
         program = clCreateProgramWithSource(context, 1,
-                    (const char **)&src_str, (const size_t *)&src_size, &ret); // создаём программу из исходного кода
-        ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);        // собираем программу (онлайн компиляция)
-        kernel = clCreateKernel(program, "model_compute", &ret);               // создаём кернель
+                    (const char **)&src_str, NULL, &ret);
+        if (!program)
+        {
+            qDebug()<<"Error: Failed to create compute program!";
+            return;
+        }
+        ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+        if (ret != CL_SUCCESS)
+        {
+            size_t len;
+            char buffer[2048];
 
+            qDebug()<<"Error: Failed to build program executable!";
+            clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG,
+                                  sizeof(buffer), buffer, &len);
+            qDebug()<<buffer;
+            return;
+        }
+        kernel = clCreateKernel(program, kernelName.c_str(), &ret);
+        if (!kernel || ret != CL_SUCCESS)
+        {
+            qDebug()<<"Error: Failed to create compute kernel!";
+            return;
+        }
         prevSource = source;
     }
 
-    const int inDataSize = space->points.size()*3;// data has vec3d type
-    const int outDataSize = space->points.size();
-
-    cl_mem in_mem_obj; // опять, обратите внимание на тип данных
-    cl_mem out_mem_obj; // cl_mem это тип буфера памяти OpenCL
-
-    in_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
-                inDataSize * sizeof(cl_double), NULL, &ret);
-    out_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
-                outDataSize * sizeof(cl_char), NULL, &ret);
-
-    double* inputArgData = new double[inDataSize];
-    double inputPointData = space->pointSize.z/2.;
-
+    // Prepeat cpu data
+    cl_double3* inputPoints = new cl_double3[space->points.size()];
+    cl_double3 inputPointSize = {space->pointSize.x/2.,
+                                 space->pointSize.y/2.,
+                                 space->pointSize.z/2.};
     for(int i = 0; i < space->points.size(); i++)
     {
-        inputArgData[i*2] = space->points[i].x;
-        inputArgData[i*2+1] = space->points[i].y;
-        inputArgData[i*2+2] = space->points[i].z;
+        inputPoints[i] = {space->points[i].x,
+                          space->points[i].y,
+                          space->points[i].z};
     }
 
+    // Create gpu buffers
+    cl_mem in_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+                space->points.size() * sizeof(cl_double3), NULL, &ret);
+    cl_mem decoy_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+                space->points.size() * sizeof(cl_double3), NULL, &ret);
+    cl_mem out_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+                space->points.size() * sizeof(cl_int), NULL, &ret);
+    if (!in_mem_obj || !out_mem_obj || !decoy_mem_obj)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to allocate device memory!";
+        return;
+    }
+
+    // Fill gpu buffer from cpu memory
     ret = clEnqueueWriteBuffer(command_queue, in_mem_obj, CL_TRUE, 0,
-                inDataSize * sizeof(double), inputArgData, 0, NULL, NULL);
+                space->points.size() * sizeof(cl_double3), inputPoints, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to write to source array!";
+        return;
+    }
+    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&out_mem_obj);
+    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&in_mem_obj);
+    ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&decoy_mem_obj);
+    ret = clSetKernelArg(kernel, 3, sizeof(cl_double3), &inputPointSize);
+    if (ret != CL_SUCCESS)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
+        return;
+    }
+    // Get the maximum work group size for executing the kernel on the device
+    //
+    size_t global;                      // global domain size for our calculation
+    size_t local;                       // local domain size for our calculation
+    ret = clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE,
+                                   sizeof(local), &local, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to retrieve kernel work group info! " << ret;
+        return;
+    }
+    qDebug() << "Local working groups = "<<local;
 
-    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&in_mem_obj);  // объект А
-    ret = clSetKernelArg(kernel, 1, sizeof(double), &inputPointData);
-    ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&out_mem_obj);  // объект C
+    // Execute the kernel over the entire range of our 1d input data set
+    // using the maximum number of work group items for this device
+    //
+    global = space->points.size();
 
-    size_t NDRange;   // здесь мы указываем размер вычислительной сетки
-    size_t work_size; // размер рабочей группы (work-group)
-    NDRange = outDataSize;
-    work_size = 32;        // NDRange должен быть кратен размеру work-group
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
+                &global, &local, 0, NULL, NULL);
+    if (ret)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to execute kernel!\n";
+        return;
+    }
+    clFinish(command_queue);
 
-    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,     // исполняем кернель
-                &NDRange, &work_size, 0, NULL, NULL);
-
-    char *result;
-    result = new char[outDataSize]; // выделяем память для массива с ответами
-    ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0, // записываем ответы
-                outDataSize * sizeof(char), result, 0, NULL, NULL);
+    cl_double3* decoyRes = new cl_double3[space->points.size()];
+    int* result = new int[space->points.size()];
+    ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0,
+                space->points.size() * sizeof(int), result, 0, NULL, NULL);
+    ret = clEnqueueReadBuffer(command_queue, decoy_mem_obj, CL_TRUE, 0,
+                space->points.size() * sizeof(cl_double3), decoyRes, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to read output array! "<<ret;
+        return;
+    }
 
     Zone zone;
-    for(int i = 0; i < outDataSize; i++)
+    for(int i = 0; i < space->points.size(); i++)
     {
-        if(result[i] == -1)
-            adder(VoxelData(space->points[i], space->pointSize/2., Zone::Negative, {255, 255, 255, 20}));
-        else if(result[i] == 0)
-            adder(VoxelData(space->points[i], space->pointSize/2., Zone::Zero, {255, 255, 255, 20}));
+        Vector3f decoyPos = {static_cast<float>(decoyRes[i].x),
+                             static_cast<float>(decoyRes[i].y),
+                             static_cast<float>(decoyRes[i].z)};
+        if(result[i] == 0)
+            zone = Zone::Zero;
+        else if(result[i] == 1)
+            zone = Zone::Positive;
         else
-            adder(VoxelData(space->points[i], space->pointSize/2., Zone::Positive, {255, 255, 255, 20}));
+            zone = Zone::Negative;
+        adder(VoxelData(decoyPos, space->pointSize/2.,
+                        zone, {255, 255, 255, 20}));
     }
-    ret = clFlush(command_queue);  // отчищаем очередь команд
-    ret = clFinish(command_queue); // завершаем выполнение всех команд в очереди
-    ret = clReleaseMemObject(in_mem_obj); // отчищаем OpenCL буфер А
-    ret = clReleaseMemObject(out_mem_obj);  // отчищаем OpenCL буфер C
+    ret = clReleaseMemObject(in_mem_obj);
+    ret = clReleaseMemObject(out_mem_obj);
+    ret = clReleaseMemObject(decoy_mem_obj);
+    delete[] decoyRes;
+    delete[] inputPoints;
     delete[] result;
-    delete[] inputArgData;
+    qDebug()<<"Complete\n";
 }
-
 //void OpenclGenerator::Compute(const string& source, const vector<Vector2d> &data)
 //{
 

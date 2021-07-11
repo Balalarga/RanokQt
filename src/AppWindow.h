@@ -1,5 +1,5 @@
-#ifndef WIDGET_H
-#define WIDGET_H
+#ifndef APPWINDOW_H
+#define APPWINDOW_H
 
 #include <QWidget>
 #include <QVBoxLayout>
@@ -10,16 +10,16 @@
 #include <QComboBox>
 #include <QSpinBox>
 
-#include "ToggleButton.h"
+#include "Gui/ToggleButton.h"
 
-#include "Opengl/SceneView.h"
-#include "CodeEditor/CodeEditor.h"
-#include "CodeEditor/LineEditor.h"
+#include "Gui/Opengl/SceneView.h"
+#include "Gui/CodeEditor/CodeEditor.h"
+#include "Gui/CodeEditor/LineEditor.h"
 
 #include "Language/Parser.h"
 
 #include "TaskThread.h"
-#include "LinearGradientModel.h"
+#include "Gui/LinearGradientModel.h"
 
 
 enum class ObjectType
@@ -33,13 +33,13 @@ enum class Mode
 };
 
 
-class Widget : public QWidget
+class AppWindow : public QWidget
 {
     Q_OBJECT
 
 public:
-    Widget(QWidget *parent = nullptr);
-    ~Widget();
+    AppWindow(QWidget *parent = nullptr);
+    ~AppWindow();
 
 
 protected:

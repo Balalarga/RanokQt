@@ -1,16 +1,16 @@
-#include "Widget.h"
+#include "AppWindow.h"
 
-#include "StyleLoader.h"
+#include "Gui/StyleLoader.h"
 
-#include "Opengl/OpenglCube.h"
-#include "Opengl/OpenglSquare.h"
+#include "Gui/Opengl/OpenglCube.h"
+#include "Gui/Opengl/OpenglSquare.h"
 #include "Space/SpaceBuilder.h"
 #include "OpenclGenerator.h"
 
 #include <QFileDialog>
 #include <QStringListModel>
 
-Widget::Widget(QWidget *parent)
+AppWindow::AppWindow(QWidget *parent)
     : QWidget(parent),
       m_mode(Mode::Common),
       m_toolBar(new QToolBar(this)),
@@ -39,7 +39,7 @@ Widget::Widget(QWidget *parent)
     m_toolVLayout->addWidget(m_toolBar);
 
     m_toolBar->addAction(QPixmap("assets/images/playIcon.svg"),
-                         "Run", this, &Widget::Compute);
+                         "Run", this, &AppWindow::Compute);
 
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
     QWidget* wrapWidget = new QWidget(this);
@@ -87,6 +87,7 @@ Widget::Widget(QWidget *parent)
     _imageType->setVisible(false);
 
     _spaceDepth->setRange(1, 10);
+    _spaceDepth->setValue(4);
 
     m_addLineButton->setVisible(false);
     wrapWidget->setLayout(modeLayout);
@@ -107,7 +108,7 @@ Widget::Widget(QWidget *parent)
 
     QAction* saveAction = new QAction;
     saveAction->setText("Открыть");
-    connect(saveAction, &QAction::triggered, this, &Widget::OpenFile);
+    connect(saveAction, &QAction::triggered, this, &AppWindow::OpenFile);
     fileMenu->addAction(saveAction);
 
     m_toolVLayout->setMenuBar(menuBar);
@@ -129,15 +130,15 @@ Widget::Widget(QWidget *parent)
 
     StyleLoader::attach("../assets/styles/dark.qss");
 
-    connect(_imageType, &QComboBox::currentTextChanged, this, &Widget::ImageChanged);
-    connect(m_editorModeButton, &QPushButton::clicked, this, &Widget::SwitchEditorMode);
-    connect(m_imageModeButton, &QPushButton::clicked, this, &Widget::SwitchModelMode);
+    connect(_imageType, &QComboBox::currentTextChanged, this, &AppWindow::ImageChanged);
+    connect(m_editorModeButton, &QPushButton::clicked, this, &AppWindow::SwitchEditorMode);
+    connect(m_imageModeButton, &QPushButton::clicked, this, &AppWindow::SwitchModelMode);
     connect(m_addLineButton, &QPushButton::clicked, m_lineEditor, &LineEditor::addItem);
-    connect(m_lineEditor, &LineEditor::runLine, this, &Widget::ComputeLine);
+    connect(m_lineEditor, &LineEditor::runLine, this, &AppWindow::ComputeLine);
 }
 
 
-Widget::~Widget()
+AppWindow::~AppWindow()
 {
     if(m_modelThread &&
             m_modelThread->isRunning())
@@ -148,102 +149,104 @@ Widget::~Widget()
 }
 
 
-void Widget::Compute()
+void AppWindow::Compute()
 {
-//    QString source = R"(
-//char checkZone(double8 values)
-//{
-//    bool plus = false;
-//    bool zero = false;
-//    bool minus = false;
-//    for(int i = 0; i < 8; i++)
-//    {
-//        if(values[i] == 0)
-//            zero = true;
-//        else if(values[i] < 0)
-//            minus = true;
-//        else if(values[i] > 0)
-//            plus = true;
-//    }
-//    if(zero || (plus && minus))
-//        return 0;
-//    if(plus)
-//        return 1;1
-//    return -1;
-//}
-//double func(double3 p)
-//{
-//    return 1 - p.x*p.x + p.y*p.y + p.z*p.z;
-//}
-//__kernel void model_calculate(__global const double *points,
-//                              double pointSize,
-//                              __global char *result)
-//{
-//    int id = get_global_id(0);
-//    double x = points[id*3];
-//    double y = points[id*3+1];
-//    double z = points[id*3+2];
-//    double3 p0 = {x+pointSize, y+pointSize, z+pointSize};
-//    double3 p1 = {x+pointSize, y+pointSize, z-pointSize};
-//    double3 p2 = {x+pointSize, y-pointSize, z+pointSize};
-//    double3 p3 = {x+pointSize, y-pointSize, z-pointSize};
-//    double3 p4 = {x-pointSize, y+pointSize, z+pointSize};
-//    double3 p5 = {x-pointSize, y+pointSize, z-pointSize};
-//    double3 p6 = {x-pointSize, y-pointSize, z+pointSize};
-//    double3 p7 = {x-pointSize, y-pointSize, z-pointSize};
-//    double8 values;
-//    values[0] = func(p0);
-//    values[1] = func(p1);
-//    values[2] = func(p2);
-//    values[3] = func(p3);
-//    values[4] = func(p4);
-//    values[5] = func(p5);
-//    values[6] = func(p6);
-//    values[7] = func(p7);
-//    result[id] = checkZone(values);
-//}
-//)";
-//    SpaceBuilder::Instance().CreateSpace({-1, 1}, {-1, 1}, {-1, 1}, 5);
-//    OpenclGenerator::Instance().Compute(source.toStdString(), [this](VoxelData data){
-//        auto obj = new OpenglCube(data.position, data.size,
-//                                  SpaceCalculator::GetVoxelColor());
-//        if(data.zone == _currentZone)
-//            obj->SetVisible(false);
-//        m_sceneView->AddObject(obj);
-//        });
-
-    QString source = m_codeEditor->GetActiveText();
-    if(!source.isEmpty())
+    QString source = R"(
+int checkZone(double *values)
+{
+    bool plus = false;
+    bool zero = false;
+    bool minus = false;
+    for(int i = 0; i < 8; i++)
     {
-        if(m_modelThread->isRunning() ||
-                m_imageThread->isRunning())
-        {
-            return;
-        }
-        m_parser.SetText(source.toStdString());
-        if(m_program)
-            delete m_program;
-        m_program = m_parser.GetProgram();
-        m_sceneView->ClearObjects();
-        SpaceBuilder::Instance().Delete3dSpace();
-        auto args = m_program->GetSymbolTable().GetAllArgs();
-        SpaceBuilder::Instance().CreateSpace(args[0]->limits,
-                args[1]->limits, args[2]->limits, _spaceDepth->value());
-        if(m_imageModeButton->isChecked())
-        {
-            m_imageThread->SetProgram(m_program);
-            m_imageThread->start();
-        }
-        else
-        {
-            m_modelThread->SetProgram(m_program);
-            m_modelThread->start();
-        }
+        if(values[i] == 0)
+            zero = true;
+        else if(values[i] < 0)
+            minus = true;
+        else if(values[i] > 0)
+            plus = true;
     }
+    if(zero || (plus && minus))
+        return 0;
+    if(plus)
+        return 1;
+    return -1;
+}
+
+double func(double3 p)
+{
+    return 1 - p.x*p.x - p.y*p.y - p.z*p.z;
+}
+kernel void calcualteModel(global int *resultZones,
+                           global const double3 *points,
+                           global double3 *decoy,
+                           const double3 pointSize)
+{
+    int id = get_global_id(0);
+    double3 p0 = {points[id].x+pointSize.x, points[id].y+pointSize.y, points[id].z+pointSize.z};
+    double3 p1 = {points[id].x+pointSize.x, points[id].y+pointSize.y, points[id].z-pointSize.z};
+    double3 p2 = {points[id].x+pointSize.x, points[id].y-pointSize.y, points[id].z+pointSize.z};
+    double3 p3 = {points[id].x+pointSize.x, points[id].y-pointSize.y, points[id].z-pointSize.z};
+    double3 p4 = {points[id].x-pointSize.x, points[id].y+pointSize.y, points[id].z+pointSize.z};
+    double3 p5 = {points[id].x-pointSize.x, points[id].y+pointSize.y, points[id].z-pointSize.z};
+    double3 p6 = {points[id].x-pointSize.x, points[id].y-pointSize.y, points[id].z+pointSize.z};
+    double3 p7 = {points[id].x-pointSize.x, points[id].y-pointSize.y, points[id].z-pointSize.z};
+
+    double values[8];
+    values[0] = func(p0);
+    values[1] = func(p1);
+    values[2] = func(p2);
+    values[3] = func(p3);
+    values[4] = func(p4);
+    values[5] = func(p5);
+    values[6] = func(p6);
+    values[7] = func(p7);
+
+    decoy[id] = points[id];
+    resultZones[id] = checkZone(values);
+}
+)";
+    m_sceneView->ClearObjects();
+    SpaceBuilder::Instance().CreateSpace({-1, 1}, {-1, 1}, {-1, 1}, 7);
+    OpenclGenerator::Instance().Compute("calcualteModel", source.toStdString(), [this](VoxelData data){
+        auto obj = new OpenglCube(data.position, data.size,
+                                  SpaceCalculator::GetVoxelColor());
+        if(data.zone != _currentZone)
+            obj->SetVisible(false);
+        m_sceneView->AddObject(obj);
+    });
+
+//    QString source = m_codeEditor->GetActiveText();
+//    if(!source.isEmpty())
+//    {
+//        if(m_modelThread->isRunning() ||
+//                m_imageThread->isRunning())
+//        {
+//            return;
+//        }
+//        m_parser.SetText(source.toStdString());
+//        if(m_program)
+//            delete m_program;
+//        m_program = m_parser.GetProgram();
+//        m_sceneView->ClearObjects();
+//        SpaceBuilder::Instance().Delete3dSpace();
+//        auto args = m_program->GetSymbolTable().GetAllArgs();
+//        SpaceBuilder::Instance().CreateSpace({-1, 1}, {-1, 1}, {-1, 1}, 5);
+//        if(m_imageModeButton->isChecked())
+//        {
+//            m_imageThread->SetProgram(m_program);
+//            m_imageThread->start();
+//        }
+//        else
+//        {
+//            m_modelThread->SetProgram(m_program);
+//            m_modelThread->start();
+//        }
+//    }
 }
 
 
-void Widget::SwitchEditorMode()
+void AppWindow::SwitchEditorMode()
 {
     if(m_mode == Mode::Common)
     {
@@ -267,7 +270,7 @@ void Widget::SwitchEditorMode()
     }
 }
 
-void Widget::SwitchModelMode()
+void AppWindow::SwitchModelMode()
 {
     if(m_imageModeButton->isChecked())
     {
@@ -285,7 +288,7 @@ void Widget::SwitchModelMode()
     }
 }
 
-void Widget::ImageChanged(QString name)
+void AppWindow::ImageChanged(QString name)
 {
     if(name == "Cx")
         _currentType = MImageType::Cx;
@@ -299,7 +302,7 @@ void Widget::ImageChanged(QString name)
         _currentType = MImageType::Ct;
 }
 
-void Widget::ComputeLine(QString line)
+void AppWindow::ComputeLine(QString line)
 {
     m_lineParser.SetText(line.toStdString());
 
@@ -330,7 +333,7 @@ void Widget::ComputeLine(QString line)
     }
 }
 
-void Widget::OpenFile()
+void AppWindow::OpenFile()
 {
     QString fileName = QFileDialog::getOpenFileName(this,
                                                     tr("Open program file"), "../",
@@ -339,7 +342,7 @@ void Widget::OpenFile()
         m_codeEditor->AddFile(fileName);
 }
 
-bool Widget::eventFilter(QObject *obj, QEvent *event)
+bool AppWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::KeyPress)
     {

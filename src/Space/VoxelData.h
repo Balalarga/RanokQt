@@ -14,7 +14,7 @@ enum class Zone
 struct VoxelData
 {
     VoxelData(const Vector3f& position, const Vector3f& size,
-              Zone zone, const QColor& color):
+              const Zone& zone, const QColor& color):
         position(position),
         size(size),
         color(color),
@@ -29,7 +29,7 @@ struct VoxelData
 struct Voxel3dData
 {
     Voxel3dData(const Vector3f& position, const Vector3f& size,
-              Zone zone, const QColor& color):
+              const Zone& zone, const QColor& color):
         position(position),
         size(size),
         color(color),
@@ -43,7 +43,7 @@ struct Voxel3dData
 struct Voxel2dData
 {
     Voxel2dData(const Vector2f& position, const Vector2f& size,
-              Zone zone, const QColor& color):
+              const Zone& zone, const QColor& color):
         position(position),
         size(size),
         color(color),
@@ -57,7 +57,7 @@ struct Voxel2dData
 struct Voxel1dData
 {
     Voxel1dData(const float& position, const float& size,
-              Zone zone, const QColor& color):
+              const Zone& zone, const QColor& color):
         position(position),
         size(size),
         color(color),

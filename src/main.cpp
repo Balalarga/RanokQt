@@ -1,13 +1,13 @@
 #include <QApplication>
 
-#include "Gui/Widget.h"
+#include "AppWindow.h"
 
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    Widget w;
+    AppWindow w;
     w.resize(1280, 720);
 
     qApp->installEventFilter(&w);
