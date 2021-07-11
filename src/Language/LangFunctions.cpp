@@ -69,7 +69,6 @@ std::string LangFunctions::FindBinaryOp(BinaryOp func)
     return "unknown";
 }
 
-
 UnaryOp LangFunctions::FindUnaryOp(std::string name)
 {
     auto it = unaryOperations.find(name);
@@ -82,4 +81,20 @@ std::string LangFunctions::FindUnaryOp(UnaryOp func)
         if(i.second == func)
             return i.first;
     return "unknown";
+}
+
+std::string LangFunctions::FindFunctionCodeName(std::string name)
+{
+    if(name == "abs")
+        return "fabs";
+    if(name == "arctan")
+        return "atan";
+    if(name == "arcsin")
+        return "asin";
+    if(name == "arccos")
+        return "acos";
+    if(name == "ln" ||
+            name == "log")
+        return "log";
+    return name;
 }

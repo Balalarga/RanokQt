@@ -17,7 +17,9 @@ public:
 
     ~OpenclGenerator();
 
-    void Compute(const std::string& kernelName, const std::string &source,
+    std::string CreateOpenclSource(const Program& program);
+
+    void Compute(const std::string& kernelName, const Program &prog,
                  std::function<void (VoxelData)> adder);
 //    void Compute(const std::string &source, const std::vector<Vector2d> &data);
 //    void Compute(const std::string &source, const std::vector<double> &data);

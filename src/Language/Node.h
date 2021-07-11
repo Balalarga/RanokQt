@@ -28,6 +28,7 @@ public:
         ready = true;
     }
     std::string error = "";
+    std::string name = "";
 
 protected:
     Expression(){}
@@ -53,6 +54,7 @@ protected:
     {
         ready = true;
         store = value;
+        name = std::to_string(value);
     }
     using Expression::operator delete;
 };
@@ -69,15 +71,14 @@ public:
         return store;
     };
 
-    std::string name;
     Expression* expr;
 
 protected:
     ConstExpr(std::string name, Expression* expr):
-        name(name),
         expr(expr)
     {
         ready = false;
+        this->name = name;
     }
     using Expression::operator delete;
 };
@@ -91,13 +92,14 @@ public:
         return store;
     };
 
-    std::string name;
     std::pair<double, double> limits;
 
 protected:
     ArgumentExpr(std::string name, std::pair<double, double> lims):
-        name(name),
-        limits(lims){}
+        limits(lims)
+    {
+        this->name = name;
+    }
     using Expression::operator delete;
 };
 
@@ -117,13 +119,14 @@ public:
         expr->Reset();
     }
 
-    std::string name;
     Expression* expr;
 
 protected:
     VariableExpr(std::string name, Expression* expr):
-        name(name),
-        expr(expr){}
+        expr(expr)
+    {
+        this->name = name;
+    }
     using Expression::operator delete;
 };
 
@@ -138,7 +141,7 @@ public:
             if(op)
                 SetValue(op(expr->GetValue()));
             else
-                error = "Unknown operation: "+opName;
+                error = "Unknown operation: "+name;
         }
         return store;
     };
@@ -148,15 +151,16 @@ public:
         expr->Reset();
     }
 
-    std::string opName;
     UnaryOp op;
     Expression* expr;
 
 protected:
     UnaryExpr(std::string opName, Expression* expr):
-        opName(opName),
         op(LangFunctions::FindUnaryOp(opName)),
-        expr(expr){}
+        expr(expr)
+    {
+        name = opName;
+    }
     using Expression::operator delete;
 };
 
@@ -172,7 +176,7 @@ public:
             if(op)
                 SetValue(op(left->GetValue(), right->GetValue()));
             else
-                error = "Unknown binary operation "+opName;
+                error = "Unknown binary operation "+name;
         }
         return store;
     };
@@ -183,17 +187,18 @@ public:
         right->Reset();
     }
 
-    std::string opName;
     BinaryOp op;
     Expression* left, *right;
 
 protected:
     BinaryExpr(std::string opName, Expression* left,
                Expression* right):
-        opName(opName),
         op(LangFunctions::FindBinaryOp(opName)),
         left(left),
-        right(right){}
+        right(right)
+    {
+        name = opName;
+    }
     using Expression::operator delete;
 };
 
@@ -219,7 +224,10 @@ public:
 protected:
     FunctionExpr(FunctionRef func, Expression* arg):
         func(func),
-        arg(arg){}
+        arg(arg)
+    {
+        name = LangFunctions::FindFunction(func);
+    }
     using Expression::operator delete;
 };
 

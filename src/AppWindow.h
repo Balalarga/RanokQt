@@ -51,6 +51,7 @@ private slots:
     void Compute();
     void SwitchEditorMode();
     void SwitchModelMode();
+    void SwitchComputeDevice();
     void ImageChanged(QString name);
     void ComputeLine(QString line);
 
@@ -82,6 +83,10 @@ private:
     QLabel* _modelLabel;
     QLabel* _imageLabel;
     ToggleButton* m_imageModeButton;
+
+    QLabel* _computeDevice1;
+    QLabel* _computeDevice2;
+    ToggleButton* m_computeDevice;
 
     QComboBox* _imageType;
     QStringListModel* _imageTypeModel;

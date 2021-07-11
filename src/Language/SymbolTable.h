@@ -15,6 +15,7 @@ public:
 
     ArgumentExpr* GetArgAt(size_t id) const;
     std::vector<ArgumentExpr *> GetAllArgs() const;
+    ArgumentExpr* GetArgument(const std::string& name) const;
 
     Expression *Get(const std::string& name) const;
 
@@ -22,16 +23,22 @@ public:
     void Concat(const SymbolTable& oth);
 
     ConstExpr* GetConst(const std::string& name) const;
-    ArgumentExpr* GetArgument(const std::string& name) const;
+    std::vector<ConstExpr*> GetAllConst() const;
     VariableExpr* GetVariable(const std::string& name) const;
+    std::vector<VariableExpr*> GetAllVariables() const;
     VariableExpr* GetLastVar() const;
 
 
 private:
-    std::unordered_map<std::string, ArgumentExpr*> m_arguments;
-    std::map<std::string, VariableExpr*> m_variables;
-    std::map<std::string, ConstExpr*> m_constants;
+    std::vector<ArgumentExpr*> m_arguments;
+    std::vector<VariableExpr*> m_variables;
+    std::vector<ConstExpr*> m_constants;
     VariableExpr* m_lastAddedVariable;
+
+    int FindArg(std::string name) const;
+    int FindConst(std::string name) const;
+    int FindVar(std::string name) const;
+
     bool HasName(const std::string& name) const;
 };
 

@@ -1,4 +1,5 @@
 #include "OpenclGenerator.h"
+#include <sstream>
 #include <QDebug>
 
 using namespace std;
@@ -11,6 +12,62 @@ OpenclGenerator::~OpenclGenerator()
     ret = clReleaseKernel(kernel);
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);
+}
+
+string OpenclGenerator::CreateOpenclSource(const Program& program)
+{
+    stringstream result;
+    result << R"(
+double __rand(double a, double b)
+{
+    return a + b - sqrt(pow(a, 2) + pow(b, 2));
+}
+double __ror(double a, double b)
+{
+    return a + b + sqrt(pow(a, 2) + pow(b, 2));
+}
+
+int checkZone(double *values)
+{
+    bool plus = false;
+    bool zero = false;
+    bool minus = false;
+    for(int i = 0; i < 8; i++)
+    {
+        if(values[i] == 0)
+            zero = true;
+        else if(values[i] < 0)
+            minus = true;
+        else if(values[i] > 0)
+            plus = true;
+    }
+    if(zero || (plus && minus))
+        return 0;
+    if(plus)
+        return 1;
+    return -1;
+})";
+    result << program.GetOpenclCode();
+
+    result << R"(kernel void calcualteModel(global int *resultZones,
+                           global const double3 *points,
+                           const double3 pointSize)
+{
+    int id = get_global_id(0);
+
+    double values[8];
+    values[0] = __resultFunc(points[id].x+pointSize.x, points[id].y+pointSize.y, points[id].z+pointSize.z);
+    values[1] = __resultFunc(points[id].x+pointSize.x, points[id].y+pointSize.y, points[id].z-pointSize.z);
+    values[2] = __resultFunc(points[id].x+pointSize.x, points[id].y-pointSize.y, points[id].z+pointSize.z);
+    values[3] = __resultFunc(points[id].x+pointSize.x, points[id].y-pointSize.y, points[id].z-pointSize.z);
+    values[4] = __resultFunc(points[id].x-pointSize.x, points[id].y+pointSize.y, points[id].z+pointSize.z);
+    values[5] = __resultFunc(points[id].x-pointSize.x, points[id].y+pointSize.y, points[id].z-pointSize.z);
+    values[6] = __resultFunc(points[id].x-pointSize.x, points[id].y-pointSize.y, points[id].z+pointSize.z);
+    values[7] = __resultFunc(points[id].x-pointSize.x, points[id].y-pointSize.y, points[id].z-pointSize.z);
+
+    resultZones[id] = checkZone(values);
+})";
+    return result.str();
 }
 
 OpenclGenerator::OpenclGenerator()
@@ -30,11 +87,11 @@ OpenclGenerator::OpenclGenerator()
 }
 
 
-void OpenclGenerator::Compute(const string& kernelName, const string& source,
+void OpenclGenerator::Compute(const string& kernelName, const Program& prog,
                               std::function<void(VoxelData)> adder)
 {
     auto space = SpaceBuilder::Instance().Get3dSpace();
-
+    string source = CreateOpenclSource(prog);
     const char* src_str = source.c_str();
 
     if(source != prevSource)

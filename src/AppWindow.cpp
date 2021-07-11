@@ -7,6 +7,9 @@
 #include "Space/SpaceBuilder.h"
 #include "OpenclGenerator.h"
 
+#include <iostream>
+
+#include <QDebug>
 #include <QFileDialog>
 #include <QStringListModel>
 
@@ -21,6 +24,7 @@ AppWindow::AppWindow(QWidget *parent)
       m_lineProgram(nullptr),
       m_editorModeButton(new ToggleButton(8, 10, this)),
       m_imageModeButton(new ToggleButton(8, 10, this)),
+      m_computeDevice(new ToggleButton(8, 10, this)),
       m_addLineButton(new QPushButton("Добавить строку", this)),
       _imageType(new QComboBox(this)),
       _spaceDepth(new QSpinBox(this)),
@@ -57,10 +61,12 @@ AppWindow::AppWindow(QWidget *parent)
     QHBoxLayout* editorModeBtnLayout = new QHBoxLayout;
     editorModeBtnLayout->setContentsMargins(0, 10, 0, 0);
     _editorMode1Label = new QLabel("Обычный режим");
+    _editorMode1Label->setAlignment(Qt::AlignVCenter);
     _editorMode1Label->setAlignment(Qt::AlignRight);
     _editorMode1Label->setStyleSheet("QLabel { color : #ffffff; }");
     _editorMode2Label = new QLabel("Построчный режим");
     _editorMode2Label->setStyleSheet("QLabel { color : #888888; }");
+    _editorMode2Label->setAlignment(Qt::AlignVCenter);
     editorModeBtnLayout->addWidget(_editorMode1Label);
     editorModeBtnLayout->addWidget(m_editorModeButton);
     editorModeBtnLayout->addWidget(_editorMode2Label);
@@ -69,14 +75,32 @@ AppWindow::AppWindow(QWidget *parent)
     QHBoxLayout* modelModeBtnLayout = new QHBoxLayout;
     modelModeBtnLayout->setContentsMargins(0, 10, 0, 0);
     _modelLabel = new QLabel("Модель");
+    _modelLabel->setAlignment(Qt::AlignVCenter);
     _modelLabel->setAlignment(Qt::AlignRight);
     _modelLabel->setStyleSheet("QLabel { color : #ffffff; }");
     _imageLabel = new QLabel("М-Образ");
     _imageLabel->setStyleSheet("QLabel { color : #888888; }");
+    _imageLabel->setAlignment(Qt::AlignVCenter);
     modelModeBtnLayout->addWidget(_modelLabel);
     modelModeBtnLayout->addWidget(m_imageModeButton);
     modelModeBtnLayout->addWidget(_imageLabel);
     modeLayout->addLayout(modelModeBtnLayout);
+
+
+    QHBoxLayout* deviceModeLayout = new QHBoxLayout;
+    deviceModeLayout->setContentsMargins(0, 10, 0, 0);
+    _computeDevice1 = new QLabel("CPU");
+    _computeDevice1->setAlignment(Qt::AlignVCenter);
+    _computeDevice1->setAlignment(Qt::AlignRight);
+    _computeDevice1->setStyleSheet("QLabel { color : #ffffff; }");
+    _computeDevice2 = new QLabel("GPU");
+    _computeDevice2->setStyleSheet("QLabel { color : #888888; }");
+    _computeDevice2->setAlignment(Qt::AlignVCenter);
+    deviceModeLayout->addWidget(_computeDevice1);
+    deviceModeLayout->addWidget(m_computeDevice);
+    deviceModeLayout->addWidget(_computeDevice2);
+    modeLayout->addLayout(deviceModeLayout);
+
 
     _imageType->setEditable(false);
     QStringList imageNames;
@@ -133,6 +157,7 @@ AppWindow::AppWindow(QWidget *parent)
     connect(_imageType, &QComboBox::currentTextChanged, this, &AppWindow::ImageChanged);
     connect(m_editorModeButton, &QPushButton::clicked, this, &AppWindow::SwitchEditorMode);
     connect(m_imageModeButton, &QPushButton::clicked, this, &AppWindow::SwitchModelMode);
+    connect(m_computeDevice, &QPushButton::clicked, this, &AppWindow::SwitchComputeDevice);
     connect(m_addLineButton, &QPushButton::clicked, m_lineEditor, &LineEditor::addItem);
     connect(m_lineEditor, &LineEditor::runLine, this, &AppWindow::ComputeLine);
 }
@@ -151,96 +176,49 @@ AppWindow::~AppWindow()
 
 void AppWindow::Compute()
 {
-    QString source = R"(
-int checkZone(double *values)
-{
-    bool plus = false;
-    bool zero = false;
-    bool minus = false;
-    for(int i = 0; i < 8; i++)
+    QString source = m_codeEditor->GetActiveText();
+    if(!source.isEmpty())
     {
-        if(values[i] == 0)
-            zero = true;
-        else if(values[i] < 0)
-            minus = true;
-        else if(values[i] > 0)
-            plus = true;
+        if(m_modelThread->isRunning() ||
+                m_imageThread->isRunning())
+        {
+            return;
+        }
+        m_parser.SetText(source.toStdString());
+        if(m_program)
+            delete m_program;
+        m_program = m_parser.GetProgram();
+        m_sceneView->ClearObjects();
+        SpaceBuilder::Instance().Delete3dSpace();
+        auto args = m_program->GetSymbolTable().GetAllArgs();
+        SpaceBuilder::Instance().CreateSpace(args[0]->limits, args[1]->limits,
+                                             args[2]->limits, _spaceDepth->value());
+        if(m_computeDevice->isChecked())
+        {
+            OpenclGenerator::Instance().Compute("calcualteModel", *m_program,
+                                                [this](VoxelData data)
+            {
+                auto obj = new OpenglCube(data.position, data.size,
+                                          SpaceCalculator::GetVoxelColor());
+                if(data.zone != _currentZone)
+                    obj->SetVisible(false);
+                m_sceneView->AddObject(obj);
+            });
+        }
+        else
+        {
+            if(m_imageModeButton->isChecked())
+            {
+                m_imageThread->SetProgram(m_program);
+                m_imageThread->start();
+            }
+            else
+            {
+                m_modelThread->SetProgram(m_program);
+                m_modelThread->start();
+            }
+        }
     }
-    if(zero || (plus && minus))
-        return 0;
-    if(plus)
-        return 1;
-    return -1;
-}
-
-double func(double3 p)
-{
-    return 1 - p.x*p.x - p.y*p.y - p.z*p.z;
-}
-kernel void calcualteModel(global int *resultZones,
-                           global const double3 *points,
-                           const double3 pointSize)
-{
-    int id = get_global_id(0);
-    double3 p0 = {points[id].x+pointSize.x, points[id].y+pointSize.y, points[id].z+pointSize.z};
-    double3 p1 = {points[id].x+pointSize.x, points[id].y+pointSize.y, points[id].z-pointSize.z};
-    double3 p2 = {points[id].x+pointSize.x, points[id].y-pointSize.y, points[id].z+pointSize.z};
-    double3 p3 = {points[id].x+pointSize.x, points[id].y-pointSize.y, points[id].z-pointSize.z};
-    double3 p4 = {points[id].x-pointSize.x, points[id].y+pointSize.y, points[id].z+pointSize.z};
-    double3 p5 = {points[id].x-pointSize.x, points[id].y+pointSize.y, points[id].z-pointSize.z};
-    double3 p6 = {points[id].x-pointSize.x, points[id].y-pointSize.y, points[id].z+pointSize.z};
-    double3 p7 = {points[id].x-pointSize.x, points[id].y-pointSize.y, points[id].z-pointSize.z};
-
-    double values[8];
-    values[0] = func(p0);
-    values[1] = func(p1);
-    values[2] = func(p2);
-    values[3] = func(p3);
-    values[4] = func(p4);
-    values[5] = func(p5);
-    values[6] = func(p6);
-    values[7] = func(p7);
-
-    resultZones[id] = checkZone(values);
-}
-)";
-    m_sceneView->ClearObjects();
-    SpaceBuilder::Instance().CreateSpace({-1, 1}, {-1, 1}, {-1, 1}, 7);
-    OpenclGenerator::Instance().Compute("calcualteModel", source.toStdString(), [this](VoxelData data){
-        auto obj = new OpenglCube(data.position, data.size,
-                                  SpaceCalculator::GetVoxelColor());
-        if(data.zone != _currentZone)
-            obj->SetVisible(false);
-        m_sceneView->AddObject(obj);
-    });
-
-//    QString source = m_codeEditor->GetActiveText();
-//    if(!source.isEmpty())
-//    {
-//        if(m_modelThread->isRunning() ||
-//                m_imageThread->isRunning())
-//        {
-//            return;
-//        }
-//        m_parser.SetText(source.toStdString());
-//        if(m_program)
-//            delete m_program;
-//        m_program = m_parser.GetProgram();
-//        m_sceneView->ClearObjects();
-//        SpaceBuilder::Instance().Delete3dSpace();
-//        auto args = m_program->GetSymbolTable().GetAllArgs();
-//        SpaceBuilder::Instance().CreateSpace({-1, 1}, {-1, 1}, {-1, 1}, 5);
-//        if(m_imageModeButton->isChecked())
-//        {
-//            m_imageThread->SetProgram(m_program);
-//            m_imageThread->start();
-//        }
-//        else
-//        {
-//            m_modelThread->SetProgram(m_program);
-//            m_modelThread->start();
-//        }
-//    }
 }
 
 
@@ -283,6 +261,22 @@ void AppWindow::SwitchModelMode()
         _modelLabel->setStyleSheet("QLabel { color : #ffffff; }");
         _imageLabel->setStyleSheet("QLabel { color : #888888; }");
         _imageType->setVisible(false);
+    }
+}
+
+void AppWindow::SwitchComputeDevice()
+{
+    if(m_computeDevice->isChecked())
+    {
+        // image mode
+        _computeDevice1->setStyleSheet("QLabel { color : #888888; }");
+        _computeDevice2->setStyleSheet("QLabel { color : #ffffff; }");
+    }
+    else
+    {
+        // model mode
+        _computeDevice1->setStyleSheet("QLabel { color : #ffffff; }");
+        _computeDevice2->setStyleSheet("QLabel { color : #888888; }");
     }
 }
 

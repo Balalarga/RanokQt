@@ -1,6 +1,7 @@
 #include "Program.h"
 #include <list>
 #include <queue>
+#include <sstream>
 
 using namespace std;
 
@@ -61,7 +62,7 @@ double Program::Compute(Vector3d args) const
 }
 
 
-void Program::PrintTreeDepth(int depth)
+void Program::PrintTreeDepth(int depth) const
 {
     set<string> vars;
     PrintNode(resultNode, vars, 0, depth);
@@ -73,7 +74,93 @@ SymbolTable &Program::GetSymbolTable()
     return m_symbolTable;
 }
 
-void Program::PrintNode(Expression *node, set<string>& vars, int currDepth, int maxDepth)
+void GetVariableBody(stringstream& stream, Expression* v)
+{
+    stream<<"(";
+    if(auto casted = dynamic_cast<UnaryExpr*>(v))
+    {
+        stream << v->name;
+        GetVariableBody(stream, casted->expr);
+    }
+    else if(auto casted = dynamic_cast<BinaryExpr*>(v))
+    {
+        if(v->name == "^")
+        {
+            stream << "pow(";
+            GetVariableBody(stream, casted->left);
+            stream<<", ";
+            GetVariableBody(stream, casted->right);
+            stream << ")";
+        }
+        else if(v->name == "&")
+        {
+            stream << "__rand(";
+            GetVariableBody(stream, casted->left);
+            stream<<", ";
+            GetVariableBody(stream, casted->right);
+            stream << ")";
+        }
+        else if(v->name == "|")
+        {
+            stream << "__ror(";
+            GetVariableBody(stream, casted->left);
+            stream<<", ";
+            GetVariableBody(stream, casted->right);
+            stream << ")";
+        }
+        else
+        {
+            GetVariableBody(stream, casted->left);
+            stream << v->name;
+            GetVariableBody(stream, casted->right);
+        }
+    }
+    else if(auto casted = dynamic_cast<FunctionExpr*>(v))
+    {
+        stream << LangFunctions::FindFunctionCodeName(casted->name)<<"(";
+        GetVariableBody(stream, casted->arg);
+        stream << ")";
+    }
+    else if(v)
+    {
+        stream << v->name;
+    }
+    stream<<")";
+}
+
+string Program::GetOpenclCode() const
+{
+    stringstream code;
+    auto variables = m_symbolTable.GetAllVariables();
+    auto constants = m_symbolTable.GetAllConst();
+    auto args = m_symbolTable.GetAllArgs();
+    code << "double __resultFunc(";
+    for(int i = 0; i < args.size(); i++)
+    {
+        code << "double "<<args[i]->name;
+        if(i != args.size()- 1)
+            code<<", ";
+    }
+    code << ")\n{\n";
+    for(auto& c: constants)
+    {
+        code << "const double "<<c->name <<" = "<< c->GetValue() << ";\n";
+    }
+
+    for(auto& v: variables)
+    {
+        code << "double "<<v->name <<" =";
+        GetVariableBody(code, v->expr);
+        code << ";\n";
+    }
+
+    code << "return ";
+    GetVariableBody(code, resultNode);
+    code << ";\n}\n";
+    return code.str();
+}
+
+void Program::PrintNode(Expression *node, set<string>& vars, int currDepth, int maxDepth) const
 {
     if(maxDepth == currDepth)
         return;
@@ -121,12 +208,12 @@ void Program::PrintNode(Expression *node, set<string>& vars, int currDepth, int 
         PrintNode(casted->arg, vars, currDepth+1, maxDepth);
     }
 }
-string Program::GetError()
+string Program::GetError() const
 {
     return error;
 }
 
-bool Program::IsError()
+bool Program::IsError() const
 {
     return !error.empty();
 }

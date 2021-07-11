@@ -25,6 +25,8 @@ public:
 
     static UnaryOp FindUnaryOp(std::string);
     static std::string FindUnaryOp(UnaryOp);
+
+    static std::string FindFunctionCodeName(std::string name);
 };
 
 #endif // LANGFUNCTIONS_H

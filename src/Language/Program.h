@@ -19,15 +19,17 @@ public:
     double Compute(std::map<std::string, double> arguments) const;
     double Compute(Vector3d args) const;
 
-    std::string GetError();
-    bool IsError();
+    std::string GetError() const;
+    bool IsError() const;
 
     void SetResult(Expression* expr);
 
     Expression *MergeProgram(const Program* program);
 
-    void PrintTreeDepth(int depth);
+    void PrintTreeDepth(int depth) const;
     SymbolTable& GetSymbolTable();
+
+    std::string GetOpenclCode() const;
 
 private:
     Expression* resultNode;
@@ -35,7 +37,8 @@ private:
 
     mutable std::string error = "";
 
-    void PrintNode(Expression* node, std::set<std::string>& vars, int currDepth, int maxDepth);
+    void PrintNode(Expression* node, std::set<std::string>& vars,
+                   int currDepth, int maxDepth) const;
 };
 
 #endif // PROGRAM_H
