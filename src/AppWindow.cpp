@@ -195,15 +195,30 @@ void AppWindow::Compute()
                                              args[2]->limits, _spaceDepth->value());
         if(m_computeDevice->isChecked())
         {
-            OpenclGenerator::Instance().Compute("calcualteModel", *m_program,
-                                                [this](VoxelData data)
+
+            if(m_imageModeButton->isChecked())
             {
-                auto obj = new OpenglCube(data.position, data.size,
-                                          SpaceCalculator::GetVoxelColor());
-                if(data.zone != _currentZone)
-                    obj->SetVisible(false);
-                m_sceneView->AddObject(obj);
-            });
+                OpenclGenerator::Instance().ComputeImage(*m_program,
+                                                         [this](VoxelImageData data){
+                    double value = data.images[_currentType];
+                    value = (1. + value)/2.;
+                    unsigned uValue = UINT_MAX*value;
+                    m_sceneView->AddObject(new OpenglCube(data.position, data.size,
+                                                          _linearGradModel->GetColor(uValue)));
+                });
+            }
+            else
+            {
+                OpenclGenerator::Instance().ComputeModel(*m_program,
+                                                    [this](VoxelData data)
+                {
+                    auto obj = new OpenglCube(data.position, data.size,
+                                              SpaceCalculator::GetVoxelColor());
+                    if(data.zone != _currentZone)
+                        obj->SetVisible(false);
+                    m_sceneView->AddObject(obj);
+                });
+            }
         }
         else
         {

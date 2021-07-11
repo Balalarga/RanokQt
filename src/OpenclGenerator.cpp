@@ -18,6 +18,24 @@ string OpenclGenerator::CreateOpenclSource(const Program& program)
 {
     stringstream result;
     result << R"(
+double __matrix4x4Det(double* m, int n)
+{
+      return
+         m[3] * m[1*n+2] * m[2*n+1] * m[3*n+0] - m[0*n+2] * m[1*n+3] * m[2*n+1] * m[3*n+0] -
+         m[3] * m[1*n+1] * m[2*n+2] * m[3*n+0] + m[0*n+1] * m[1*n+3] * m[2*n+2] * m[3*n+0] +
+         m[2] * m[1*n+1] * m[2*n+3] * m[3*n+0] - m[0*n+1] * m[1*n+2] * m[2*n+3] * m[3*n+0] -
+         m[3] * m[1*n+2] * m[2*n+0] * m[3*n+1] + m[0*n+2] * m[1*n+3] * m[2*n+0] * m[3*n+1] +
+         m[3] * m[1*n+0] * m[2*n+2] * m[3*n+1] - m[0*n+0] * m[1*n+3] * m[2*n+2] * m[3*n+1] -
+         m[2] * m[1*n+0] * m[2*n+3] * m[3*n+1] + m[0*n+0] * m[1*n+2] * m[2*n+3] * m[3*n+1] +
+         m[3] * m[1*n+1] * m[2*n+0] * m[3*n+2] - m[0*n+1] * m[1*n+3] * m[2*n+0] * m[3*n+2] -
+         m[3] * m[1*n+0] * m[2*n+1] * m[3*n+2] + m[0*n+0] * m[1*n+3] * m[2*n+1] * m[3*n+2] +
+         m[1] * m[1*n+0] * m[2*n+3] * m[3*n+2] - m[0*n+0] * m[1*n+1] * m[2*n+3] * m[3*n+2] -
+         m[2] * m[1*n+1] * m[2*n+0] * m[3*n+3] + m[0*n+1] * m[1*n+2] * m[2*n+0] * m[3*n+3] +
+         m[2] * m[1*n+0] * m[2*n+1] * m[3*n+3] - m[0*n+0] * m[1*n+2] * m[2*n+1] * m[3*n+3] -
+         m[1] * m[1*n+0] * m[2*n+2] * m[3*n+3] + m[0*n+0] * m[1*n+1] * m[2*n+2] * m[3*n+3];
+}
+
+
 double __rand(double a, double b)
 {
     return a + b - sqrt(pow(a, 2) + pow(b, 2));
@@ -49,7 +67,8 @@ int checkZone(double *values)
 })";
     result << program.GetOpenclCode();
 
-    result << R"(kernel void calcualteModel(global int *resultZones,
+    result << R"(
+kernel void calcualteModel(global int *resultZones,
                            global const double3 *points,
                            const double3 pointSize)
 {
@@ -66,7 +85,67 @@ int checkZone(double *values)
     values[7] = __resultFunc(points[id].x-pointSize.x, points[id].y-pointSize.y, points[id].z-pointSize.z);
 
     resultZones[id] = checkZone(values);
-})";
+}
+
+kernel void calculateMImage(global double8 *result,
+                            global const double3 *points,
+                            const double3 pointSize)
+{
+    int id = get_global_id(0);
+    result[id] = (double8)(1);
+
+    double wv[4];
+    wv[0] = __resultFunc(points[id].x,             points[id].y,             points[id].z            );
+    wv[1] = __resultFunc(points[id].x+pointSize.x, points[id].y,             points[id].z            );
+    wv[2] = __resultFunc(points[id].x,             points[id].y+pointSize.y, points[id].z            );
+    wv[3] = __resultFunc(points[id].x,             points[id].y,             points[id].z+pointSize.z);
+
+    double a[] = {
+        points[id].y,             points[id].z,             wv[0], 1,
+        points[id].y,             points[id].z,             wv[1], 1,
+        points[id].y+pointSize.y, points[id].z,             wv[2], 1,
+        points[id].y,             points[id].z+pointSize.z, wv[3], 1
+    };
+    double b[] = {
+        points[id].x,             points[id].z,             wv[0], 1,
+        points[id].x+pointSize.x, points[id].z,             wv[1], 1,
+        points[id].x,             points[id].z,             wv[2], 1,
+        points[id].x,             points[id].z+pointSize.z, wv[3], 1
+    };
+    double c[] = {
+        points[id].x,             points[id].y,             wv[0], 1,
+        points[id].x+pointSize.x, points[id].y,             wv[1], 1,
+        points[id].x,             points[id].y+pointSize.y, wv[2], 1,
+        points[id].x,             points[id].y,             wv[3], 1
+    };
+    double d[] = {
+        points[id].x,             points[id].y,             points[id].z,              1,
+        points[id].x+pointSize.x, points[id].y,             points[id].z,              1,
+        points[id].x,             points[id].y+pointSize.y, points[id].z,              1,
+        points[id].x,             points[id].y,             points[id].z+pointSize.z, 1
+    };
+    double f[] = {
+        points[id].x,             points[id].y,             points[id].z,             wv[0],
+        points[id].x+pointSize.x, points[id].y,             points[id].z,             wv[1],
+        points[id].x,             points[id].y+pointSize.y, points[id].z,             wv[2],
+        points[id].x,             points[id].y,             points[id].z+pointSize.z, wv[3]
+    };
+    double detA = __matrix4x4Det(a, 4);
+    double detB = __matrix4x4Det(b, 4);
+    double detC = __matrix4x4Det(c, 4);
+    double detD = __matrix4x4Det(d, 4);
+    double detF = __matrix4x4Det(f, 4);
+    double div = sqrt(pow(detA, 2)+pow(detB, 2)+pow(detC, 2)+pow(detD, 2)+pow(detF, 2));
+
+    result[id].s0 = detA/div;
+    result[id].s1 = -detB/div;
+    result[id].s2 = -detC/div;
+    result[id].s3 = detD/div;
+    result[id].s4 = detF/div;
+}
+
+
+)";
     return result.str();
 }
 
@@ -87,7 +166,7 @@ OpenclGenerator::OpenclGenerator()
 }
 
 
-void OpenclGenerator::Compute(const string& kernelName, const Program& prog,
+void OpenclGenerator::ComputeModel(const Program& prog,
                               std::function<void(VoxelData)> adder)
 {
     auto space = SpaceBuilder::Instance().Get3dSpace();
@@ -121,7 +200,7 @@ void OpenclGenerator::Compute(const string& kernelName, const Program& prog,
             qDebug()<<buffer;
             return;
         }
-        kernel = clCreateKernel(program, kernelName.c_str(), &ret);
+        kernel = clCreateKernel(program, "calcualteModel", &ret);
         if (!kernel || ret != CL_SUCCESS)
         {
             qDebug()<<"Error: Failed to create compute kernel!";
@@ -222,6 +301,146 @@ void OpenclGenerator::Compute(const string& kernelName, const Program& prog,
             zone = Zone::Negative;
         adder(VoxelData(space->points[i], space->pointSize/2.,
                         zone, {255, 255, 255, 20}));
+    }
+    ret = clReleaseMemObject(in_mem_obj);
+    ret = clReleaseMemObject(out_mem_obj);
+    delete[] inputPoints;
+    delete[] result;
+    qDebug()<<"Complete\n";
+}
+
+void OpenclGenerator::ComputeImage(const Program &prog, function<void (VoxelImageData)> adder)
+{
+    auto space = SpaceBuilder::Instance().Get3dSpace();
+    string source = CreateOpenclSource(prog);
+    const char* src_str = source.c_str();
+
+    if(source != prevSource)
+    {
+        if(!prevSource.empty())
+        {
+            ret = clReleaseProgram(program);
+            ret = clReleaseKernel(kernel);
+        }
+
+        program = clCreateProgramWithSource(context, 1,
+                    (const char **)&src_str, NULL, &ret);
+        if (!program)
+        {
+            qDebug()<<"Error: Failed to create compute program!";
+            return;
+        }
+        ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+        if (ret != CL_SUCCESS)
+        {
+            size_t len;
+            char buffer[2048];
+
+            qDebug()<<"Error: Failed to build program executable!";
+            clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG,
+                                  sizeof(buffer), buffer, &len);
+            qDebug()<<buffer;
+            return;
+        }
+        kernel = clCreateKernel(program, "calculateMImage", &ret);
+        if (!kernel || ret != CL_SUCCESS)
+        {
+            qDebug()<<"Error: Failed to create compute kernel!";
+            return;
+        }
+        prevSource = source;
+    }
+
+    // Prepeat cpu data
+    cl_double3* inputPoints = new cl_double3[space->points.size()];
+    cl_double3 inputPointSize = {space->pointSize.x,
+                                 space->pointSize.y,
+                                 space->pointSize.z};
+    for(int i = 0; i < space->points.size(); i++)
+    {
+        inputPoints[i] = {space->points[i].x,
+                          space->points[i].y,
+                          space->points[i].z};
+    }
+
+    // Create gpu buffers
+    cl_mem in_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+                space->points.size() * sizeof(cl_double3), NULL, &ret);
+    cl_mem out_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+                space->points.size() * sizeof(cl_double8), NULL, &ret);
+    if (!in_mem_obj || !out_mem_obj)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to allocate device memory!";
+        return;
+    }
+
+    // Fill gpu buffer from cpu memory
+    ret = clEnqueueWriteBuffer(command_queue, in_mem_obj, CL_TRUE, 0,
+                space->points.size() * sizeof(cl_double3), inputPoints, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to write to source array!";
+        return;
+    }
+    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&out_mem_obj);
+    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&in_mem_obj);
+    ret = clSetKernelArg(kernel, 2, sizeof(cl_double3), &inputPointSize);
+    if (ret != CL_SUCCESS)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
+        return;
+    }
+    // Get the maximum work group size for executing the kernel on the device
+    //
+    size_t global;                      // global domain size for our calculation
+    size_t local;                       // local domain size for our calculation
+    ret = clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE,
+                                   sizeof(local), &local, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to retrieve kernel work group info! " << ret;
+        return;
+    }
+
+    // Execute the kernel over the entire range of our 1d input data set
+    // using the maximum number of work group items for this device
+    //
+    global = space->points.size();
+
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
+                &global, &local, 0, NULL, NULL);
+    if (ret)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to execute kernel!\n";
+        return;
+    }
+    clFinish(command_queue);
+
+    cl_double8* result = new cl_double8[space->points.size()];
+    ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0,
+                space->points.size() * sizeof(cl_double8), result, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        delete[] inputPoints;
+        qDebug()<<"Error: Failed to read output array! "<<ret;
+        return;
+    }
+
+    for(int i = 0; i < space->points.size(); i++)
+    {
+        cl_double8 res = result[i];
+        adder(VoxelImageData(space->points[i], space->pointSize/2., {
+                   {MImageType::Cx, res.s0},
+                   {MImageType::Cy, res.s1},
+                   {MImageType::Cz, res.s2},
+                   {MImageType::Cw, res.s3},
+                   {MImageType::Ct, res.s4},
+               }));
     }
     ret = clReleaseMemObject(in_mem_obj);
     ret = clReleaseMemObject(out_mem_obj);
