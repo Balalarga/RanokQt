@@ -210,16 +210,9 @@ void OpenclGenerator::ComputeModel(const Program& prog,
     }
 
     // Prepeat cpu data
-    cl_double3* inputPoints = new cl_double3[space->points.size()];
     cl_double3 inputPointSize = {space->pointSize.x/2.,
                                  space->pointSize.y/2.,
                                  space->pointSize.z/2.};
-    for(int i = 0; i < space->points.size(); i++)
-    {
-        inputPoints[i] = {space->points[i].x,
-                          space->points[i].y,
-                          space->points[i].z};
-    }
 
     // Create gpu buffers
     cl_mem in_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
@@ -228,17 +221,15 @@ void OpenclGenerator::ComputeModel(const Program& prog,
                 space->points.size() * sizeof(cl_int), NULL, &ret);
     if (!in_mem_obj || !out_mem_obj)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to allocate device memory!";
         return;
     }
 
     // Fill gpu buffer from cpu memory
     ret = clEnqueueWriteBuffer(command_queue, in_mem_obj, CL_TRUE, 0,
-                space->points.size() * sizeof(cl_double3), inputPoints, 0, NULL, NULL);
+                space->points.size() * sizeof(cl_double3), space->points.data(), 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to write to source array!";
         return;
     }
@@ -247,7 +238,6 @@ void OpenclGenerator::ComputeModel(const Program& prog,
     ret = clSetKernelArg(kernel, 2, sizeof(cl_double3), &inputPointSize);
     if (ret != CL_SUCCESS)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
         return;
     }
@@ -259,7 +249,6 @@ void OpenclGenerator::ComputeModel(const Program& prog,
                                    sizeof(local), &local, NULL);
     if (ret != CL_SUCCESS)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to retrieve kernel work group info! " << ret;
         return;
     }
@@ -274,18 +263,16 @@ void OpenclGenerator::ComputeModel(const Program& prog,
                 &global, &local, 0, NULL, NULL);
     if (ret)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to execute kernel!\n";
         return;
     }
     clFinish(command_queue);
 
-    int* result = new int[space->points.size()];
+    Zone* result = new Zone[space->points.size()];
     ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0,
                 space->points.size() * sizeof(int), result, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to read output array! "<<ret;
         return;
     }
@@ -293,19 +280,11 @@ void OpenclGenerator::ComputeModel(const Program& prog,
     Zone zone;
     for(int i = 0; i < space->points.size(); i++)
     {
-        int res = result[i];
-        if(res == 0)
-            zone = Zone::Zero;
-        else if(res == 1)
-            zone = Zone::Positive;
-        else
-            zone = Zone::Negative;
-        adder(VoxelData(space->points[i], space->pointSize/2.,
-                        zone, {255, 255, 255, 20}));
+        adder(VoxelData(space->points[i], inputPointSize,
+                        result[i], {255, 255, 255, 20}));
     }
     ret = clReleaseMemObject(in_mem_obj);
     ret = clReleaseMemObject(out_mem_obj);
-    delete[] inputPoints;
     delete[] result;
     qDebug()<<"Complete\n";
 }
@@ -352,18 +331,9 @@ void OpenclGenerator::ComputeImage(const Program &prog, function<void (VoxelImag
         prevSource = source;
     }
 
-    // Prepeat cpu data
-    cl_double3* inputPoints = new cl_double3[space->points.size()];
-    cl_double3 inputPointSize = {space->pointSize.x,
-                                 space->pointSize.y,
-                                 space->pointSize.z};
-    for(int i = 0; i < space->points.size(); i++)
-    {
-        inputPoints[i] = {space->points[i].x,
-                          space->points[i].y,
-                          space->points[i].z};
-    }
-
+    cl_double3 halfSize = {space->pointSize.x/2.,
+                           space->pointSize.y/2.,
+                           space->pointSize.z/2.};
     // Create gpu buffers
     cl_mem in_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
                 space->points.size() * sizeof(cl_double3), NULL, &ret);
@@ -371,26 +341,23 @@ void OpenclGenerator::ComputeImage(const Program &prog, function<void (VoxelImag
                 space->points.size() * sizeof(cl_double8), NULL, &ret);
     if (!in_mem_obj || !out_mem_obj)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to allocate device memory!";
         return;
     }
 
     // Fill gpu buffer from cpu memory
     ret = clEnqueueWriteBuffer(command_queue, in_mem_obj, CL_TRUE, 0,
-                space->points.size() * sizeof(cl_double3), inputPoints, 0, NULL, NULL);
+                space->points.size() * sizeof(cl_double3), space->points.data(), 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to write to source array!";
         return;
     }
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&out_mem_obj);
     ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&in_mem_obj);
-    ret = clSetKernelArg(kernel, 2, sizeof(cl_double3), &inputPointSize);
+    ret = clSetKernelArg(kernel, 2, sizeof(cl_double3), &space->pointSize);
     if (ret != CL_SUCCESS)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
         return;
     }
@@ -402,7 +369,6 @@ void OpenclGenerator::ComputeImage(const Program &prog, function<void (VoxelImag
                                    sizeof(local), &local, NULL);
     if (ret != CL_SUCCESS)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to retrieve kernel work group info! " << ret;
         return;
     }
@@ -416,7 +382,6 @@ void OpenclGenerator::ComputeImage(const Program &prog, function<void (VoxelImag
                 &global, &local, 0, NULL, NULL);
     if (ret)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to execute kernel!\n";
         return;
     }
@@ -427,7 +392,6 @@ void OpenclGenerator::ComputeImage(const Program &prog, function<void (VoxelImag
                 space->points.size() * sizeof(cl_double8), result, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        delete[] inputPoints;
         qDebug()<<"Error: Failed to read output array! "<<ret;
         return;
     }
@@ -435,7 +399,7 @@ void OpenclGenerator::ComputeImage(const Program &prog, function<void (VoxelImag
     for(int i = 0; i < space->points.size(); i++)
     {
         cl_double8 res = result[i];
-        adder(VoxelImageData(space->points[i], space->pointSize/2., {
+        adder(VoxelImageData(space->points[i], halfSize, {
                    {MImageType::Cx, res.s0},
                    {MImageType::Cy, res.s1},
                    {MImageType::Cz, res.s2},
@@ -445,7 +409,6 @@ void OpenclGenerator::ComputeImage(const Program &prog, function<void (VoxelImag
     }
     ret = clReleaseMemObject(in_mem_obj);
     ret = clReleaseMemObject(out_mem_obj);
-    delete[] inputPoints;
     delete[] result;
     qDebug()<<"Complete\n";
 }

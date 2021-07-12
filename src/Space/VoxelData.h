@@ -3,12 +3,13 @@
 
 #include "Utils.h"
 #include <QColor>
+#include <CL/cl.h>
 
 enum class Zone
 {
-    Zero,
-    Positive,
-    Negative
+    Negative = -1,
+    Zero = 0,
+    Positive = 1
 };
 
 struct VoxelData
@@ -20,6 +21,14 @@ struct VoxelData
         color(color),
         zone(zone)
     {}
+    VoxelData(const cl_double3& position, const cl_double3& size,
+              const Zone& zone, const QColor& color):
+        position(position.x, position.y, position.z),
+        size(size.x, size.y, size.z),
+        color(color),
+        zone(zone)
+    {}
+
     Vector3f position;
     Vector3f size;
     QColor color;

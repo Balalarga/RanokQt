@@ -4,36 +4,37 @@
 
 #include <vector>
 #include "Utils.h"
+#include <CL/cl.h>
 
 struct Linear3dSpaceData
 {
-    Linear3dSpaceData(int spaceSize, Vector3d pointSize):
+    Linear3dSpaceData(int spaceSize, cl_double3 pointSize):
         pointSize(pointSize)
     {
         points.reserve(spaceSize);
     }
-    Vector3d pointSize;
-    std::vector<Vector3d> points;
+    cl_double3 pointSize;
+    std::vector<cl_double3> points;
 };
 struct Linear2dSpaceData
 {
-    Linear2dSpaceData(int spaceSize, Vector2d pointSize):
+    Linear2dSpaceData(int spaceSize, cl_double2 pointSize):
         pointSize(pointSize)
     {
         points.reserve(spaceSize);
     }
-    Vector2d pointSize;
-    std::vector<Vector2d> points;
+    cl_double2 pointSize;
+    std::vector<cl_double2> points;
 };
 struct Linear1dSpaceData
 {
-    Linear1dSpaceData(int spaceSize, double pointSize):
+    Linear1dSpaceData(int spaceSize, cl_double pointSize):
         pointSize(pointSize)
     {
         points.reserve(spaceSize);
     }
-    double pointSize;
-    std::vector<double> points;
+    cl_double pointSize;
+    std::vector<cl_double> points;
 };
 
 class SpaceBuilder

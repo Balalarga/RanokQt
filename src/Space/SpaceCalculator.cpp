@@ -75,13 +75,13 @@ bool SpaceCalculator::GetModel(const Program &program, std::function<void (Voxel
     auto space = SpaceBuilder::Instance().Get3dSpace();
     if(!space)
         return false;
-    Vector3f halfSize(space->pointSize.x/2.f,
-                      space->pointSize.y/2.f,
-                      space->pointSize.z/2.f);
+    cl_double3 halfSize{space->pointSize.x/2.f,
+                        space->pointSize.y/2.f,
+                        space->pointSize.z/2.f};
     for(auto& point : space->points)
     {
         constexpr unsigned verticesSize = 8;
-        Vector3d vertices[verticesSize]{
+        cl_double3 vertices[verticesSize]{
             { point.x+halfSize.x, point.y+halfSize.y, point.z+halfSize.z },
             { point.x+halfSize.x, point.y+halfSize.y, point.z-halfSize.z },
             { point.x+halfSize.x, point.y-halfSize.y, point.z+halfSize.z },
@@ -105,18 +105,18 @@ bool SpaceCalculator::GetMImage(const Program &program, std::function<void (Voxe
     auto space = SpaceBuilder::Instance().Get3dSpace();
     if(!space)
         return false;
-    Vector3f size = space->pointSize;
-    Vector3f halfSize(size.x/2.f,
-                      size.y/2.f,
-                      size.z/2.f);
+    cl_double3 size = space->pointSize;
+    cl_double3 halfSize{size.x/2.f,
+                        size.y/2.f,
+                        size.z/2.f};
 
     vector<double> wv(4);
     for(auto& point: space->points)
     {
-        wv[0] = program.Compute({point.x,        point.y,        point.z       });
-        wv[1] = program.Compute({point.x+size.x, point.y,        point.z       });
-        wv[2] = program.Compute({point.x,        point.y+size.y, point.z       });
-        wv[3] = program.Compute({point.x,        point.y,        point.z+size.z});
+        wv[0] = program.Compute(Vector3{point.x,        point.y,        point.z       });
+        wv[1] = program.Compute(Vector3{point.x+size.x, point.y,        point.z       });
+        wv[2] = program.Compute(Vector3{point.x,        point.y+size.y, point.z       });
+        wv[3] = program.Compute(Vector3{point.x,        point.y,        point.z+size.z});
 
         int flag = 0;
         for(auto& i: wv)

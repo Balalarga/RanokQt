@@ -61,6 +61,11 @@ double Program::Compute(Vector3d args) const
     return res;
 }
 
+double Program::Compute(cl_double3 args) const
+{
+    return Compute(Vector3d(args.x, args.y, args.z));
+}
+
 
 void Program::PrintTreeDepth(int depth) const
 {

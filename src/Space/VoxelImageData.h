@@ -2,7 +2,7 @@
 #define VOXELIMAGEDATA_H
 
 #include "Utils.h"
-
+#include <CL/cl.h>
 #include <map>
 
 enum class MImageType
@@ -16,6 +16,12 @@ struct VoxelImageData
                    const std::map<MImageType, double> &normals):
         position(position),
         size(size),
+        images(normals)
+    {}
+    VoxelImageData(const cl_double3& position, const cl_double3& size,
+                   const std::map<MImageType, double> &normals):
+        position(position.x, position.y, position.z),
+        size(size.x, size.y, size.z),
         images(normals)
     {}
     Vector3f position;

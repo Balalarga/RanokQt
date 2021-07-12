@@ -6,6 +6,7 @@
 #include "Utils.h"
 #include "SymbolTable.h"
 #include "NodeCreator.h"
+#include <CL/cl.h>
 
 
 // Класс, содержащий информацию о абстрактном синтаксическом дереве
@@ -18,6 +19,7 @@ public:
 
     double Compute(std::map<std::string, double> arguments) const;
     double Compute(Vector3d args) const;
+    double Compute(cl_double3 args) const;
 
     std::string GetError() const;
     bool IsError() const;
