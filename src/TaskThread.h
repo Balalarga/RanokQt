@@ -7,6 +7,12 @@
 #include "Space/VoxelData.h"
 #include "Space/VoxelImageData.h"
 #include "Space/SpaceCalculator.h"
+#include "OpenclGenerator.h"
+
+enum class ComputeMode
+{
+    Cpu, Gpu
+};
 
 
 class ModelThread : public QThread
@@ -22,18 +28,28 @@ public:
     {
         _program = program;
     }
+    void SetComputeMode(ComputeMode mode)
+    {
+        _mode = mode;
+    }
 
 
 protected:
     void run() override
     {
         if(_program)
-            SpaceCalculator::GetModel(*_program, _adder);
+        {
+            if(_mode == ComputeMode::Cpu)
+                SpaceCalculator::GetModel(*_program, _adder);
+            else
+                OpenclGenerator::Instance().ComputeModel(*_program, _adder);
+        }
         else
             qDebug()<<"[ModelThread] Program is null";
     }
     std::function<void(VoxelData)> _adder;
     Program* _program = nullptr;
+    ComputeMode _mode = ComputeMode::Cpu;
 };
 
 
@@ -50,15 +66,28 @@ public:
     {
         _program = program;
     }
+    void SetComputeMode(ComputeMode mode)
+    {
+        _mode = mode;
+    }
 
 
 protected:
     void run() override
     {
-        SpaceCalculator::GetMImage(*_program, _adder);
+        if(_program)
+        {
+            if(_mode == ComputeMode::Cpu)
+                SpaceCalculator::GetMImage(*_program, _adder);
+            else
+                OpenclGenerator::Instance().ComputeImage(*_program, _adder);
+        }
+        else
+            qDebug()<<"[ModelThread] Program is null";
     }
     std::function<void(VoxelImageData)> _adder;
     Program* _program = nullptr;
+    ComputeMode _mode = ComputeMode::Cpu;
 };
 
 #endif // TASKTHREAD_H

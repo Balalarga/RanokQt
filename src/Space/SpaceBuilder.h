@@ -44,23 +44,23 @@ public:
     ~SpaceBuilder();
 
     Linear3dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                     const std::pair<double, double> &dim2,
-                                     const std::pair<double, double> &dim3,
-                                     const Vector3i &step);
+                                   const std::pair<double, double> &dim2,
+                                   const std::pair<double, double> &dim3,
+                                   const Vector3i &step);
     Linear3dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                     const std::pair<double, double> &dim2,
-                                     const std::pair<double, double> &dim3,
-                                     const int &recur);
+                                   const std::pair<double, double> &dim2,
+                                   const std::pair<double, double> &dim3,
+                                   const int &recur);
     Linear2dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                     const std::pair<double, double> &dim2,
-                                     const Vector2i &step);
+                                   const std::pair<double, double> &dim2,
+                                   const Vector2i &step);
     Linear2dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                     const std::pair<double, double> &dim2,
-                                     const int &recur);
+                                   const std::pair<double, double> &dim2,
+                                   const int &recur);
     Linear1dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                     const double &step);
+                                   const double &step);
     Linear1dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                     const int &recur);
+                                   const int &recur);
     Linear3dSpaceData* Get3dSpace();
     Linear2dSpaceData* Get2dSpace();
     Linear1dSpaceData* Get1dSpace();

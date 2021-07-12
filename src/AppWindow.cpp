@@ -193,45 +193,16 @@ void AppWindow::Compute()
         auto args = m_program->GetSymbolTable().GetAllArgs();
         SpaceBuilder::Instance().CreateSpace(args[0]->limits, args[1]->limits,
                                              args[2]->limits, _spaceDepth->value());
-        if(m_computeDevice->isChecked())
-        {
 
-            if(m_imageModeButton->isChecked())
-            {
-                OpenclGenerator::Instance().ComputeImage(*m_program,
-                                                         [this](VoxelImageData data){
-                    double value = data.images[_currentType];
-                    value = (1. + value)/2.;
-                    unsigned uValue = UINT_MAX*value;
-                    m_sceneView->AddObject(new OpenglCube(data.position, data.size,
-                                                          _linearGradModel->GetColor(uValue)));
-                });
-            }
-            else
-            {
-                OpenclGenerator::Instance().ComputeModel(*m_program,
-                                                    [this](VoxelData data)
-                {
-                    auto obj = new OpenglCube(data.position, data.size,
-                                              SpaceCalculator::GetVoxelColor());
-                    if(data.zone != _currentZone)
-                        obj->SetVisible(false);
-                    m_sceneView->AddObject(obj);
-                });
-            }
+        if(m_imageModeButton->isChecked())
+        {
+            m_imageThread->SetProgram(m_program);
+            m_imageThread->start();
         }
         else
         {
-            if(m_imageModeButton->isChecked())
-            {
-                m_imageThread->SetProgram(m_program);
-                m_imageThread->start();
-            }
-            else
-            {
-                m_modelThread->SetProgram(m_program);
-                m_modelThread->start();
-            }
+            m_modelThread->SetProgram(m_program);
+            m_modelThread->start();
         }
     }
 }
@@ -283,15 +254,19 @@ void AppWindow::SwitchComputeDevice()
 {
     if(m_computeDevice->isChecked())
     {
-        // image mode
+        // Gpu
         _computeDevice1->setStyleSheet("QLabel { color : #888888; }");
         _computeDevice2->setStyleSheet("QLabel { color : #ffffff; }");
+        m_modelThread->SetComputeMode(ComputeMode::Gpu);
+        m_imageThread->SetComputeMode(ComputeMode::Gpu);
     }
     else
     {
-        // model mode
+        // Cpu
         _computeDevice1->setStyleSheet("QLabel { color : #ffffff; }");
         _computeDevice2->setStyleSheet("QLabel { color : #888888; }");
+        m_modelThread->SetComputeMode(ComputeMode::Cpu);
+        m_imageThread->SetComputeMode(ComputeMode::Cpu);
     }
 }
 

@@ -293,9 +293,10 @@ void OpenclGenerator::ComputeModel(const Program& prog,
     Zone zone;
     for(int i = 0; i < space->points.size(); i++)
     {
-        if(result[i] == 0)
+        int res = result[i];
+        if(res == 0)
             zone = Zone::Zero;
-        else if(result[i] == 1)
+        else if(res == 1)
             zone = Zone::Positive;
         else
             zone = Zone::Negative;
