@@ -20,10 +20,8 @@ public:
 
     std::string CreateOpenclSource(const Program& program);
 
-    void ComputeModel(const Program &prog,
-                 std::function<void (VoxelData)> adder);
-    void ComputeImage(const Program &prog,
-                 std::function<void (VoxelImageData)> adder);
+    void ComputeModel(const Program &prog);
+    void ComputeImage(const Program &prog);
 //    void Compute(const std::string &source, const std::vector<Vector2d> &data);
 //    void Compute(const std::string &source, const std::vector<double> &data);
 

@@ -166,10 +166,13 @@ OpenclGenerator::OpenclGenerator()
 }
 
 
-void OpenclGenerator::ComputeModel(const Program& prog,
-                              std::function<void(VoxelData)> adder)
+void OpenclGenerator::ComputeModel(const Program& prog)
 {
-    auto space = SpaceBuilder::Instance().Get3dSpace();
+    auto space = SpaceBuilder::Instance().GetSpace();
+    if(!space)
+        return;
+    space->CreateZoneData();
+
     string source = CreateOpenclSource(prog);
     const char* src_str = source.c_str();
 
@@ -289,9 +292,12 @@ void OpenclGenerator::ComputeModel(const Program& prog,
     qDebug()<<"Complete\n";
 }
 
-void OpenclGenerator::ComputeImage(const Program &prog, function<void (VoxelImageData)> adder)
+void OpenclGenerator::ComputeImage(const Program &prog)
 {
-    auto space = SpaceBuilder::Instance().Get3dSpace();
+    auto space = SpaceBuilder::Instance().GetSpace();
+    if(!space)
+        return;
+    space->CreateMimageData();
     string source = CreateOpenclSource(prog);
     const char* src_str = source.c_str();
 
@@ -376,7 +382,7 @@ void OpenclGenerator::ComputeImage(const Program &prog, function<void (VoxelImag
     // Execute the kernel over the entire range of our 1d input data set
     // using the maximum number of work group items for this device
     //
-    global = space->points.size();
+    global = space->
 
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
                 &global, &local, 0, NULL, NULL);

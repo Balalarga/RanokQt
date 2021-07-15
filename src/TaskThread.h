@@ -19,9 +19,8 @@ class ModelThread : public QThread
 {
     Q_OBJECT
 public:
-    ModelThread(std::function<void(VoxelData)> adder, QObject *parent = nullptr):
-        QThread(parent),
-        _adder(adder)
+    ModelThread(QObject *parent = nullptr):
+        QThread(parent)
     {
     }
     void SetProgram(Program* program)
@@ -40,14 +39,13 @@ protected:
         if(_program)
         {
             if(_mode == ComputeMode::Cpu)
-                SpaceCalculator::GetModel(*_program, _adder);
+                SpaceCalculator::GetModel(*_program);
             else
-                OpenclGenerator::Instance().ComputeModel(*_program, _adder);
+                OpenclGenerator::Instance().ComputeModel(*_program);
         }
         else
             qDebug()<<"[ModelThread] Program is null";
     }
-    std::function<void(VoxelData)> _adder;
     Program* _program = nullptr;
     ComputeMode _mode = ComputeMode::Cpu;
 };
@@ -57,7 +55,7 @@ class ImageThread : public QThread
 {
     Q_OBJECT
 public:
-    ImageThread(std::function<void(VoxelImageData)> adder, QObject *parent = nullptr):
+    ImageThread(QObject *parent = nullptr):
         QThread(parent),
         _adder(adder)
     {
@@ -78,14 +76,13 @@ protected:
         if(_program)
         {
             if(_mode == ComputeMode::Cpu)
-                SpaceCalculator::GetMImage(*_program, _adder);
+                SpaceCalculator::GetMImage(*_program);
             else
-                OpenclGenerator::Instance().ComputeImage(*_program, _adder);
+                OpenclGenerator::Instance().ComputeImage(*_program);
         }
         else
             qDebug()<<"[ModelThread] Program is null";
     }
-    std::function<void(VoxelImageData)> _adder;
     Program* _program = nullptr;
     ComputeMode _mode = ComputeMode::Cpu;
 };
