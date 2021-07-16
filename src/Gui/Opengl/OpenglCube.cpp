@@ -1,6 +1,6 @@
 #include "OpenglCube.h"
 
-OpenglCube::OpenglCube(Vector3f pos, Vector3f size, QColor color, QObject *parent):
+OpenglCube::OpenglCube(cl_double3 pos, cl_double3 size, QColor color, QObject *parent):
     OpenglObject(color, parent)
 {
     verticies[0] =  {pos.x-size.x,

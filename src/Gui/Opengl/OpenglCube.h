@@ -3,18 +3,19 @@
 
 #include <QObject>
 #include "OpenglObject.h"
+#include <CL/cl.h>
 
 class OpenglCube : public OpenglObject
 {
     Q_OBJECT
 public:
-    explicit OpenglCube(Vector3f pos, Vector3f size, QColor color, QObject *parent = nullptr);
+    explicit OpenglCube(cl_double3 pos, cl_double3 size, QColor color, QObject *parent = nullptr);
 
     void Render();
 
 private:
-    Vector3f verticies[24];
-    Vector3f normals[6]{
+    cl_double3 verticies[24];
+    cl_double3 normals[6]{
         {0, 0, 1},
         {0, 0, -1},
         {1, 0, 0},

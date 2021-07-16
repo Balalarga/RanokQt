@@ -7,7 +7,7 @@
 #include "Space/VoxelData.h"
 #include "Space/VoxelImageData.h"
 #include "Space/SpaceCalculator.h"
-#include "OpenclGenerator.h"
+#include "OpenclCalculator.h"
 
 enum class ComputeMode
 {
@@ -20,7 +20,8 @@ class ModelThread : public QThread
     Q_OBJECT
 public:
     ModelThread(QObject *parent = nullptr):
-        QThread(parent)
+        QThread(parent),
+        _batchSize(0)
     {
     }
     void SetProgram(Program* program)
@@ -31,6 +32,10 @@ public:
     {
         _mode = mode;
     }
+    void SetBatchSize(int batchSize)
+    {
+        _batchSize = batchSize;
+    }
 
 
 protected:
@@ -39,15 +44,18 @@ protected:
         if(_program)
         {
             if(_mode == ComputeMode::Cpu)
-                SpaceCalculator::GetModel(*_program);
+            {
+                SpaceCalculator::Get().GetModel(*_program, _batchSize);
+            }
             else
-                OpenclGenerator::Instance().ComputeModel(*_program);
+                OpenclCalculator::Get().ComputeModel(*_program, _batchSize);
         }
         else
             qDebug()<<"[ModelThread] Program is null";
     }
     Program* _program = nullptr;
     ComputeMode _mode = ComputeMode::Cpu;
+    int _batchSize;
 };
 
 
@@ -55,9 +63,9 @@ class ImageThread : public QThread
 {
     Q_OBJECT
 public:
-    ImageThread(QObject *parent = nullptr):
+    ImageThread( QObject *parent = nullptr):
         QThread(parent),
-        _adder(adder)
+        _batchSize(0)
     {
     }
     void SetProgram(Program* program)
@@ -68,6 +76,11 @@ public:
     {
         _mode = mode;
     }
+    void SetBatchSize(int batchSize)
+    {
+        _batchSize = batchSize;
+    }
+
 
 
 protected:
@@ -76,15 +89,16 @@ protected:
         if(_program)
         {
             if(_mode == ComputeMode::Cpu)
-                SpaceCalculator::GetMImage(*_program);
+                SpaceCalculator::Get().GetMImage(*_program, _batchSize);
             else
-                OpenclGenerator::Instance().ComputeImage(*_program);
+                OpenclCalculator::Get().ComputeImage(*_program, _batchSize);
         }
         else
             qDebug()<<"[ModelThread] Program is null";
     }
     Program* _program = nullptr;
     ComputeMode _mode = ComputeMode::Cpu;
+    int _batchSize;
 };
 
 #endif // TASKTHREAD_H

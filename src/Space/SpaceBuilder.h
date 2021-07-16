@@ -3,6 +3,8 @@
 
 
 #include <vector>
+#include <QDebug>
+
 #include "Utils.h"
 #include <CL/cl.h>
 
@@ -10,9 +12,9 @@ template<class T>
 struct CubeMatrix
 {
     CubeMatrix(cl_uint3 size):
-        _size(size)
+        _size(size),
+        _rawPtr(new T[size.x*size.y*size.z])
     {
-        _rawPtr = new T[size.x*size.y*size.z];
     }
     ~CubeMatrix()
     {
@@ -20,19 +22,25 @@ struct CubeMatrix
     }
     T& At(int x, int y, int z)
     {
-        return _rawPtr[x + _size.y * (y + _size.z * z)];
+        return _rawPtr[x*_size.y*_size.z + y*_size.z + z];
+    }
+    T& At(int i)
+    {
+        return _rawPtr[i];
     }
 
     cl_uint3 GetSize()
     {
         return _size;
     }
+    T* GetPointer()
+    {
+        return _rawPtr;
+    }
 
 private:
-    T* _rawPtr;
+    T* _rawPtr = 0;
     cl_uint3 _size;
-
-    // Flat[x + WIDTH * (y + DEPTH * z)]
 };
 
 
@@ -52,12 +60,16 @@ struct SpaceData
               cl_double3 startPoint,
               cl_double3 pointSize):
         spaceUnits(spaceUnits),
-        startPoint(startPoint),
         pointSize(pointSize),
         mimageData(nullptr),
         zoneData(nullptr)
     {
-
+        pointHalfSize = {pointSize.x/2.,
+                         pointSize.y/2.,
+                         pointSize.z/2.};
+        this->startPoint.x = startPoint.x + pointHalfSize.x;
+        this->startPoint.y = startPoint.y + pointHalfSize.y;
+        this->startPoint.z = startPoint.z + pointHalfSize.z;
     }
     ~SpaceData()
     {
@@ -66,10 +78,12 @@ struct SpaceData
     }
     void CreateMimageData()
     {
+        DeleteMimageData();
         mimageData = new CubeMatrix<MimageData>(spaceUnits);
     }
     void CreateZoneData()
     {
+        DeleteZoneData();
         zoneData = new CubeMatrix<int>(spaceUnits);
     }
     void DeleteMimageData()
@@ -88,10 +102,23 @@ struct SpaceData
             zoneData = nullptr;
         }
     }
+    int GetSize()
+    {
+        return spaceUnits.x*spaceUnits.y*spaceUnits.z;
+    }
+    cl_double3 GetPos(int i)
+    {
+        cl_double3 pos;
+        pos.x = startPoint.x + pointSize.x * (i / ( spaceUnits.z * spaceUnits.y ));
+        pos.y = startPoint.y + pointSize.y * (( i / spaceUnits.z ) % spaceUnits.y);
+        pos.z = startPoint.z + pointSize.z * (i % spaceUnits.z);
+        return pos;
+    }
 
     cl_uint3   spaceUnits;
     cl_double3 startPoint;
     cl_double3 pointSize;
+    cl_double3 pointHalfSize;
 
     CubeMatrix<MimageData>* mimageData;
     CubeMatrix<int>*        zoneData;

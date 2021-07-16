@@ -1,25 +1,32 @@
 #ifndef SPACECALCULATOR_H
 #define SPACECALCULATOR_H
 
+#include <QObject>
 
 #include "VoxelImageData.h"
 #include "VoxelData.h"
 #include "Language/Program.h"
 
-
-class SpaceCalculator
+class SpaceCalculator: public QObject
 {
+    Q_OBJECT
 public:
-    SpaceCalculator() = delete;
 
-    static bool GetModel(const Program& program);
-    static bool GetMImage(const Program& program);
+    static SpaceCalculator& Get();
 
-    static QColor GetVoxelColor();
-    static void SetVoxelColor(const QColor &newDefaultColor);
+    bool GetModel(const Program& program, int batchSize = 0);
+    bool GetMImage(const Program& program, int batchSize = 0);
+
+    QColor GetVoxelColor();
+    void SetVoxelColor(const QColor &newDefaultColor);
+
+signals:
+    void ComputedModel(int start, int count);
+    void ComputedMimage(int start, int count);
 
 private:
-    static QColor _voxelColor;
+    SpaceCalculator(QObject* parent = 0);
+    QColor _voxelColor;
 };
 
 #endif // SPACECALCULATOR_H

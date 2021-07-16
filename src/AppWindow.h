@@ -54,7 +54,8 @@ private slots:
     void SwitchComputeDevice();
     void ImageChanged(QString name);
     void ComputeLine(QString line);
-
+    void ModelComputeFinished(int start, int end);
+    void MimageComputeFinished(int start, int end);
 
 private:
     Mode m_mode;
@@ -73,7 +74,7 @@ private:
     Program* m_lineProgram;
     LinearGradientModel* _linearGradModel;
 
-    Zone _currentZone;
+    int _currentZone;
     MImageType _currentType;
 
     QLabel* _editorMode1Label;
@@ -91,6 +92,7 @@ private:
     QComboBox* _imageType;
     QStringListModel* _imageTypeModel;
     QSpinBox* _spaceDepth;
+    QSpinBox* _batchSize;
 
 
     QPushButton* m_addLineButton;

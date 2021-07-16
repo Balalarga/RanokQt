@@ -43,6 +43,11 @@ SpaceData* SpaceBuilder::CreateSpace(const std::pair<double, double> &dim1,
     return CreateSpace(dim1, dim2, dim3, {depth, depth, depth});
 }
 
+SpaceData *SpaceBuilder::GetSpace()
+{
+    return _space;
+}
+
 //Linear2dSpaceData *SpaceBuilder::CreateSpace(const std::pair<double, double> &dim1,
 //                                             const std::pair<double, double> &dim2,
 //                                             const Vector2i &step)

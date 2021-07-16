@@ -68,10 +68,13 @@ int CheckZone(const std::vector<double> &values)
     return -1;
 }
 
+SpaceCalculator &SpaceCalculator::Get()
+{
+    static SpaceCalculator calc;
+    return calc;
+}
 
-QColor SpaceCalculator::_voxelColor = {255, 255, 255, 20};
-
-bool SpaceCalculator::GetModel(const Program &program)
+bool SpaceCalculator::GetModel(const Program &program, int batchSize)
 {
     auto space = SpaceBuilder::Instance().GetSpace();
     if(!space)
@@ -79,40 +82,42 @@ bool SpaceCalculator::GetModel(const Program &program)
 
     space->CreateZoneData();
 
-    cl_double3 halfSize{space->pointSize.x/2.f,
-                space->pointSize.y/2.f,
-                space->pointSize.z/2.f};
+    cl_double3 halfSize = space->pointHalfSize;
     constexpr unsigned verticesSize = 8;
     vector<double> values(8);
     cl_double3 vertices[verticesSize];
-    for(unsigned ix = 0; ix < space->spaceUnits.x; ix++)
-    {
-        for(unsigned iy = 0; iy < space->spaceUnits.y; iy++)
-        {
-            for(unsigned iz = 0; iz < space->spaceUnits.z; iz++)
-            {
-                cl_double3 point = {space->startPoint.x + space->pointSize.x * ix,
-                                    space->startPoint.y + space->pointSize.y * iy,
-                                    space->startPoint.z + space->pointSize.z * iz};
-                vertices[0] = { point.x + halfSize.x, point.y + halfSize.y, point.z + halfSize.z };
-                vertices[0] = { point.x + halfSize.x, point.y + halfSize.y, point.z - halfSize.z };
-                vertices[0] = { point.x + halfSize.x, point.y - halfSize.y, point.z + halfSize.z };
-                vertices[0] = { point.x + halfSize.x, point.y - halfSize.y, point.z - halfSize.z };
-                vertices[0] = { point.x - halfSize.x, point.y + halfSize.y, point.z + halfSize.z };
-                vertices[0] = { point.x - halfSize.x, point.y + halfSize.y, point.z - halfSize.z };
-                vertices[0] = { point.x - halfSize.x, point.y - halfSize.y, point.z + halfSize.z };
-                vertices[0] = { point.x - halfSize.x, point.y - halfSize.y, point.z - halfSize.z };
+    cl_double3 point;
 
-                for(size_t i = 0; i < verticesSize; i++)
-                    values[i] = program.Compute(vertices[i]);
-                space->zoneData->At(ix, iy, iz) = CheckZone(values);
-            }
+    if(batchSize == 0)
+        batchSize = space->GetSize();
+
+    for(int batchStart = 0; batchStart < space->GetSize(); )
+    {
+        int start = batchStart;
+        int currentSize = batchSize+batchStart < space->GetSize() ? batchSize+batchStart : space->GetSize();
+
+        for(; batchStart < currentSize; ++batchStart)
+        {
+            point = space->GetPos(batchStart);
+            vertices[0] = { point.x + halfSize.x, point.y + halfSize.y, point.z + halfSize.z };
+            vertices[1] = { point.x + halfSize.x, point.y + halfSize.y, point.z - halfSize.z };
+            vertices[2] = { point.x + halfSize.x, point.y - halfSize.y, point.z + halfSize.z };
+            vertices[3] = { point.x + halfSize.x, point.y - halfSize.y, point.z - halfSize.z };
+            vertices[4] = { point.x - halfSize.x, point.y + halfSize.y, point.z + halfSize.z };
+            vertices[5] = { point.x - halfSize.x, point.y + halfSize.y, point.z - halfSize.z };
+            vertices[6] = { point.x - halfSize.x, point.y - halfSize.y, point.z + halfSize.z };
+            vertices[7] = { point.x - halfSize.x, point.y - halfSize.y, point.z - halfSize.z };
+
+            for(size_t i = 0; i < verticesSize; i++)
+                values[i] = program.Compute(vertices[i]);
+            space->zoneData->At(batchStart) = CheckZone(values);
         }
+        emit ComputedModel(start, currentSize);
     }
     return true;
 }
 
-bool SpaceCalculator::GetMImage(const Program &program)
+bool SpaceCalculator::GetMImage(const Program &program, int batchSize)
 {
     auto space = SpaceBuilder::Instance().GetSpace();
     if(!space)
@@ -121,74 +126,76 @@ bool SpaceCalculator::GetMImage(const Program &program)
     space->CreateMimageData();
 
     cl_double3 size = space->pointSize;
-
     vector<double> wv(4);
     vector<vector<double>> a;
     vector<vector<double>> b;
     vector<vector<double>> c;
     vector<vector<double>> d;
     vector<vector<double>> f;
-    for(unsigned ix = 0; ix < space->spaceUnits.x; ix++)
+    cl_double3 point;
+
+    if(batchSize == 0)
+        batchSize = space->GetSize();
+
+    for(int batchStart = 0; batchStart < space->GetSize(); )
     {
-        for(unsigned iy = 0; iy < space->spaceUnits.y; iy++)
+        int start = batchStart;
+        int currentSize = batchSize+batchStart < space->GetSize() ? batchSize+batchStart : space->GetSize();
+
+        for(; batchStart < currentSize; ++batchStart)
         {
-            for(unsigned iz = 0; iz < space->spaceUnits.z; iz++)
-            {
-                cl_double3 point = {space->startPoint.x + space->pointSize.x * ix,
-                                    space->startPoint.y + space->pointSize.y * iy,
-                                    space->startPoint.z + space->pointSize.z * iz};
+            point = space->GetPos(batchStart);
+            wv[0] = program.Compute(Vector3{point.x,        point.y,        point.z       });
+            wv[1] = program.Compute(Vector3{point.x+size.x, point.y,        point.z       });
+            wv[2] = program.Compute(Vector3{point.x,        point.y+size.y, point.z       });
+            wv[3] = program.Compute(Vector3{point.x,        point.y,        point.z+size.z});
 
-                wv[0] = program.Compute(Vector3{point.x,        point.y,        point.z       });
-                wv[1] = program.Compute(Vector3{point.x+size.x, point.y,        point.z       });
-                wv[2] = program.Compute(Vector3{point.x,        point.y+size.y, point.z       });
-                wv[3] = program.Compute(Vector3{point.x,        point.y,        point.z+size.z});
+            a = {
+                {point.y,        point.z,        wv[0], 1},
+                {point.y,        point.z,        wv[1], 1},
+                {point.y+size.y, point.z,        wv[2], 1},
+                {point.y,        point.z+size.z, wv[3], 1},
+            };
+            b = {
+                {point.x,        point.z,        wv[0], 1},
+                {point.x+size.x, point.z,        wv[1], 1},
+                {point.x,        point.z,        wv[2], 1},
+                {point.x,        point.z+size.z, wv[3], 1},
+            };
+            c = {
+                {point.x,        point.y,        wv[0], 1},
+                {point.x+size.x, point.y,        wv[1], 1},
+                {point.x,        point.y+size.y, wv[2], 1},
+                {point.x,        point.y,        wv[3], 1},
+            };
+            d = {
+                {point.x,        point.y,        point.z,        1},
+                {point.x+size.x, point.y,        point.z,        1},
+                {point.x,        point.y+size.y, point.z,        1},
+                {point.x,        point.y,        point.z+size.z, 1},
+            };
+            f = {
+                {point.x,        point.y,        point.z,        wv[0]},
+                {point.x+size.x, point.y,        point.z,        wv[1]},
+                {point.x,        point.y+size.y, point.z,        wv[2]},
+                {point.x,        point.y,        point.z+size.z, wv[3]},
+            };
 
-                a = {
-                    {point.y,        point.z,        wv[0], 1},
-                    {point.y,        point.z,        wv[1], 1},
-                    {point.y+size.y, point.z,        wv[2], 1},
-                    {point.y,        point.z+size.z, wv[3], 1},
-                };
-                b = {
-                    {point.x,        point.z,        wv[0], 1},
-                    {point.x+size.x, point.z,        wv[1], 1},
-                    {point.x,        point.z,        wv[2], 1},
-                    {point.x,        point.z+size.z, wv[3], 1},
-                };
-                c = {
-                    {point.x,        point.y,        wv[0], 1},
-                    {point.x+size.x, point.y,        wv[1], 1},
-                    {point.x,        point.y+size.y, wv[2], 1},
-                    {point.x,        point.y,        wv[3], 1},
-                };
-                d = {
-                    {point.x,        point.y,        point.z,        1},
-                    {point.x+size.x, point.y,        point.z,        1},
-                    {point.x,        point.y+size.y, point.z,        1},
-                    {point.x,        point.y,        point.z+size.z, 1},
-                };
-                f = {
-                    {point.x,        point.y,        point.z,        wv[0]},
-                    {point.x+size.x, point.y,        point.z,        wv[1]},
-                    {point.x,        point.y+size.y, point.z,        wv[2]},
-                    {point.x,        point.y,        point.z+size.z, wv[3]},
-                };
+            double detA = determinantOfMatrix(a, 4);
+            double detB = determinantOfMatrix(b, 4);
+            double detC = determinantOfMatrix(c, 4);
+            double detD = determinantOfMatrix(d, 4);
+            double detF = determinantOfMatrix(f, 4);
+            double div = sqrt(pow(detA, 2)+pow(detB, 2)+
+                              pow(detC, 2)+pow(detD, 2)+pow(detF, 2));
 
-                double detA = determinantOfMatrix(a, 4);
-                double detB = determinantOfMatrix(b, 4);
-                double detC = determinantOfMatrix(c, 4);
-                double detD = determinantOfMatrix(d, 4);
-                double detF = determinantOfMatrix(f, 4);
-                double div = sqrt(pow(detA, 2)+pow(detB, 2)+
-                                  pow(detC, 2)+pow(detD, 2)+pow(detF, 2));
-
-                space->mimageData->At(ix, iy, iz).Cx = detA/div;
-                space->mimageData->At(ix, iy, iz).Cy = -detB/div;
-                space->mimageData->At(ix, iy, iz).Cz = -detC/div;
-                space->mimageData->At(ix, iy, iz).Cw = detD/div;
-                space->mimageData->At(ix, iy, iz).Ct = detF/div;
-            }
+            space->mimageData->At(batchStart).Cx = detA/div;
+            space->mimageData->At(batchStart).Cy = -detB/div;
+            space->mimageData->At(batchStart).Cz = -detC/div;
+            space->mimageData->At(batchStart).Cw = detD/div;
+            space->mimageData->At(batchStart).Ct = detF/div;
         }
+        emit ComputedMimage(start, currentSize);
     }
 
     return true;
@@ -202,4 +209,10 @@ QColor SpaceCalculator::GetVoxelColor()
 void SpaceCalculator::SetVoxelColor(const QColor &newDefaultColor)
 {
     _voxelColor = newDefaultColor;
+}
+
+SpaceCalculator::SpaceCalculator(QObject *parent):
+    QObject(parent)
+{
+    _voxelColor = {255, 255, 255, 20};
 }

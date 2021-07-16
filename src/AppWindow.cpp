@@ -5,7 +5,7 @@
 #include "Gui/Opengl/OpenglCube.h"
 #include "Gui/Opengl/OpenglSquare.h"
 #include "Space/SpaceBuilder.h"
-#include "OpenclGenerator.h"
+#include "OpenclCalculator.h"
 
 #include <iostream>
 
@@ -28,7 +28,8 @@ AppWindow::AppWindow(QWidget *parent)
       m_addLineButton(new QPushButton("Добавить строку", this)),
       _imageType(new QComboBox(this)),
       _spaceDepth(new QSpinBox(this)),
-      _currentZone(Zone::Zero),
+      _batchSize(new QSpinBox(this)),
+      _currentZone(0),
       _currentType(MImageType::Cx)
 {
     QVector<QColor> gradColors;
@@ -52,6 +53,12 @@ AppWindow::AppWindow(QWidget *parent)
     QLabel* spinLabel = new QLabel("Глубина рекурсии");
     spinLayout->addWidget(spinLabel);
     spinLayout->addWidget(_spaceDepth);
+
+    QHBoxLayout* batchLayout = new QHBoxLayout();
+    QLabel* batchLabel = new QLabel("Размер пачки");
+    batchLayout->addWidget(batchLabel);
+    spinLayout->addWidget(_batchSize);
+
 
     modeLayout->addLayout(spinLayout);
     modeLayout->addWidget(m_codeEditor);
@@ -113,6 +120,9 @@ AppWindow::AppWindow(QWidget *parent)
     _spaceDepth->setRange(1, 10);
     _spaceDepth->setValue(4);
 
+    _batchSize->setRange(0, 10000);
+    _batchSize->setValue(0);
+
     m_addLineButton->setVisible(false);
     wrapWidget->setLayout(modeLayout);
     m_lineEditor->setVisible(false);
@@ -137,22 +147,16 @@ AppWindow::AppWindow(QWidget *parent)
 
     m_toolVLayout->setMenuBar(menuBar);
 
-    m_imageThread = new ImageThread([this](VoxelImageData data){
-            double value = data.images[_currentType];
-            value = (1. + value)/2.;
-            unsigned uValue = UINT_MAX*value;
-            m_sceneView->AddObject(new OpenglCube(data.position, data.size,
-                                                  _linearGradModel->GetColor(uValue)));
-        }, this);
-    m_modelThread = new ModelThread([this](VoxelData data){
-            auto obj = new OpenglCube(data.position, data.size,
-                                      SpaceCalculator::GetVoxelColor());
-            if(data.zone != _currentZone)
-                obj->SetVisible(false);
-            m_sceneView->AddObject(obj);
-        }, this);
+    m_imageThread = new ImageThread(this);
+    m_modelThread = new ModelThread(this);
 
     StyleLoader::attach("../assets/styles/dark.qss");
+    m_codeEditor->AddFile("../examples/NewFuncs/sphere.txt");
+
+    connect(&SpaceCalculator::Get(), &SpaceCalculator::ComputedModel, this, &AppWindow::ModelComputeFinished);
+    connect(&SpaceCalculator::Get(), &SpaceCalculator::ComputedMimage, this, &AppWindow::MimageComputeFinished);
+    connect(&OpenclCalculator::Get(), &OpenclCalculator::ComputedModel, this, &AppWindow::ModelComputeFinished);
+    connect(&OpenclCalculator::Get(), &OpenclCalculator::ComputedMimage, this, &AppWindow::MimageComputeFinished);
 
     connect(_imageType, &QComboBox::currentTextChanged, this, &AppWindow::ImageChanged);
     connect(m_editorModeButton, &QPushButton::clicked, this, &AppWindow::SwitchEditorMode);
@@ -189,18 +193,19 @@ void AppWindow::Compute()
             delete m_program;
         m_program = m_parser.GetProgram();
         m_sceneView->ClearObjects();
-        SpaceBuilder::Instance().Delete3dSpace();
         auto args = m_program->GetSymbolTable().GetAllArgs();
         SpaceBuilder::Instance().CreateSpace(args[0]->limits, args[1]->limits,
-                                             args[2]->limits, _spaceDepth->value());
+                args[2]->limits, _spaceDepth->value());
 
         if(m_imageModeButton->isChecked())
         {
+            m_modelThread->SetBatchSize(_batchSize->value());
             m_imageThread->SetProgram(m_program);
             m_imageThread->start();
         }
         else
         {
+            m_modelThread->SetBatchSize(_batchSize->value());
             m_modelThread->SetProgram(m_program);
             m_modelThread->start();
         }
@@ -216,7 +221,7 @@ void AppWindow::SwitchEditorMode()
         m_lineEditor->setVisible(true);
         m_addLineButton->setVisible(true);
         m_mode = Mode::Line;
-//        m_modeButton->setText("Построчный режим");
+        //        m_modeButton->setText("Построчный режим");
         _editorMode1Label->setStyleSheet("QLabel { color : #888888; }");
         _editorMode2Label->setStyleSheet("QLabel { color : #ffffff; }");
     }
@@ -226,7 +231,7 @@ void AppWindow::SwitchEditorMode()
         m_lineEditor->setVisible(false);
         m_addLineButton->setVisible(false);
         m_mode = Mode::Common;
-//        m_modeButton->setText("Обычный режим");
+        //        m_modeButton->setText("Обычный режим");
         _editorMode1Label->setStyleSheet("QLabel { color : #ffffff; }");
         _editorMode2Label->setStyleSheet("QLabel { color : #888888; }");
     }
@@ -312,6 +317,35 @@ void AppWindow::ComputeLine(QString line)
         m_modelThread->SetProgram(m_lineProgram);
         m_sceneView->ClearObjects();
         m_modelThread->start();
+    }
+}
+
+void AppWindow::ModelComputeFinished(int start, int end)
+{
+    auto space = SpaceBuilder::Instance().GetSpace();
+
+    for(int i = start; i < end; ++i)
+    {
+        cl_double3 point = space->GetPos(i);
+        auto obj = new OpenglCube(point, space->pointHalfSize,
+                                  SpaceCalculator::Get().GetVoxelColor());
+        if(space->zoneData->At(i) != _currentZone)
+            obj->SetVisible(false);
+        m_sceneView->AddObject(obj);
+    }
+}
+
+void AppWindow::MimageComputeFinished(int start, int end)
+{
+    auto space = SpaceBuilder::Instance().GetSpace();
+    for(int i = start; i < end; ++i)
+    {
+        cl_double3 point = space->GetPos(i);
+        double value = space->mimageData->At(i).Cx;
+        value = (1. + value)/2.;
+        unsigned uValue = UINT_MAX*value;
+        m_sceneView->AddObject(new OpenglCube(point, space->pointHalfSize,
+                                              _linearGradModel->GetColor(uValue)));
     }
 }
 

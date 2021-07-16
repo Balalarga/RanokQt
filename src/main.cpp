@@ -28,43 +28,43 @@ bool ParseArguments(int argc, char *argv[])
         cout<<"Result file("<<resultFile<<") error\n";
         return false;
     }
-    if(mode == "Model")
-    {
-        vector<VoxelData> allData;
-        auto modelAdder = [&allData](VoxelData data){
-            allData.push_back(data);
-        };
-        if(device == "Cpu")
-            SpaceCalculator::GetModel(*program, modelAdder);
-        else
-            OpenclGenerator::Instance().ComputeModel(*program, modelAdder);
-        outputFile<<allData[0].size.x<<" "<<allData[0].size.y<<" "<<allData[0].size.z<<"\n";
-        for(auto& v: allData)
-        {
-            outputFile<<v.position.x<<" "<<v.position.y<<" "<<v.position.z<<" "<<static_cast<int>(v.zone)<<"\n";
-        }
-    }
-    else
-    {
-        vector<VoxelImageData> allData;
-        auto imageAdder = [&allData](VoxelImageData data){
-            allData.push_back(data);
-        };
-        if(device == "Cpu")
-            SpaceCalculator::GetMImage(*program, imageAdder);
-        else
-            OpenclGenerator::Instance().ComputeImage(*program, imageAdder);
+//    if(mode == "Model")
+//    {
+//        vector<VoxelData> allData;
+//        auto modelAdder = [&allData](VoxelData data){
+//            allData.push_back(data);
+//        };
+//        if(device == "Cpu")
+//            SpaceCalculator::Get()::GetModel(*program, modelAdder);
+//        else
+//            OpenclGenerator::Instance().ComputeModel(*program, modelAdder);
+//        outputFile<<allData[0].size.x<<" "<<allData[0].size.y<<" "<<allData[0].size.z<<"\n";
+//        for(auto& v: allData)
+//        {
+//            outputFile<<v.position.x<<" "<<v.position.y<<" "<<v.position.z<<" "<<static_cast<int>(v.zone)<<"\n";
+//        }
+//    }
+//    else
+//    {
+//        vector<VoxelImageData> allData;
+//        auto imageAdder = [&allData](VoxelImageData data){
+//            allData.push_back(data);
+//        };
+//        if(device == "Cpu")
+//            SpaceCalculator::Get()::GetMImage(*program, imageAdder);
+//        else
+//            OpenclGenerator::Instance().ComputeImage(*program, imageAdder);
 
-        outputFile<<allData[0].size.x<<" "<<allData[0].size.y<<" "<<allData[0].size.z<<"\n";
-        for(auto& v: allData)
-        {
-            outputFile<<v.position.x<<" "<<v.position.y<<" "<<v.position.z<<"\n";
-            for(auto& i: v.images)
-            {
-                outputFile<<static_cast<int>(i.first)<<" "<<i.second<<"\n";
-            }
-        }
-    }
+//        outputFile<<allData[0].size.x<<" "<<allData[0].size.y<<" "<<allData[0].size.z<<"\n";
+//        for(auto& v: allData)
+//        {
+//            outputFile<<v.position.x<<" "<<v.position.y<<" "<<v.position.z<<"\n";
+//            for(auto& i: v.images)
+//            {
+//                outputFile<<static_cast<int>(i.first)<<" "<<i.second<<"\n";
+//            }
+//        }
+//    }
 
     outputFile.close();
     delete program;

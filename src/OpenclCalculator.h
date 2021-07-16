@@ -11,22 +11,28 @@
 #include "Space/VoxelData.h"
 #include "Space/VoxelImageData.h"
 
-class OpenclGenerator
+class OpenclCalculator: public QObject
 {
+    Q_OBJECT
 public:
-    static OpenclGenerator& Instance(){ static OpenclGenerator gen; return gen; }
+    static OpenclCalculator& Get(){ static OpenclCalculator gen; return gen; }
 
-    ~OpenclGenerator();
+    ~OpenclCalculator();
 
     std::string CreateOpenclSource(const Program& program);
 
-    void ComputeModel(const Program &prog);
-    void ComputeImage(const Program &prog);
+    void ComputeModel(const Program &prog, int batchSize = 0);
+    void ComputeImage(const Program &prog, int batchSize = 0);
 //    void Compute(const std::string &source, const std::vector<Vector2d> &data);
 //    void Compute(const std::string &source, const std::vector<double> &data);
 
+signals:
+    void ComputedModel(int start, int count);
+    void ComputedMimage(int start, int count);
+
+
 protected:
-    OpenclGenerator();
+    OpenclCalculator();
 
 
 private:
