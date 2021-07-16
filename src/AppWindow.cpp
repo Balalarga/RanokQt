@@ -57,10 +57,11 @@ AppWindow::AppWindow(QWidget *parent)
     QHBoxLayout* batchLayout = new QHBoxLayout();
     QLabel* batchLabel = new QLabel("Размер пачки");
     batchLayout->addWidget(batchLabel);
-    spinLayout->addWidget(_batchSize);
+    batchLayout->addWidget(_batchSize);
 
 
     modeLayout->addLayout(spinLayout);
+    modeLayout->addLayout(batchLayout);
     modeLayout->addWidget(m_codeEditor);
     modeLayout->addWidget(m_lineEditor);
     modeLayout->addWidget(m_addLineButton);

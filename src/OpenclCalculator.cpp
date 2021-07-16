@@ -68,7 +68,7 @@ int checkZone(double *values)
     result << program.GetOpenclCode();
 
     result << R"(
-kernel void calcualteModel(global int *resultZones,
+kernel void __calcualteModel(global int *resultZones,
                            const uint3 spaceSize,
                            const double3 startPoint,
                            const double3 pointSize,
@@ -94,7 +94,7 @@ kernel void calcualteModel(global int *resultZones,
     resultZones[id] = checkZone(values);
 }
 
-kernel void calculateMImage(global double *result,
+kernel void __calculateMImage(global double *result,
                            const uint3 spaceSize,
                            const double3 startPoint,
                            const double3 pointSize,
@@ -214,14 +214,16 @@ void OpenclCalculator::ComputeModel(const Program& prog, int batchSize)
             qDebug()<<buffer;
             return;
         }
-        kernel = clCreateKernel(program, "calcualteModel", &ret);
-        if (!kernel || ret != CL_SUCCESS)
-        {
-            qDebug()<<"Error: Failed to create compute kernel!";
-            return;
-        }
         prevSource = source;
     }
+
+    kernel = clCreateKernel(program, "__calcualteModel", &ret);
+    if (!kernel || ret != CL_SUCCESS)
+    {
+        qDebug()<<"Error: Failed to create compute kernel!";
+        return;
+    }
+
     if(batchSize == 0)
         batchSize = space->GetSize();
 
@@ -246,6 +248,7 @@ void OpenclCalculator::ComputeModel(const Program& prog, int batchSize)
         if (ret != CL_SUCCESS)
         {
             qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
+            clReleaseMemObject(out_mem_obj);
             return;
         }
         // Get the maximum work group size for executing the kernel on the device
@@ -257,6 +260,7 @@ void OpenclCalculator::ComputeModel(const Program& prog, int batchSize)
         if (ret != CL_SUCCESS)
         {
             qDebug()<<"Error: Failed to retrieve kernel work group info! " << ret;
+            clReleaseMemObject(out_mem_obj);
             return;
         }
 
@@ -270,6 +274,7 @@ void OpenclCalculator::ComputeModel(const Program& prog, int batchSize)
         if (ret)
         {
             qDebug()<<"Error: Failed to execute kernel!\n";
+            clReleaseMemObject(out_mem_obj);
             return;
         }
         clFinish(command_queue);
@@ -279,6 +284,7 @@ void OpenclCalculator::ComputeModel(const Program& prog, int batchSize)
         if (ret != CL_SUCCESS)
         {
             qDebug()<<"Error: Failed to read output array! "<<ret;
+            clReleaseMemObject(out_mem_obj);
             return;
         }
         ret = clReleaseMemObject(out_mem_obj);
@@ -324,13 +330,14 @@ void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
             qDebug()<<buffer;
             return;
         }
-        kernel = clCreateKernel(program, "calculateMImage", &ret);
-        if (!kernel || ret != CL_SUCCESS)
-        {
-            qDebug()<<"Error: Failed to create compute kernel!";
-            return;
-        }
         prevSource = source;
+    }
+
+    kernel = clCreateKernel(program, "__calculateMImage", &ret);
+    if (!kernel || ret != CL_SUCCESS)
+    {
+        qDebug()<<"Error: Failed to create compute kernel!";
+        return;
     }
 
     if(batchSize == 0)
@@ -358,6 +365,7 @@ void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
         if (ret != CL_SUCCESS)
         {
             qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
+            ret = clReleaseMemObject(out_mem_obj);
             return;
         }
         // Get the maximum work group size for executing the kernel on the device
@@ -369,6 +377,7 @@ void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
         if (ret != CL_SUCCESS)
         {
             qDebug()<<"Error: Failed to retrieve kernel work group info! " << ret;
+            clReleaseMemObject(out_mem_obj);
             return;
         }
 
@@ -382,6 +391,7 @@ void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
         if (ret)
         {
             qDebug()<<"Error: Failed to execute kernel!\n";
+            clReleaseMemObject(out_mem_obj);
             return;
         }
         clFinish(command_queue);
@@ -392,6 +402,7 @@ void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
         if (ret != CL_SUCCESS)
         {
             qDebug()<<"Error: Failed to read output array! "<<ret;
+            clReleaseMemObject(out_mem_obj);
             return;
         }
         ret = clReleaseMemObject(out_mem_obj);
