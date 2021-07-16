@@ -57,8 +57,8 @@ struct MimageData
 struct SpaceData
 {
     SpaceData(cl_uint3 spaceUnits,
-              cl_double3 startPoint,
-              cl_double3 pointSize):
+              cl_float3 startPoint,
+              cl_float3 pointSize):
         spaceUnits(spaceUnits),
         pointSize(pointSize),
         mimageData(nullptr),
@@ -106,9 +106,9 @@ struct SpaceData
     {
         return spaceUnits.x*spaceUnits.y*spaceUnits.z;
     }
-    cl_double3 GetPos(int i)
+    cl_float3 GetPos(int i)
     {
-        cl_double3 pos;
+        cl_float3 pos;
         pos.x = startPoint.x + pointSize.x * (i / ( spaceUnits.z * spaceUnits.y ));
         pos.y = startPoint.y + pointSize.y * (( i / spaceUnits.z ) % spaceUnits.y);
         pos.z = startPoint.z + pointSize.z * (i % spaceUnits.z);
@@ -116,9 +116,9 @@ struct SpaceData
     }
 
     cl_uint3   spaceUnits;
-    cl_double3 startPoint;
-    cl_double3 pointSize;
-    cl_double3 pointHalfSize;
+    cl_float3 startPoint;
+    cl_float3 pointSize;
+    cl_float3 pointHalfSize;
 
     CubeMatrix<MimageData>* mimageData;
     CubeMatrix<int>*        zoneData;

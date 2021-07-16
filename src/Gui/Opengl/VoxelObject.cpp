@@ -7,11 +7,11 @@ bool VoxelObject::Create(int count, QOpenGLShaderProgram* shader)
     vao.bind();
 
     vbo.create();
+    vbo.setUsagePattern(QOpenGLBuffer::DynamicDraw);
     vbo.bind();
-    vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
     vbo.allocate(nullptr, bufferSize*sizeof(float));
     shader->enableAttributeArray(0);
-    shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, 0);
+    shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, 6*sizeof(float));
 
     vao.release();
     vbo.release();
@@ -31,7 +31,9 @@ void VoxelObject::AddData(float x, float y, float z)
 void VoxelObject::Flush()
 {
     vbo.bind();
-    vbo.write(bufferFill*sizeof(float), buffer.data(), buffer.size());
+    vbo.write(bufferFill*sizeof(float), buffer.data(), buffer.size()*sizeof(float));
+    vbo.release();
+
     bufferFill += buffer.size();
     buffer.clear();
 }

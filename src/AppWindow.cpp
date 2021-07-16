@@ -325,7 +325,7 @@ void AppWindow::ModelComputeFinished(int start, int end)
 
     for(int i = start; i < end; ++i)
     {
-        cl_double3 point = space->GetPos(i);
+        cl_float3 point = space->GetPos(i);
         if(space->zoneData->At(i) == _currentZone)
             m_sceneView->AddObject(point.x, point.y, point.z);
     }
@@ -337,10 +337,11 @@ void AppWindow::MimageComputeFinished(int start, int end)
     auto space = SpaceBuilder::Instance().GetSpace();
     for(int i = start; i < end; ++i)
     {
-        cl_double3 point = space->GetPos(i);
+        cl_float3 point = space->GetPos(i);
         double value = space->mimageData->At(i).Cx;
         value = (1. + value)/2.;
         unsigned uValue = UINT_MAX*value;
+        QColor color = _linearGradModel->GetColor(uValue);
         m_sceneView->AddObject(point.x, point.y, point.z);
     }
     m_sceneView->Flush();

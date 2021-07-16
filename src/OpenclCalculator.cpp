@@ -70,12 +70,12 @@ int checkZone(double *values)
     result << R"(
 kernel void __calcualteModel(global int *resultZones,
                            const uint3 spaceSize,
-                           const double3 startPoint,
-                           const double3 pointSize,
-                           const double3 halfSize)
+                           const float3 startPoint,
+                           const float3 pointSize,
+                           const float3 halfSize)
 {
     int id = get_global_id(0);
-    double3 point;
+    float3 point;
     point.x = startPoint.x + pointSize.x * (id / ( spaceSize.z * spaceSize.y ));
     point.y = startPoint.y + pointSize.y * (( id / spaceSize.z ) % spaceSize.y);
     point.z = startPoint.z + pointSize.z * (id % spaceSize.z);
@@ -96,12 +96,12 @@ kernel void __calcualteModel(global int *resultZones,
 
 kernel void __calculateMImage(global double *result,
                            const uint3 spaceSize,
-                           const double3 startPoint,
-                           const double3 pointSize,
-                           const double3 halfSize)
+                           const float3 startPoint,
+                           const float3 pointSize,
+                           const float3 halfSize)
 {
     int id = get_global_id(0);
-    double3 point;
+    float3 point;
     point.x = startPoint.x + pointSize.x * (id / ( spaceSize.z * spaceSize.y ));
     point.y = startPoint.y + pointSize.y * (( id / spaceSize.z ) % spaceSize.y);
     point.z = startPoint.z + pointSize.z * (id % spaceSize.z);
@@ -242,9 +242,9 @@ void OpenclCalculator::ComputeModel(const Program& prog, int batchSize)
 
         ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&out_mem_obj);
         ret = clSetKernelArg(kernel, 1, sizeof(cl_uint3), &space->spaceUnits);
-        ret = clSetKernelArg(kernel, 2, sizeof(cl_double3), &space->startPoint);
-        ret = clSetKernelArg(kernel, 3, sizeof(cl_double3), &space->pointSize);
-        ret = clSetKernelArg(kernel, 4, sizeof(cl_double3), &space->pointHalfSize);
+        ret = clSetKernelArg(kernel, 2, sizeof(cl_float3), &space->startPoint);
+        ret = clSetKernelArg(kernel, 3, sizeof(cl_float3), &space->pointSize);
+        ret = clSetKernelArg(kernel, 4, sizeof(cl_float3), &space->pointHalfSize);
         if (ret != CL_SUCCESS)
         {
             qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
@@ -350,7 +350,7 @@ void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
 
         // Create gpu buffers
         cl_mem out_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
-                                            (end-batchStart) * 5 * sizeof(cl_double), NULL, &ret);
+                                            (end-batchStart) * 5 * sizeof(cl_float), NULL, &ret);
         if (!out_mem_obj)
         {
             qDebug()<<"Error: Failed to allocate device memory!";
@@ -359,9 +359,9 @@ void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
 
         ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&out_mem_obj);
         ret = clSetKernelArg(kernel, 1, sizeof(cl_uint3), &space->spaceUnits);
-        ret = clSetKernelArg(kernel, 2, sizeof(cl_double3), &space->startPoint);
-        ret = clSetKernelArg(kernel, 3, sizeof(cl_double3), &space->pointSize);
-        ret = clSetKernelArg(kernel, 4, sizeof(cl_double3), &space->pointHalfSize);
+        ret = clSetKernelArg(kernel, 2, sizeof(cl_float3), &space->startPoint);
+        ret = clSetKernelArg(kernel, 3, sizeof(cl_float3), &space->pointSize);
+        ret = clSetKernelArg(kernel, 4, sizeof(cl_float3), &space->pointHalfSize);
         if (ret != CL_SUCCESS)
         {
             qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
@@ -397,7 +397,7 @@ void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
         clFinish(command_queue);
 
         ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0,
-                                  (end-batchStart) * 5 * sizeof(cl_double), space->mimageData->GetPointer()+batchStart,
+                                  (end-batchStart) * 5 * sizeof(cl_float), space->mimageData->GetPointer()+batchStart,
                                   0, NULL, NULL);
         if (ret != CL_SUCCESS)
         {

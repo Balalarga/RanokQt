@@ -21,11 +21,11 @@ SpaceData *SpaceBuilder::CreateSpace(const std::pair<double, double> &dim1,
 {
     DeleteSpace();
 
-    cl_double3 startPoint;
+    cl_float3 startPoint;
     startPoint.x = dim1.first;
     startPoint.y = dim2.first;
     startPoint.z = dim3.first;
-    cl_double3 pointSize;
+    cl_float3 pointSize;
     pointSize.x = (dim1.second-dim1.first)/units.x;
     pointSize.y = (dim2.second-dim2.first)/units.y;
     pointSize.z = (dim3.second-dim3.first)/units.z;

@@ -82,11 +82,11 @@ bool SpaceCalculator::GetModel(const Program &program, int batchSize)
 
     space->CreateZoneData();
 
-    cl_double3 halfSize = space->pointHalfSize;
+    cl_float3 halfSize = space->pointHalfSize;
     constexpr unsigned verticesSize = 8;
     vector<double> values(8);
     cl_double3 vertices[verticesSize];
-    cl_double3 point;
+    cl_float3 point;
 
     if(batchSize == 0)
         batchSize = space->GetSize();
@@ -125,14 +125,14 @@ bool SpaceCalculator::GetMImage(const Program &program, int batchSize)
 
     space->CreateMimageData();
 
-    cl_double3 size = space->pointSize;
+    cl_float3 size = space->pointSize;
     vector<double> wv(4);
     vector<vector<double>> a;
     vector<vector<double>> b;
     vector<vector<double>> c;
     vector<vector<double>> d;
     vector<vector<double>> f;
-    cl_double3 point;
+    cl_float3 point;
 
     if(batchSize == 0)
         batchSize = space->GetSize();
