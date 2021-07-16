@@ -6,7 +6,6 @@
 #include <QTimer>
 
 #include "AsyncVector.h"
-#include "OpenglObject.h"
 #include "ShaderProgram.h"
 #include "GridObject.h"
 #include "VoxelObject.h"

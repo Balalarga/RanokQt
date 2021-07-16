@@ -2,8 +2,6 @@
 
 #include "Gui/StyleLoader.h"
 
-#include "Gui/Opengl/OpenglCube.h"
-#include "Gui/Opengl/OpenglSquare.h"
 #include "Space/SpaceBuilder.h"
 #include "OpenclCalculator.h"
 
@@ -11,6 +9,7 @@
 
 #include <QDebug>
 #include <QFileDialog>
+#include <QMenuBar>
 #include <QStringListModel>
 
 AppWindow::AppWindow(QWidget *parent)

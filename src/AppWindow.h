@@ -9,6 +9,7 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QSpinBox>
+#include <QLabel>
 
 #include "Gui/ToggleButton.h"
 

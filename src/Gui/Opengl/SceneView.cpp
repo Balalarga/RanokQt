@@ -1,7 +1,7 @@
 #include "SceneView.h"
 
-#include <GL/glu.h>
 #include "Space/SpaceBuilder.h"
+#include <QMouseEvent>
 
 SceneView::SceneView(QWidget *parent):
     QGLWidget(QGLFormat(QGL::SampleBuffers), parent),
