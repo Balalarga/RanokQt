@@ -7,9 +7,9 @@
 
 #include "AsyncVector.h"
 #include "OpenglObject.h"
-
-#include <pthread.h>
-
+#include "ShaderProgram.h"
+#include "GridObject.h"
+#include "VoxelObject.h"
 
 class SceneView : public QGLWidget
 {
@@ -19,8 +19,10 @@ public:
     ~SceneView();
 
 public slots:
-    void AddObject(OpenglObject* obj);
+    void AddObject(double x, double y, double z);
+    void Flush();
     void ClearObjects();
+    void CreateVoxelObject(int count);
 
 protected:
     void initializeGL() override;
@@ -32,10 +34,20 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
 
+    void UpdateMvpMatrix();
+
 private:
     QTimer* m_frameTimer;
 
-    AsyncVector<OpenglObject*> m_objects;
+    ShaderProgram* m_voxelShader;
+    ShaderProgram* m_gridShader;
+    QMatrix4x4 viewMatrix;
+    QMatrix4x4 projMatrix;
+    QMatrix4x4 mvpMatrix;
+
+    GridObject* gridObject;
+    VoxelObject* voxelObject;
+
 
     struct Camera
     {

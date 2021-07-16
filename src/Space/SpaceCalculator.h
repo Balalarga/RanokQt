@@ -2,9 +2,7 @@
 #define SPACECALCULATOR_H
 
 #include <QObject>
-
-#include "VoxelImageData.h"
-#include "VoxelData.h"
+#include <QColor>
 #include "Language/Program.h"
 
 class SpaceCalculator: public QObject

@@ -8,8 +8,6 @@
 
 #include "Space/SpaceBuilder.h"
 #include "Language/Program.h"
-#include "Space/VoxelData.h"
-#include "Space/VoxelImageData.h"
 
 class OpenclCalculator: public QObject
 {

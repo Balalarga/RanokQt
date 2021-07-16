@@ -30,7 +30,7 @@ AppWindow::AppWindow(QWidget *parent)
       _spaceDepth(new QSpinBox(this)),
       _batchSize(new QSpinBox(this)),
       _currentZone(0),
-      _currentType(MImageType::Cx)
+      _currentType(0)
 {
     QVector<QColor> gradColors;
     gradColors.push_back(QColor(255, 255, 0, 5));
@@ -134,9 +134,6 @@ AppWindow::AppWindow(QWidget *parent)
     m_sceneView->setMinimumWidth(500);
     m_toolVLayout->addWidget(splitter);
 
-    m_sceneView->AddObject(new OpenglCube({0, 0, 0}, {1, 1, 1},
-                                          QColor(255, 255, 255, 100)));
-
     QMenuBar* menuBar = new QMenuBar(this);
     QMenu *fileMenu = new QMenu("Файл");
     menuBar->addMenu(fileMenu);
@@ -196,8 +193,9 @@ void AppWindow::Compute()
         m_program = m_parser.GetProgram();
         m_sceneView->ClearObjects();
         auto args = m_program->GetSymbolTable().GetAllArgs();
-        SpaceBuilder::Instance().CreateSpace(args[0]->limits, args[1]->limits,
+        auto space = SpaceBuilder::Instance().CreateSpace(args[0]->limits, args[1]->limits,
                 args[2]->limits, _spaceDepth->value());
+        m_sceneView->CreateVoxelObject(space->GetSize());
 
         if(m_imageModeButton->isChecked())
         {
@@ -280,15 +278,15 @@ void AppWindow::SwitchComputeDevice()
 void AppWindow::ImageChanged(QString name)
 {
     if(name == "Cx")
-        _currentType = MImageType::Cx;
+        _currentType = 0;
     else if(name == "Cy")
-        _currentType = MImageType::Cy;
+        _currentType = 1;
     else if(name == "Cz")
-        _currentType = MImageType::Cz;
+        _currentType = 2;
     else if(name == "Cw")
-        _currentType = MImageType::Cw;
+        _currentType = 3;
     else if(name == "Ct")
-        _currentType = MImageType::Ct;
+        _currentType = 4;
 }
 
 void AppWindow::ComputeLine(QString line)
@@ -329,12 +327,10 @@ void AppWindow::ModelComputeFinished(int start, int end)
     for(int i = start; i < end; ++i)
     {
         cl_double3 point = space->GetPos(i);
-        auto obj = new OpenglCube(point, space->pointHalfSize,
-                                  SpaceCalculator::Get().GetVoxelColor());
-        if(space->zoneData->At(i) != _currentZone)
-            obj->SetVisible(false);
-        m_sceneView->AddObject(obj);
+        if(space->zoneData->At(i) == _currentZone)
+            m_sceneView->AddObject(point.x, point.y, point.z);
     }
+    m_sceneView->Flush();
 }
 
 void AppWindow::MimageComputeFinished(int start, int end)
@@ -346,9 +342,9 @@ void AppWindow::MimageComputeFinished(int start, int end)
         double value = space->mimageData->At(i).Cx;
         value = (1. + value)/2.;
         unsigned uValue = UINT_MAX*value;
-        m_sceneView->AddObject(new OpenglCube(point, space->pointHalfSize,
-                                              _linearGradModel->GetColor(uValue)));
+        m_sceneView->AddObject(point.x, point.y, point.z);
     }
+    m_sceneView->Flush();
 }
 
 void AppWindow::OpenFile()

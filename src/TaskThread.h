@@ -4,8 +4,6 @@
 #include <QThread>
 #include <QDebug>
 
-#include "Space/VoxelData.h"
-#include "Space/VoxelImageData.h"
 #include "Space/SpaceCalculator.h"
 #include "OpenclCalculator.h"
 

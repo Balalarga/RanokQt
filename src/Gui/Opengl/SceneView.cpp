@@ -1,6 +1,7 @@
 #include "SceneView.h"
 
 #include <GL/glu.h>
+#include "Space/SpaceBuilder.h"
 
 SceneView::SceneView(QWidget *parent):
     QGLWidget(QGLFormat(QGL::SampleBuffers), parent),
@@ -9,23 +10,48 @@ SceneView::SceneView(QWidget *parent):
     m_frameTimer->setInterval(20);
     connect(m_frameTimer, &QTimer::timeout, this, &QGLWidget::updateGL);
     m_frameTimer->start();
+
+    m_gridShader = new ShaderProgram(":/shaders/grid.vert",":/shaders/grid.frag");
+    m_gridShader->AddUniform("worldToView");
+    m_gridShader->AddUniform("gridColor");
+    m_gridShader->AddUniform("backColor");
+    m_voxelShader = new ShaderProgram(":/shaders/voxel.vert",":/shaders/voxel.frag");
+    m_voxelShader->AddUniform("worldToView");
+    gridObject = new GridObject;
+    voxelObject = new VoxelObject;
 }
 
 SceneView::~SceneView()
 {
     ClearObjects();
+    m_voxelShader->Destroy();
+    m_gridShader->Destroy();
+    gridObject->Destroy();
+    voxelObject->Destroy();
+    delete m_voxelShader;
+    delete m_gridShader;
+    delete gridObject;
+    delete voxelObject;
 }
 
-void SceneView::AddObject(OpenglObject *obj)
+void SceneView::AddObject(double x, double y, double z)
 {
-    m_objects.PushBack(obj);
+    voxelObject->AddData(x, y, z);
+}
+
+void SceneView::Flush()
+{
+    voxelObject->Flush();
 }
 
 void SceneView::ClearObjects()
 {
-    for(int i = 0; i < m_objects.Size(); i++)
-        delete m_objects.At(i);
-    m_objects.Clear();
+    voxelObject->Destroy();
+}
+
+void SceneView::CreateVoxelObject(int count)
+{
+    voxelObject->Create(count, m_voxelShader->GetRawProgram());
 }
 
 void SceneView::initializeGL()
@@ -35,104 +61,47 @@ void SceneView::initializeGL()
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
-    glShadeModel(GL_SMOOTH);
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if(!m_voxelShader->Create())
+        qDebug()<<"voxel shader error";
+    if(!m_gridShader->Create())
+        qDebug()<<"grid shader error";
+
+    gridObject->Create(m_gridShader->GetRawProgram());
 }
 
 void SceneView::resizeGL(int width, int height)
 {
     glViewport(0, 0, width, height);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45.f, (float)width / height,
-                   0.1f, 100.f);
+    projMatrix.setToIdentity();
+    projMatrix.perspective(45, width/(float)height, 0.1, 10000);
+    UpdateMvpMatrix();
 }
 
 void SceneView::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    gluLookAt(0.0f, 0.0f, m_camera.zoom,
-              0.0f, 0.0f, 0.0f,
-              0.0f, 1.0f, 0.0f);
-    glRotatef(m_camera.xAngle-90, 1, 0, 0);
-    glRotatef(m_camera.zAngle, 0, 0, 1);
+    QVector4D backColor(0.1f, 0.15f, 0.3f, 0.5f);
+    QVector4D minorGridColor(0.5f, 0.5f, 0.7f, 0.5f);
+    glClearColor(backColor.x(), backColor.y(), backColor.z(), backColor.w());
 
-    // grid
-    qglColor(qRgba(40, 40, 40, 150));
+    m_gridShader->Bind();
+    m_gridShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
+    m_gridShader->GetRawProgram()->setUniformValue("gridColor", minorGridColor);
+    m_gridShader->GetRawProgram()->setUniformValue("backColor", backColor);
+    gridObject->Render();
+    m_gridShader->Release();
 
-    glBegin(GL_LINES);
-    for(int i = -100; i < 100; i++)
+    if(voxelObject->IsCreated())
     {
-        glVertex3i(i, -100, 0);
-        glVertex3i(i,  100, 0);
-        glVertex3i(-100, i, 0);
-        glVertex3i( 100, i, 0);
+        m_voxelShader->Bind();
+        m_voxelShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
+        voxelObject->Render();
     }
-    glEnd();
-
-    glBegin(GL_QUADS);
-    for(int i = 0; i < m_objects.Size(); i++)
-        if(m_objects.At(i)->IsVisible())
-            m_objects.At(i)->Render();
-    glEnd();
-
-    glBegin(GL_LINES);
-    // x
-    glColor3f(1.0f, 0.0f, 0.0);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(0.5, 0.0, 0.0);
-
-    // y
-    glColor3f(0.0f, 1.0f, 0.0);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(0.0, 0.5, 0.0);
-
-    // z
-    glColor3f(0.0f, 0.0f, 1.0);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(0.0, 0.0, 0.5);
-    glEnd();
-
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0.0, 10, 10, 0.0, -10.0, 10.0);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glDisable(GL_CULL_FACE);
-
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glTranslated(9, 1, 0);
-    glRotatef(m_camera.xAngle-90, 1, 0, 0);
-    glRotatef(m_camera.zAngle, 0, 0, 1);
-
-    glBegin(GL_LINES);
-        // x
-        glColor3f(1.0f, 0.0f, 0.0);
-        glVertex3f(0.0, 0.0, 0.0);
-        glVertex3f(-0.5, 0.0, 0.0);
-
-        // y
-        glColor3f(0.0f, 1.0f, 0.0);
-        glVertex3f(0.0, 0.0, 0.0);
-        glVertex3f(0.0, -0.5, 0.0);
-
-        // z
-        glColor3f(0.0f, 0.0f, 1.0);
-        glVertex3f(0.0, 0.0, 0.0);
-        glVertex3f(0.0, 0.0, -0.5);
-    glEnd();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
 }
 
 void SceneView::mousePressEvent(QMouseEvent *event)
@@ -152,6 +121,18 @@ void SceneView::mouseReleaseEvent(QMouseEvent *event)
     }
 }
 
+void SceneView::UpdateMvpMatrix()
+{
+    viewMatrix.setToIdentity();
+    viewMatrix.lookAt({0.0f, 0.0f, m_camera.zoom},
+                      {0.0f, 0.0f, 0.0f},
+                      {0.0f, 1.0f, 0.0f});
+    viewMatrix.rotate(m_camera.xAngle-90, 1, 0, 0);
+    viewMatrix.rotate(m_camera.zAngle, 0, 0, 1);
+    mvpMatrix = projMatrix * viewMatrix;
+//    updateGL();
+}
+
 void SceneView::mouseMoveEvent(QMouseEvent *event)
 {
     if(m_mouseState.pressed)
@@ -159,6 +140,7 @@ void SceneView::mouseMoveEvent(QMouseEvent *event)
         m_camera.xAngle += (m_mouseState.pos.y() - event->pos().y())*0.5;
         m_camera.zAngle += (event->pos().x() - m_mouseState.pos.x())*0.5;
         m_mouseState.pos = {event->pos().x(), event->pos().y()};
+        UpdateMvpMatrix();
     }
 }
 
@@ -168,4 +150,5 @@ void SceneView::wheelEvent(QWheelEvent *event)
         m_camera.zoom += 0.4f;
     else if(event->angleDelta().y() < 0)
         m_camera.zoom -= 0.4f;
+    UpdateMvpMatrix();
 }

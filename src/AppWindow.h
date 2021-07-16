@@ -75,7 +75,7 @@ private:
     LinearGradientModel* _linearGradModel;
 
     int _currentZone;
-    MImageType _currentType;
+    int _currentType;
 
     QLabel* _editorMode1Label;
     QLabel* _editorMode2Label;
