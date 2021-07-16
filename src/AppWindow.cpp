@@ -178,7 +178,8 @@ AppWindow::~AppWindow()
         m_imageThread->terminate();
 }
 
-
+#include <iostream>
+using namespace std;
 void AppWindow::Compute()
 {
     QString source = m_codeEditor->GetActiveText();
