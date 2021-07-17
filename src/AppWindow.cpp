@@ -198,7 +198,7 @@ void AppWindow::Compute()
 
         if(m_imageModeButton->isChecked())
         {
-            m_modelThread->SetBatchSize(_batchSize->value());
+            m_imageThread->SetBatchSize(_batchSize->value());
             m_imageThread->SetProgram(m_program);
             m_imageThread->start();
         }
@@ -323,11 +323,14 @@ void AppWindow::ModelComputeFinished(int start, int end)
 {
     auto space = SpaceBuilder::Instance().GetSpace();
 
+    int zone = 0;
     for(int i = start; i < end; ++i)
     {
         cl_float3 point = space->GetPos(i);
-        if(space->zoneData->At(i) == _currentZone)
-            m_sceneView->AddObject(point.x, point.y, point.z);
+        zone = space->zoneData->At(i);
+        if(zone == _currentZone)
+            m_sceneView->AddObject(point.x, point.y, point.z,
+                                   1.f, 1.f, 1.f, 0.4f);
     }
     m_sceneView->Flush();
 }
@@ -335,14 +338,28 @@ void AppWindow::ModelComputeFinished(int start, int end)
 void AppWindow::MimageComputeFinished(int start, int end)
 {
     auto space = SpaceBuilder::Instance().GetSpace();
+    double value;
+    cl_float3 point;
     for(int i = start; i < end; ++i)
     {
-        cl_float3 point = space->GetPos(i);
-        double value = space->mimageData->At(i).Cx;
+        point = space->GetPos(i);
+        if(_currentZone == 0)
+            value = space->mimageData->At(i).Cx;
+        else if(_currentZone == 1)
+            value = space->mimageData->At(i).Cy;
+        else if(_currentZone == 2)
+            value = space->mimageData->At(i).Cz;
+        else if(_currentZone == 3)
+            value = space->mimageData->At(i).Cw;
+        else if(_currentZone == 4)
+            value = space->mimageData->At(i).Ct;
+
         value = (1. + value)/2.;
         unsigned uValue = UINT_MAX*value;
         QColor color = _linearGradModel->GetColor(uValue);
-        m_sceneView->AddObject(point.x, point.y, point.z);
+        m_sceneView->AddObject(point.x, point.y, point.z,
+                               color.redF(), color.greenF(), color.blueF(),
+                               color.alphaF());
     }
     m_sceneView->Flush();
 }

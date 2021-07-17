@@ -4,19 +4,17 @@
 #include <QMouseEvent>
 
 SceneView::SceneView(QWidget *parent):
-    QGLWidget(QGLFormat(QGL::SampleBuffers), parent),
-    m_frameTimer(new QTimer(this))
+    QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
 {
-    m_frameTimer->setInterval(20);
-    connect(m_frameTimer, &QTimer::timeout, this, &QGLWidget::updateGL);
-    m_frameTimer->start();
-
-    m_gridShader = new ShaderProgram(":/shaders/grid.vert",":/shaders/grid.frag");
+    m_gridShader = new ShaderProgram(":/shaders/grid.vert", ":/shaders/grid.frag");
     m_gridShader->AddUniform("worldToView");
     m_gridShader->AddUniform("gridColor");
     m_gridShader->AddUniform("backColor");
-    m_voxelShader = new ShaderProgram(":/shaders/voxel.vert",":/shaders/voxel.frag");
+    m_voxelShader = new ShaderProgram(":/shaders/voxel.vert",
+                                      ":/shaders/voxel.frag",
+                                      ":/shaders/voxel.geom");
     m_voxelShader->AddUniform("worldToView");
+    m_voxelShader->AddUniform("voxSize");
     gridObject = new GridObject;
     voxelObject = new VoxelObject;
 }
@@ -34,14 +32,15 @@ SceneView::~SceneView()
     delete voxelObject;
 }
 
-void SceneView::AddObject(double x, double y, double z)
+void SceneView::AddObject(float x, float y, float z, float r, float g, float b, float a)
 {
-    voxelObject->AddData(x, y, z);
+    voxelObject->AddData(x, y, z, r, g, b, a);
 }
 
 void SceneView::Flush()
 {
     voxelObject->Flush();
+    updateGL();
 }
 
 void SceneView::ClearObjects()
@@ -56,10 +55,10 @@ void SceneView::CreateVoxelObject(int count)
 
 void SceneView::initializeGL()
 {
-    qglClearColor(qRgb(20, 20, 20));
+    glClearColor(backColor.x(), backColor.y(), backColor.z(), backColor.w());
 
     glDisable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -83,9 +82,13 @@ void SceneView::resizeGL(int width, int height)
 
 void SceneView::paintGL()
 {
+    cl_float3 voxSize = {0.2, 0.2, 0.2};
+    if(SpaceBuilder::Instance().GetSpace())
+    {
+        voxSize = SpaceBuilder::Instance().GetSpace()->pointSize;
+    }
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    QVector4D backColor(0.1f, 0.15f, 0.3f, 0.5f);
     QVector4D minorGridColor(0.5f, 0.5f, 0.7f, 0.5f);
     glClearColor(backColor.x(), backColor.y(), backColor.z(), backColor.w());
 
@@ -100,6 +103,7 @@ void SceneView::paintGL()
     {
         m_voxelShader->Bind();
         m_voxelShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
+        m_voxelShader->GetRawProgram()->setUniformValue("voxSize", voxSize.x, voxSize.y, voxSize.z);
         voxelObject->Render();
     }
 }
@@ -130,7 +134,7 @@ void SceneView::UpdateMvpMatrix()
     viewMatrix.rotate(m_camera.xAngle-90, 1, 0, 0);
     viewMatrix.rotate(m_camera.zAngle, 0, 0, 1);
     mvpMatrix = projMatrix * viewMatrix;
-//    updateGL();
+    updateGL();
 }
 
 void SceneView::mouseMoveEvent(QMouseEvent *event)

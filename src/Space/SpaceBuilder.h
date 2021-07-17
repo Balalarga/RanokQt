@@ -64,9 +64,9 @@ struct SpaceData
         mimageData(nullptr),
         zoneData(nullptr)
     {
-        pointHalfSize = {pointSize.x/2.,
-                         pointSize.y/2.,
-                         pointSize.z/2.};
+        pointHalfSize = {pointSize.x/2.f,
+                         pointSize.y/2.f,
+                         pointSize.z/2.f};
         this->startPoint.x = startPoint.x + pointHalfSize.x;
         this->startPoint.y = startPoint.y + pointHalfSize.y;
         this->startPoint.z = startPoint.z + pointHalfSize.z;

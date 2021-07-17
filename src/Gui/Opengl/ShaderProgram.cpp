@@ -1,9 +1,10 @@
 #include "ShaderProgram.h"
 
 
-ShaderProgram::ShaderProgram(const QString &vertexShaderFilePath, const QString & fragmentShaderFilePath):
+ShaderProgram::ShaderProgram(const QString &vertexShaderFilePath, const QString & fragmentShaderFilePath, const QString &geometryShaderFilePath):
     m_vertexShaderFilePath(vertexShaderFilePath),
     m_fragmentShaderFilePath(fragmentShaderFilePath),
+    m_geometryShaderFilePath(geometryShaderFilePath),
     m_program(nullptr)
 {
 
@@ -18,6 +19,10 @@ bool ShaderProgram::Create() {
         return false;
 
     if (!m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, m_fragmentShaderFilePath))
+        return false;
+
+    if(!m_geometryShaderFilePath.isEmpty() &&
+            !m_program->addShaderFromSourceFile(QOpenGLShader::Geometry, m_geometryShaderFilePath))
         return false;
 
     if (!m_program->link())

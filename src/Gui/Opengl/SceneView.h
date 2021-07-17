@@ -3,7 +3,7 @@
 
 #include <QGLWidget>
 #include <QVector>
-#include <QTimer>
+#include <QVector4D>
 
 #include "AsyncVector.h"
 #include "ShaderProgram.h"
@@ -18,7 +18,8 @@ public:
     ~SceneView();
 
 public slots:
-    void AddObject(double x, double y, double z);
+    void AddObject(float x, float y, float z,
+                   float r, float g, float b, float a);
     void Flush();
     void ClearObjects();
     void CreateVoxelObject(int count);
@@ -36,8 +37,6 @@ protected:
     void UpdateMvpMatrix();
 
 private:
-    QTimer* m_frameTimer;
-
     ShaderProgram* m_voxelShader;
     ShaderProgram* m_gridShader;
     QMatrix4x4 viewMatrix;
@@ -47,6 +46,7 @@ private:
     GridObject* gridObject;
     VoxelObject* voxelObject;
 
+    QVector4D backColor{0.1f, 0.15f, 0.3f, 0.5f};
 
     struct Camera
     {

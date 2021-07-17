@@ -94,7 +94,8 @@ bool SpaceCalculator::GetModel(const Program &program, int batchSize)
     for(int batchStart = 0; batchStart < space->GetSize(); )
     {
         int start = batchStart;
-        int currentSize = batchSize+batchStart < space->GetSize() ? batchSize+batchStart : space->GetSize();
+        int currentSize = batchSize+batchStart < space->GetSize() ?
+                    batchSize+batchStart : space->GetSize();
 
         for(; batchStart < currentSize; ++batchStart)
         {

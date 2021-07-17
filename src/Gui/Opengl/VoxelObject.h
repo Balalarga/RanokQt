@@ -12,7 +12,8 @@ class VoxelObject
 public:
     VoxelObject() = default;
     bool Create(int count, QOpenGLShaderProgram* shader);
-    void AddData(float x, float y, float z);
+    void AddData(float x, float y, float z,
+                 float r, float g, float b, float a);
     void Flush();
     void Destroy();
     void Render();
@@ -24,7 +25,7 @@ private:
     int bufferSize;
     int bufferFill = 0;
     QVector<float> buffer;
-    int flushCount = 300;
+    int flushCount = 700;
     bool isCreated = false;
 };
 

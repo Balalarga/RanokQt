@@ -8,7 +8,9 @@
 class ShaderProgram
 {
 public:
-    ShaderProgram(const QString &vertexShaderFilePath, const QString & fragmentShaderFilePath);
+    ShaderProgram(const QString &vertexShaderFilePath,
+                  const QString & fragmentShaderFilePath,
+                  const QString & geometryShaderFilePath = "");
     bool Create();
     void Destroy();
     void Bind();
@@ -24,6 +26,7 @@ private:
     QOpenGLShaderProgram *m_program;
     QString m_vertexShaderFilePath;
     QString m_fragmentShaderFilePath;
+    QString m_geometryShaderFilePath;
 };
 
 #endif // SHADERPROGRAM_H

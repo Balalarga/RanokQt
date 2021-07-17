@@ -350,7 +350,7 @@ void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
 
         // Create gpu buffers
         cl_mem out_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
-                                            (end-batchStart) * 5 * sizeof(cl_float), NULL, &ret);
+                                            (end-batchStart) * 5 * sizeof(cl_double), NULL, &ret);
         if (!out_mem_obj)
         {
             qDebug()<<"Error: Failed to allocate device memory!";
@@ -397,7 +397,7 @@ void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
         clFinish(command_queue);
 
         ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0,
-                                  (end-batchStart) * 5 * sizeof(cl_float), space->mimageData->GetPointer()+batchStart,
+                                  (end-batchStart) * 5 * sizeof(cl_double), space->mimageData->GetPointer()+batchStart,
                                   0, NULL, NULL);
         if (ret != CL_SUCCESS)
         {
