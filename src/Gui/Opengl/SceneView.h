@@ -3,13 +3,12 @@
 
 #include <QGLWidget>
 #include <QVector>
-#include <QTimer>
+#include <QVector4D>
 
-#include "AsyncVector.h"
-#include "OpenglObject.h"
-
-#include <pthread.h>
-
+#include "ShaderProgram.h"
+#include "GridObject.h"
+#include "VoxelObject.h"
+#include "WcsObject.h"
 
 class SceneView : public QGLWidget
 {
@@ -19,8 +18,11 @@ public:
     ~SceneView();
 
 public slots:
-    void AddObject(OpenglObject* obj);
+    void AddObject(float x, float y, float z,
+                   float r, float g, float b, float a);
+    void Flush();
     void ClearObjects();
+    void CreateVoxelObject(int count);
 
 protected:
     void initializeGL() override;
@@ -32,10 +34,20 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
 
-private:
-    QTimer* m_frameTimer;
+    void UpdateMvpMatrix();
 
-    AsyncVector<OpenglObject*> m_objects;
+private:
+    ShaderProgram* m_voxelShader;
+    ShaderProgram* m_gridShader;
+    QMatrix4x4 viewMatrix;
+    QMatrix4x4 projMatrix;
+    QMatrix4x4 mvpMatrix;
+
+    GridObject* gridObject;
+    VoxelObject* voxelObject;
+    WcsObject* wcsObject;
+
+    QVector4D backColor{0.1f, 0.15f, 0.3f, 0.5f};
 
     struct Camera
     {

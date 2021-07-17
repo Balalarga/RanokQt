@@ -125,7 +125,7 @@ void SymbolTable::Concat(const SymbolTable &oth)
 
 ConstExpr *SymbolTable::GetConst(const std::string &name) const
 {
-    int id = FindArg(name);
+    int id = FindConst(name);
     if(id != -1)
         return m_constants[id];
     return nullptr;

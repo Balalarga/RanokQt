@@ -2,15 +2,15 @@
 
 #include "Gui/StyleLoader.h"
 
-#include "Gui/Opengl/OpenglCube.h"
-#include "Gui/Opengl/OpenglSquare.h"
 #include "Space/SpaceBuilder.h"
-#include "OpenclGenerator.h"
+#include "Space/Calculators/CommonCalculator.h"
+#include "Space/Calculators/OpenclCalculator.h"
 
 #include <iostream>
 
 #include <QDebug>
 #include <QFileDialog>
+#include <QMenuBar>
 #include <QStringListModel>
 
 AppWindow::AppWindow(QWidget *parent)
@@ -28,17 +28,10 @@ AppWindow::AppWindow(QWidget *parent)
       m_addLineButton(new QPushButton("Добавить строку", this)),
       _imageType(new QComboBox(this)),
       _spaceDepth(new QSpinBox(this)),
-      _currentZone(Zone::Zero),
-      _currentType(MImageType::Cx)
+      _batchSize(new QSpinBox(this)),
+      _currentZone(0),
+      _currentType(0)
 {
-    QVector<QColor> gradColors;
-    gradColors.push_back(QColor(255, 255, 0, 5));
-    gradColors.push_back(QColor(0, 255, 162, 5));
-    gradColors.push_back(QColor(0, 0, 255, 5));
-    gradColors.push_back(QColor(255, 145, 0, 5));
-    gradColors.push_back(QColor(214, 0, 255, 5));
-    _linearGradModel = new LinearGradientModel(gradColors, this);
-
     QVBoxLayout* m_toolVLayout = new QVBoxLayout(this);
     m_toolVLayout->addWidget(m_toolBar);
 
@@ -53,7 +46,14 @@ AppWindow::AppWindow(QWidget *parent)
     spinLayout->addWidget(spinLabel);
     spinLayout->addWidget(_spaceDepth);
 
+    QHBoxLayout* batchLayout = new QHBoxLayout();
+    QLabel* batchLabel = new QLabel("Размер пачки");
+    batchLayout->addWidget(batchLabel);
+    batchLayout->addWidget(_batchSize);
+
+
     modeLayout->addLayout(spinLayout);
+    modeLayout->addLayout(batchLayout);
     modeLayout->addWidget(m_codeEditor);
     modeLayout->addWidget(m_lineEditor);
     modeLayout->addWidget(m_addLineButton);
@@ -113,6 +113,9 @@ AppWindow::AppWindow(QWidget *parent)
     _spaceDepth->setRange(1, 10);
     _spaceDepth->setValue(4);
 
+    _batchSize->setRange(0, 10000);
+    _batchSize->setValue(0);
+
     m_addLineButton->setVisible(false);
     wrapWidget->setLayout(modeLayout);
     m_lineEditor->setVisible(false);
@@ -122,9 +125,6 @@ AppWindow::AppWindow(QWidget *parent)
     splitter->setMidLineWidth(2);
     m_sceneView->setMinimumWidth(500);
     m_toolVLayout->addWidget(splitter);
-
-    m_sceneView->AddObject(new OpenglCube({0, 0, 0}, {1, 1, 1},
-                                          QColor(255, 255, 255, 100)));
 
     QMenuBar* menuBar = new QMenuBar(this);
     QMenu *fileMenu = new QMenu("Файл");
@@ -137,22 +137,20 @@ AppWindow::AppWindow(QWidget *parent)
 
     m_toolVLayout->setMenuBar(menuBar);
 
-    m_imageThread = new ImageThread([this](VoxelImageData data){
-            double value = data.images[_currentType];
-            value = (1. + value)/2.;
-            unsigned uValue = UINT_MAX*value;
-            m_sceneView->AddObject(new OpenglCube(data.position, data.size,
-                                                  _linearGradModel->GetColor(uValue)));
-        }, this);
-    m_modelThread = new ModelThread([this](VoxelData data){
-            auto obj = new OpenglCube(data.position, data.size,
-                                      SpaceCalculator::GetVoxelColor());
-            if(data.zone != _currentZone)
-                obj->SetVisible(false);
-            m_sceneView->AddObject(obj);
-        }, this);
+
+    _calculators[CalculatorName::Common] = new CommonCalculator(this);
+    _calculators[CalculatorName::Opencl] = new OpenclCalculator(this);
+    for(auto& i: _calculators)
+    {
+        connect(i, &OpenclCalculator::ComputedModel, this, &AppWindow::ModelComputeFinished);
+        connect(i, &OpenclCalculator::ComputedMimage, this, &AppWindow::MimageComputeFinished);
+    }
 
     StyleLoader::attach("../assets/styles/dark.qss");
+    m_codeEditor->AddFile("../examples/NewFuncs/sphere.txt");
+    m_codeEditor->AddFile("../examples/NewFuncs/Bone.txt");
+    m_codeEditor->AddFile("../examples/NewFuncs/Chainik.txt");
+
 
     connect(_imageType, &QComboBox::currentTextChanged, this, &AppWindow::ImageChanged);
     connect(m_editorModeButton, &QPushButton::clicked, this, &AppWindow::SwitchEditorMode);
@@ -165,45 +163,39 @@ AppWindow::AppWindow(QWidget *parent)
 
 AppWindow::~AppWindow()
 {
-    if(m_modelThread &&
-            m_modelThread->isRunning())
-        m_modelThread->terminate();
-    if(m_imageThread &&
-            m_imageThread->isRunning())
-        m_imageThread->terminate();
+    StopCalculators();
 }
 
-
+#include <iostream>
+using namespace std;
 void AppWindow::Compute()
 {
     QString source = m_codeEditor->GetActiveText();
     if(!source.isEmpty())
     {
-        if(m_modelThread->isRunning() ||
-                m_imageThread->isRunning())
-        {
+        if(IsCalculate())
             return;
-        }
+
         m_parser.SetText(source.toStdString());
         if(m_program)
             delete m_program;
         m_program = m_parser.GetProgram();
         m_sceneView->ClearObjects();
-        SpaceBuilder::Instance().Delete3dSpace();
         auto args = m_program->GetSymbolTable().GetAllArgs();
-        SpaceBuilder::Instance().CreateSpace(args[0]->limits, args[1]->limits,
-                                             args[2]->limits, _spaceDepth->value());
+        auto space = SpaceBuilder::Instance().CreateSpace(args[0]->limits, args[1]->limits,
+                args[2]->limits, _spaceDepth->value());
+        m_sceneView->CreateVoxelObject(space->GetSize());
 
-        if(m_imageModeButton->isChecked())
-        {
-            m_imageThread->SetProgram(m_program);
-            m_imageThread->start();
-        }
-        else
-        {
-            m_modelThread->SetProgram(m_program);
-            m_modelThread->start();
-        }
+        _activeCalculator = m_computeDevice->isChecked() ?
+                    _calculators[CalculatorName::Opencl] :
+                _calculators[CalculatorName::Common];
+
+        _activeCalculator->SetCalculatorMode(m_imageModeButton->isChecked() ?
+                                          CalculatorMode::Mimage: CalculatorMode::Model);
+
+        _activeCalculator->SetBatchSize(_batchSize->value());
+        _activeCalculator->SetProgram(m_program);
+        _activeCalculator->start();
     }
 }
 
@@ -216,7 +208,7 @@ void AppWindow::SwitchEditorMode()
         m_lineEditor->setVisible(true);
         m_addLineButton->setVisible(true);
         m_mode = Mode::Line;
-//        m_modeButton->setText("Построчный режим");
+        //        m_modeButton->setText("Построчный режим");
         _editorMode1Label->setStyleSheet("QLabel { color : #888888; }");
         _editorMode2Label->setStyleSheet("QLabel { color : #ffffff; }");
     }
@@ -226,7 +218,7 @@ void AppWindow::SwitchEditorMode()
         m_lineEditor->setVisible(false);
         m_addLineButton->setVisible(false);
         m_mode = Mode::Common;
-//        m_modeButton->setText("Обычный режим");
+        //        m_modeButton->setText("Обычный режим");
         _editorMode1Label->setStyleSheet("QLabel { color : #ffffff; }");
         _editorMode2Label->setStyleSheet("QLabel { color : #888888; }");
     }
@@ -257,31 +249,27 @@ void AppWindow::SwitchComputeDevice()
         // Gpu
         _computeDevice1->setStyleSheet("QLabel { color : #888888; }");
         _computeDevice2->setStyleSheet("QLabel { color : #ffffff; }");
-        m_modelThread->SetComputeMode(ComputeMode::Gpu);
-        m_imageThread->SetComputeMode(ComputeMode::Gpu);
     }
     else
     {
         // Cpu
         _computeDevice1->setStyleSheet("QLabel { color : #ffffff; }");
         _computeDevice2->setStyleSheet("QLabel { color : #888888; }");
-        m_modelThread->SetComputeMode(ComputeMode::Cpu);
-        m_imageThread->SetComputeMode(ComputeMode::Cpu);
     }
 }
 
 void AppWindow::ImageChanged(QString name)
 {
     if(name == "Cx")
-        _currentType = MImageType::Cx;
+        _currentType = 0;
     else if(name == "Cy")
-        _currentType = MImageType::Cy;
+        _currentType = 1;
     else if(name == "Cz")
-        _currentType = MImageType::Cz;
+        _currentType = 2;
     else if(name == "Cw")
-        _currentType = MImageType::Cw;
+        _currentType = 3;
     else if(name == "Ct")
-        _currentType = MImageType::Ct;
+        _currentType = 4;
 }
 
 void AppWindow::ComputeLine(QString line)
@@ -309,10 +297,74 @@ void AppWindow::ComputeLine(QString line)
 
     if(!m_lineProgram->GetSymbolTable().GetAllArgs().empty())
     {
-        m_modelThread->SetProgram(m_lineProgram);
-        m_sceneView->ClearObjects();
-        m_modelThread->start();
+//        m_modelThread->SetProgram(m_lineProgram);
+//        m_sceneView->ClearObjects();
+//        m_modelThread->start();
     }
+}
+
+void AppWindow::ModelComputeFinished(int start, int end)
+{
+    auto space = SpaceBuilder::Instance().GetSpace();
+
+    int zone = 0;
+    QColor modelColor = _activeCalculator->GetModelColor();
+    for(int i = start; i < end; ++i)
+    {
+        cl_float3 point = space->GetPos(i);
+        zone = space->zoneData->At(i);
+        if(zone == _currentZone)
+            m_sceneView->AddObject(point.x, point.y, point.z,
+                                   modelColor.redF(), modelColor.greenF(),
+                                   modelColor.blueF(), modelColor.alphaF());
+    }
+    m_sceneView->Flush();
+}
+
+void AppWindow::MimageComputeFinished(int start, int end)
+{
+    auto space = SpaceBuilder::Instance().GetSpace();
+    double value;
+    cl_float3 point;
+    for(int i = start; i < end; ++i)
+    {
+        point = space->GetPos(i);
+        if(_currentZone == 0)
+            value = space->mimageData->At(i).Cx;
+        else if(_currentZone == 1)
+            value = space->mimageData->At(i).Cy;
+        else if(_currentZone == 2)
+            value = space->mimageData->At(i).Cz;
+        else if(_currentZone == 3)
+            value = space->mimageData->At(i).Cw;
+        else if(_currentZone == 4)
+            value = space->mimageData->At(i).Ct;
+
+        QColor color = _activeCalculator->GetMImageColor(value);
+        m_sceneView->AddObject(point.x, point.y, point.z,
+                               color.redF(), color.greenF(), color.blueF(),
+                               color.alphaF());
+    }
+    m_sceneView->Flush();
+}
+
+void AppWindow::StopCalculators()
+{
+    for(auto& i: _calculators)
+    {
+        if(i->isRunning())
+            i->terminate();
+    }
+}
+
+bool AppWindow::IsCalculate()
+{
+    for(auto& i: _calculators)
+    {
+        if(i->isRunning())
+            return true;
+    }
+    return false;
 }
 
 void AppWindow::OpenFile()

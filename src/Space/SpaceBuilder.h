@@ -3,39 +3,126 @@
 
 
 #include <vector>
-#include "Utils.h"
+#include <QDebug>
+
 #include <CL/cl.h>
 
-struct Linear3dSpaceData
+template<class T>
+struct CubeMatrix
 {
-    Linear3dSpaceData(int spaceSize, cl_double3 pointSize):
-        pointSize(pointSize)
+    CubeMatrix(cl_uint3 size):
+        _size(size),
+        _rawPtr(new T[size.x*size.y*size.z])
     {
-        points.reserve(spaceSize);
     }
-    cl_double3 pointSize;
-    std::vector<cl_double3> points;
+    ~CubeMatrix()
+    {
+        delete[] _rawPtr;
+    }
+    T& At(int x, int y, int z)
+    {
+        return _rawPtr[x*_size.y*_size.z + y*_size.z + z];
+    }
+    T& At(int i)
+    {
+        return _rawPtr[i];
+    }
+
+    cl_uint3 GetSize()
+    {
+        return _size;
+    }
+    T* GetPointer()
+    {
+        return _rawPtr;
+    }
+
+private:
+    T* _rawPtr = 0;
+    cl_uint3 _size;
 };
-struct Linear2dSpaceData
+
+
+struct MimageData
 {
-    Linear2dSpaceData(int spaceSize, cl_double2 pointSize):
-        pointSize(pointSize)
-    {
-        points.reserve(spaceSize);
-    }
-    cl_double2 pointSize;
-    std::vector<cl_double2> points;
+    double Cx = -10;
+    double Cy = -10;
+    double Cz = -10;
+    double Cw = -10;
+    double Ct = -10;
 };
-struct Linear1dSpaceData
+
+
+struct SpaceData
 {
-    Linear1dSpaceData(int spaceSize, cl_double pointSize):
-        pointSize(pointSize)
+    SpaceData(cl_uint3 spaceUnits,
+              cl_float3 startPoint,
+              cl_float3 pointSize):
+        spaceUnits(spaceUnits),
+        pointSize(pointSize),
+        mimageData(nullptr),
+        zoneData(nullptr)
     {
-        points.reserve(spaceSize);
+        pointHalfSize = {pointSize.x/2.f,
+                         pointSize.y/2.f,
+                         pointSize.z/2.f};
+        this->startPoint.x = startPoint.x + pointHalfSize.x;
+        this->startPoint.y = startPoint.y + pointHalfSize.y;
+        this->startPoint.z = startPoint.z + pointHalfSize.z;
     }
-    cl_double pointSize;
-    std::vector<cl_double> points;
+    ~SpaceData()
+    {
+        DeleteZoneData();
+        DeleteMimageData();
+    }
+    void CreateMimageData()
+    {
+        DeleteMimageData();
+        mimageData = new CubeMatrix<MimageData>(spaceUnits);
+    }
+    void CreateZoneData()
+    {
+        DeleteZoneData();
+        zoneData = new CubeMatrix<int>(spaceUnits);
+    }
+    void DeleteMimageData()
+    {
+        if(mimageData)
+        {
+            delete mimageData;
+            mimageData = nullptr;
+        }
+    }
+    void DeleteZoneData()
+    {
+        if(zoneData)
+        {
+            delete zoneData;
+            zoneData = nullptr;
+        }
+    }
+    int GetSize()
+    {
+        return spaceUnits.x*spaceUnits.y*spaceUnits.z;
+    }
+    cl_float3 GetPos(int i)
+    {
+        cl_float3 pos;
+        pos.x = startPoint.x + pointSize.x * (i / ( spaceUnits.z * spaceUnits.y ));
+        pos.y = startPoint.y + pointSize.y * (( i / spaceUnits.z ) % spaceUnits.y);
+        pos.z = startPoint.z + pointSize.z * (i % spaceUnits.z);
+        return pos;
+    }
+
+    cl_uint3   spaceUnits;
+    cl_float3 startPoint;
+    cl_float3 pointSize;
+    cl_float3 pointHalfSize;
+
+    CubeMatrix<MimageData>* mimageData;
+    CubeMatrix<int>*        zoneData;
 };
+
 
 class SpaceBuilder
 {
@@ -44,37 +131,23 @@ public:
 
     ~SpaceBuilder();
 
-    Linear3dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                   const std::pair<double, double> &dim2,
-                                   const std::pair<double, double> &dim3,
-                                   const Vector3i &step);
-    Linear3dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                   const std::pair<double, double> &dim2,
-                                   const std::pair<double, double> &dim3,
-                                   const int &recur);
-    Linear2dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                   const std::pair<double, double> &dim2,
-                                   const Vector2i &step);
-    Linear2dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                   const std::pair<double, double> &dim2,
-                                   const int &recur);
-    Linear1dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                   const double &step);
-    Linear1dSpaceData* CreateSpace(const std::pair<double, double> &dim1,
-                                   const int &recur);
-    Linear3dSpaceData* Get3dSpace();
-    Linear2dSpaceData* Get2dSpace();
-    Linear1dSpaceData* Get1dSpace();
-    void Delete3dSpace();
-    void Delete2dSpace();
-    void Delete1dSpace();
+    SpaceData* CreateSpace(const std::pair<double, double> &dim1,
+                           const std::pair<double, double> &dim2,
+                           const std::pair<double, double> &dim3,
+                           const cl_uint3 &units);
+    SpaceData* CreateSpace(const std::pair<double, double> &dim1,
+                           const std::pair<double, double> &dim2,
+                           const std::pair<double, double> &dim3,
+                           const int &recur);
+
+    SpaceData* GetSpace();
+
+    void DeleteSpace();
 
 private:
     SpaceBuilder();
 
-    Linear3dSpaceData* _data3;
-    Linear2dSpaceData* _data2;
-    Linear1dSpaceData* _data1;
+    SpaceData* _space;
 };
 
 #endif // SPACEBUILDER_H
