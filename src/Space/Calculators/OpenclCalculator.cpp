@@ -1,8 +1,24 @@
 #include "OpenclCalculator.h"
-#include <sstream>
 #include <QDebug>
-
+#include <sstream>
 using namespace std;
+
+OpenclCalculator::OpenclCalculator(QObject *parent):
+    ISpaceCalculator(parent)
+{
+    ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+    if(ret != CL_SUCCESS)
+        qDebug()<<Qt::endl<<ret<<Qt::endl;
+    qDebug()<<"platform_id: "<<platform_id;
+    ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1,
+                         &device_id, &ret_num_devices);
+    if(ret != CL_SUCCESS)
+        qDebug()<<Qt::endl<<ret;
+    qDebug()<<"device_id: "<<device_id;
+    context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
+    qDebug()<<"context: "<<context;
+    command_queue = clCreateCommandQueueWithProperties(context, device_id, 0, &ret);
+}
 
 OpenclCalculator::~OpenclCalculator()
 {
@@ -14,7 +30,7 @@ OpenclCalculator::~OpenclCalculator()
     ret = clReleaseContext(context);
 }
 
-string OpenclCalculator::CreateOpenclSource(const Program& program)
+QString OpenclCalculator::CreateOpenclSource(const Program& program)
 {
     stringstream result;
     result << R"(
@@ -157,39 +173,26 @@ kernel void __calculateMImage(global double *result,
 }
 
 )";
-    return result.str();
-}
-
-OpenclCalculator::OpenclCalculator()
-{
-    ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
-    if(ret != CL_SUCCESS)
-        qDebug()<<Qt::endl<<ret<<Qt::endl;
-    qDebug()<<"platform_id: "<<platform_id;
-    ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1,
-                         &device_id, &ret_num_devices);
-    if(ret != CL_SUCCESS)
-        qDebug()<<Qt::endl<<ret;
-    qDebug()<<"device_id: "<<device_id;
-    context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
-    qDebug()<<"context: "<<context;
-    command_queue = clCreateCommandQueueWithProperties(context, device_id, 0, &ret);
+    return QString::fromStdString(result.str());
 }
 
 
-void OpenclCalculator::ComputeModel(const Program& prog, int batchSize)
+void OpenclCalculator::CalcModel()
 {
     auto space = SpaceBuilder::Instance().GetSpace();
     if(!space)
         return;
     space->CreateZoneData();
 
-    string source = CreateOpenclSource(prog);
-    const char* src_str = source.c_str();
+    auto prog = GetProgram();
+    int batchSize = GetBatchSize();
+    QString source = CreateOpenclSource(*prog);
+    QByteArray ba = source.toLocal8Bit();
+    const char* src_str = ba.data();
 
     if(source != prevSource)
     {
-        if(!prevSource.empty())
+        if(!prevSource.isEmpty())
         {
             ret = clReleaseProgram(program);
             ret = clReleaseKernel(kernel);
@@ -293,19 +296,22 @@ void OpenclCalculator::ComputeModel(const Program& prog, int batchSize)
     qDebug()<<"Complete\n";
 }
 
-void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
+void OpenclCalculator::CalcMImage()
 {
     auto space = SpaceBuilder::Instance().GetSpace();
     if(!space)
         return;
     space->CreateMimageData();
 
-    string source = CreateOpenclSource(prog);
-    const char* src_str = source.c_str();
+    auto prog = GetProgram();
+    int batchSize = GetBatchSize();
+    QString source = CreateOpenclSource(*prog);
+    QByteArray ba = source.toLocal8Bit();
+    const char* src_str = ba.data();
 
     if(source != prevSource)
     {
-        if(!prevSource.empty())
+        if(!prevSource.isEmpty())
         {
             ret = clReleaseProgram(program);
             ret = clReleaseKernel(kernel);
@@ -410,12 +416,3 @@ void OpenclCalculator::ComputeImage(const Program &prog, int batchSize)
     }
     qDebug()<<"Complete\n";
 }
-//void OpenclCalculator::Compute(const string& source, const vector<Vector2d> &data)
-//{
-
-//}
-
-//void OpenclCalculator::Compute(const string& source, const vector<double> &data)
-//{
-
-//}

@@ -9,9 +9,10 @@ class LinearGradientModel : public QObject
 {
     Q_OBJECT
 public:
-    explicit LinearGradientModel(QVector<QColor> colors,
+    explicit LinearGradientModel(QVector<QColor> colors = {},
                                  QObject *parent = nullptr);
     QColor GetColor(unsigned value);
+    void SetColors(const QVector<QColor>& colors);
 
 private:
     QVector<QColor> _stops;

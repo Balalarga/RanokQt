@@ -41,7 +41,7 @@ double Program::Compute(std::map<std::string, double> args) const
     return res;
 }
 
-double Program::Compute(Vector3d args) const
+double Program::Compute(cl_double3 args) const
 {
     if(!resultNode)
         return 0;
@@ -59,11 +59,6 @@ double Program::Compute(Vector3d args) const
     resultNode->Reset();
 
     return res;
-}
-
-double Program::Compute(cl_double3 args) const
-{
-    return Compute(Vector3d(args.x, args.y, args.z));
 }
 
 

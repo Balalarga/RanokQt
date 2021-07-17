@@ -5,7 +5,6 @@
 #include <QVector>
 #include <QVector4D>
 
-#include "AsyncVector.h"
 #include "ShaderProgram.h"
 #include "GridObject.h"
 #include "VoxelObject.h"

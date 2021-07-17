@@ -22,6 +22,11 @@ QColor LinearGradientModel::GetColor(unsigned value)
     return interpolate(_stops[bin], _stops[bin+1], normalized_v);
 }
 
+void LinearGradientModel::SetColors(const QVector<QColor> &colors)
+{
+    _stops = colors;
+}
+
 QColor LinearGradientModel::interpolate(QColor c1, QColor c2,
                                         float normalized_value)
 {

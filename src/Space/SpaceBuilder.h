@@ -5,7 +5,6 @@
 #include <vector>
 #include <QDebug>
 
-#include "Utils.h"
 #include <CL/cl.h>
 
 template<class T>

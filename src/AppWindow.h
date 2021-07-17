@@ -10,6 +10,7 @@
 #include <QComboBox>
 #include <QSpinBox>
 #include <QLabel>
+#include <QMap>
 
 #include "Gui/ToggleButton.h"
 
@@ -18,19 +19,15 @@
 #include "Gui/CodeEditor/LineEditor.h"
 
 #include "Language/Parser.h"
-
-#include "TaskThread.h"
-#include "Gui/LinearGradientModel.h"
-
-
-enum class ObjectType
-{
-    Cube, Square
-};
+#include "Space/Calculators/ISpaceCalculator.h"
 
 enum class Mode
 {
     Common, Line
+};
+enum class CalculatorName
+{
+    Common, Opencl
 };
 
 
@@ -57,6 +54,8 @@ private slots:
     void ComputeLine(QString line);
     void ModelComputeFinished(int start, int end);
     void MimageComputeFinished(int start, int end);
+    void StopCalculators();
+    bool IsCalculate();
 
 private:
     Mode m_mode;
@@ -66,14 +65,13 @@ private:
 
     CodeEditor* m_codeEditor;
     LineEditor* m_lineEditor;
-    ModelThread* m_modelThread;
-    ImageThread* m_imageThread;
+    QMap<CalculatorName, ISpaceCalculator*> _calculators;
+    ISpaceCalculator* _activeCalculator;
 
     Parser m_parser;
     Program* m_program;
     Parser m_lineParser;
     Program* m_lineProgram;
-    LinearGradientModel* _linearGradModel;
 
     int _currentZone;
     int _currentType;
