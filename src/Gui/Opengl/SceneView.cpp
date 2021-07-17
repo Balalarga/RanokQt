@@ -16,19 +16,18 @@ SceneView::SceneView(QWidget *parent):
     m_voxelShader->AddUniform("worldToView");
     m_voxelShader->AddUniform("voxSize");
     gridObject = new GridObject;
+    wcsObject = new WcsObject;
     voxelObject = new VoxelObject;
 }
 
 SceneView::~SceneView()
 {
     ClearObjects();
-    m_voxelShader->Destroy();
-    m_gridShader->Destroy();
-    gridObject->Destroy();
-    voxelObject->Destroy();
+
     delete m_voxelShader;
     delete m_gridShader;
     delete gridObject;
+    delete wcsObject;
     delete voxelObject;
 }
 
@@ -69,6 +68,7 @@ void SceneView::initializeGL()
         qDebug()<<"grid shader error";
 
     gridObject->Create(m_gridShader->GetRawProgram());
+    wcsObject->Create(m_gridShader->GetRawProgram());
 }
 
 void SceneView::resizeGL(int width, int height)
@@ -89,12 +89,10 @@ void SceneView::paintGL()
     }
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    QVector4D minorGridColor(0.5f, 0.5f, 0.7f, 0.5f);
     glClearColor(backColor.x(), backColor.y(), backColor.z(), backColor.w());
 
     m_gridShader->Bind();
     m_gridShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
-    m_gridShader->GetRawProgram()->setUniformValue("gridColor", minorGridColor);
     m_gridShader->GetRawProgram()->setUniformValue("backColor", backColor);
     gridObject->Render();
     m_gridShader->Release();
@@ -105,7 +103,13 @@ void SceneView::paintGL()
         m_voxelShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
         m_voxelShader->GetRawProgram()->setUniformValue("voxSize", voxSize.x, voxSize.y, voxSize.z);
         voxelObject->Render();
+        m_voxelShader->Release();
     }
+
+    m_gridShader->Bind();
+    wcsObject->Render();
+    m_gridShader->Release();
+
 }
 
 void SceneView::mousePressEvent(QMouseEvent *event)

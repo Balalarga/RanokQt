@@ -10,6 +10,11 @@ ShaderProgram::ShaderProgram(const QString &vertexShaderFilePath, const QString 
 
 }
 
+ShaderProgram::~ShaderProgram()
+{
+    Destroy();
+}
+
 
 bool ShaderProgram::Create() {
     m_program = new QOpenGLShaderProgram();

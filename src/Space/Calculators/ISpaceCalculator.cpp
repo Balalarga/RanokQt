@@ -8,11 +8,11 @@ ISpaceCalculator::ISpaceCalculator(QObject *parent):
     _batchSize(0)
 {
     QVector<QColor> gradColors;
-    gradColors.push_back(QColor(255, 255, 0,   5));
-    gradColors.push_back(QColor(0,   255, 162, 5));
-    gradColors.push_back(QColor(0,   0,   255, 5));
-    gradColors.push_back(QColor(255, 145, 0,   5));
-    gradColors.push_back(QColor(214, 0,   255, 5));
+    gradColors.push_back(QColor(255, 255, 0,   20));
+    gradColors.push_back(QColor(0,   255, 162, 20));
+    gradColors.push_back(QColor(0,   0,   255, 20));
+    gradColors.push_back(QColor(255, 145, 0,   20));
+    gradColors.push_back(QColor(214, 0,   255, 20));
     SetMImageColorGradiend(gradColors);
 }
 

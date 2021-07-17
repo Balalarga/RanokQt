@@ -8,6 +8,7 @@
 #include "ShaderProgram.h"
 #include "GridObject.h"
 #include "VoxelObject.h"
+#include "WcsObject.h"
 
 class SceneView : public QGLWidget
 {
@@ -44,6 +45,7 @@ private:
 
     GridObject* gridObject;
     VoxelObject* voxelObject;
+    WcsObject* wcsObject;
 
     QVector4D backColor{0.1f, 0.15f, 0.3f, 0.5f};
 

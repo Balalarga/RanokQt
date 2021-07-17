@@ -11,6 +11,7 @@ public:
     ShaderProgram(const QString &vertexShaderFilePath,
                   const QString & fragmentShaderFilePath,
                   const QString & geometryShaderFilePath = "");
+    ~ShaderProgram();
     bool Create();
     void Destroy();
     void Bind();

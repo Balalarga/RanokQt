@@ -308,13 +308,15 @@ void AppWindow::ModelComputeFinished(int start, int end)
     auto space = SpaceBuilder::Instance().GetSpace();
 
     int zone = 0;
+    QColor modelColor = _activeCalculator->GetModelColor();
     for(int i = start; i < end; ++i)
     {
         cl_float3 point = space->GetPos(i);
         zone = space->zoneData->At(i);
         if(zone == _currentZone)
             m_sceneView->AddObject(point.x, point.y, point.z,
-                                   1.f, 1.f, 1.f, 0.4f);
+                                   modelColor.redF(), modelColor.greenF(),
+                                   modelColor.blueF(), modelColor.alphaF());
     }
     m_sceneView->Flush();
 }

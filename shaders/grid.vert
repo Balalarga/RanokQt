@@ -1,15 +1,18 @@
 #version 330
 
-// GLSL version 3.3
-// vertex shader
 
-layout(location = 0) in vec2 position; // input:  attribute with index '0'
-                                       //         with 2 floats (x, z coords) per vertex
 
-uniform mat4 worldToView;              // parameter: world to view transformation matrix
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec4 color;
+
+
+out vec4 gridColor;
+
+uniform mat4 worldToView;
 
 void main()
 {
-    gl_Position = worldToView * vec4(position.x, position.y, 0.0, 1.0);
+    gridColor = color;
+    gl_Position = worldToView * vec4(position.x, position.y, position.z, 1.0);
 }
 

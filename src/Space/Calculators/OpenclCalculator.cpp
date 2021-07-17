@@ -24,8 +24,10 @@ OpenclCalculator::~OpenclCalculator()
 {
     ret = clFlush(command_queue);
     ret = clFinish(command_queue);
-    ret = clReleaseProgram(program);
-    ret = clReleaseKernel(kernel);
+    if(program)
+        ret = clReleaseProgram(program);
+    if(kernel)
+        ret = clReleaseKernel(kernel);
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);
 }
@@ -283,7 +285,7 @@ void OpenclCalculator::CalcModel()
         clFinish(command_queue);
 
         ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0,
-                                  (batchEnd-batchStart) * sizeof(int), space->zoneData->GetPointer()+batchStart, 0, NULL, NULL);
+                                  (batchEnd-batchStart) * sizeof(int), &space->zoneData->At(batchStart), 0, NULL, NULL);
         if (ret != CL_SUCCESS)
         {
             qDebug()<<"Error: Failed to read output array! "<<ret;
