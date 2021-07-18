@@ -12,6 +12,7 @@
 #include <QFileDialog>
 #include <QMenuBar>
 #include <QStringListModel>
+#include <QMessageBox>
 
 AppWindow::AppWindow(QWidget *parent)
     : QWidget(parent),
@@ -26,17 +27,20 @@ AppWindow::AppWindow(QWidget *parent)
       m_imageModeButton(new ToggleButton(8, 10, this)),
       m_computeDevice(new ToggleButton(8, 10, this)),
       m_addLineButton(new QPushButton("Добавить строку", this)),
+      _modelZone(new QComboBox(this)),
       _imageType(new QComboBox(this)),
       _spaceDepth(new QSpinBox(this)),
       _batchSize(new QSpinBox(this)),
       _currentZone(0),
-      _currentType(0)
+      _currentImage(0)
 {
     QVBoxLayout* m_toolVLayout = new QVBoxLayout(this);
     m_toolVLayout->addWidget(m_toolBar);
 
     m_toolBar->addAction(QPixmap("assets/images/playIcon.svg"),
                          "Run", this, &AppWindow::Compute);
+    m_toolBar->addAction(QPixmap("assets/images/saveIcon.png"),
+                         "Save", this, &AppWindow::SaveData);
 
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
     QWidget* wrapWidget = new QWidget(this);
@@ -110,6 +114,14 @@ AppWindow::AppWindow(QWidget *parent)
     modeLayout->addWidget(_imageType);
     _imageType->setVisible(false);
 
+    _modelZone->setEditable(false);
+    QStringList modelZones;
+    modelZones<<"Отрицательная"<<"Нулевая"<<"Положительная";
+    _modelZoneModel = new QStringListModel(modelZones, this);
+    _modelZone->setModel(_modelZoneModel);
+    _modelZone->setCurrentIndex(1);
+    modeLayout->addWidget(_modelZone);
+
     _spaceDepth->setRange(1, 10);
     _spaceDepth->setValue(4);
 
@@ -153,6 +165,7 @@ AppWindow::AppWindow(QWidget *parent)
 
 
     connect(_imageType, &QComboBox::currentTextChanged, this, &AppWindow::ImageChanged);
+    connect(_modelZone, &QComboBox::currentTextChanged, this, &AppWindow::ZoneChanged);
     connect(m_editorModeButton, &QPushButton::clicked, this, &AppWindow::SwitchEditorMode);
     connect(m_imageModeButton, &QPushButton::clicked, this, &AppWindow::SwitchModelMode);
     connect(m_computeDevice, &QPushButton::clicked, this, &AppWindow::SwitchComputeDevice);
@@ -232,6 +245,7 @@ void AppWindow::SwitchModelMode()
         _modelLabel->setStyleSheet("QLabel { color : #888888; }");
         _imageLabel->setStyleSheet("QLabel { color : #ffffff; }");
         _imageType->setVisible(true);
+        _modelZone->setVisible(false);
     }
     else
     {
@@ -239,6 +253,7 @@ void AppWindow::SwitchModelMode()
         _modelLabel->setStyleSheet("QLabel { color : #ffffff; }");
         _imageLabel->setStyleSheet("QLabel { color : #888888; }");
         _imageType->setVisible(false);
+        _modelZone->setVisible(true);
     }
 }
 
@@ -261,15 +276,43 @@ void AppWindow::SwitchComputeDevice()
 void AppWindow::ImageChanged(QString name)
 {
     if(name == "Cx")
-        _currentType = 0;
+        _currentImage = 0;
     else if(name == "Cy")
-        _currentType = 1;
+        _currentImage = 1;
     else if(name == "Cz")
-        _currentType = 2;
+        _currentImage = 2;
     else if(name == "Cw")
-        _currentType = 3;
+        _currentImage = 3;
     else if(name == "Ct")
-        _currentType = 4;
+        _currentImage = 4;
+
+    if(SpaceBuilder::Instance().GetSpace() &&
+            SpaceBuilder::Instance().GetSpace()->mimageData)
+    {
+        auto size = SpaceBuilder::Instance().GetSpace()->GetSize();
+        m_sceneView->ClearObjects();
+        m_sceneView->CreateVoxelObject(size);
+        MimageComputeFinished(0, size);
+    }
+}
+
+void AppWindow::ZoneChanged(QString name)
+{
+    if(name == "Отрицательная")
+        _currentZone = -1;
+    else if(name == "Нулевая")
+        _currentZone = 0;
+    else if(name == "Положительная")
+        _currentZone = 1;
+
+    if(SpaceBuilder::Instance().GetSpace() &&
+            SpaceBuilder::Instance().GetSpace()->zoneData)
+    {
+        auto size = SpaceBuilder::Instance().GetSpace()->GetSize();
+        m_sceneView->ClearObjects();
+        m_sceneView->CreateVoxelObject(size);
+        ModelComputeFinished(0, size);
+    }
 }
 
 void AppWindow::ComputeLine(QString line)
@@ -329,15 +372,15 @@ void AppWindow::MimageComputeFinished(int start, int end)
     for(int i = start; i < end; ++i)
     {
         point = space->GetPos(i);
-        if(_currentZone == 0)
+        if(_currentImage == 0)
             value = space->mimageData->At(i).Cx;
-        else if(_currentZone == 1)
+        else if(_currentImage == 1)
             value = space->mimageData->At(i).Cy;
-        else if(_currentZone == 2)
+        else if(_currentImage == 2)
             value = space->mimageData->At(i).Cz;
-        else if(_currentZone == 3)
+        else if(_currentImage == 3)
             value = space->mimageData->At(i).Cw;
-        else if(_currentZone == 4)
+        else if(_currentImage == 4)
             value = space->mimageData->At(i).Ct;
 
         QColor color = _activeCalculator->GetMImageColor(value);
@@ -365,6 +408,93 @@ bool AppWindow::IsCalculate()
             return true;
     }
     return false;
+}
+
+void AppWindow::SaveData()
+{
+    if(!SpaceBuilder::Instance().GetSpace())
+    {
+        QMessageBox::information(this, "Nothing to save",
+                                 "You must calculate model or mimage first");
+        return;
+    }
+
+    if(SpaceBuilder::Instance().GetSpace()->zoneData)
+    {
+        QString fileName = QFileDialog::getSaveFileName(this,
+            tr("Save model"), "",
+            tr("Binary (.mranok)"));
+        if (fileName.isEmpty())
+            return;
+
+        if(!fileName.endsWith(".mranok"))
+            fileName += ".mranok";
+        QFile file(fileName);
+        if (!file.open(QIODevice::WriteOnly))
+        {
+            QMessageBox::information(this, tr("Unable to open file"),
+                                     file.errorString());
+            return;
+        }
+        auto space = SpaceBuilder::Instance().GetSpace();
+
+        QDataStream out(&file);
+        out.setVersion(QDataStream::Qt_4_5);
+        out << space->startPoint.x;
+        out << space->startPoint.y;
+        out << space->startPoint.z;
+        out << space->pointSize.x;
+        out << space->pointSize.y;
+        out << space->pointSize.z;
+        out << space->spaceUnits.x;
+        out << space->spaceUnits.y;
+        out << space->spaceUnits.z;
+        for(int i = 0; i < space->GetSize(); i++)
+        {
+            out << space->zoneData->At(i);
+        }
+        file.close();
+    }
+    else if(SpaceBuilder::Instance().GetSpace()->mimageData)
+    {
+        QString fileName = QFileDialog::getSaveFileName(this,
+            tr("Save MImage"), "",
+            tr("Binary (.iranok)"));
+        if (fileName.isEmpty())
+            return;
+
+        if(!fileName.endsWith(".iranok"))
+            fileName += ".iranok";
+        QFile file(fileName);
+        if (!file.open(QIODevice::WriteOnly))
+        {
+            QMessageBox::information(this, tr("Unable to open file"),
+                                     file.errorString());
+            return;
+        }
+        auto space = SpaceBuilder::Instance().GetSpace();
+
+        QDataStream out(&file);
+        out.setVersion(QDataStream::Qt_4_5);
+        out << space->startPoint.x;
+        out << space->startPoint.y;
+        out << space->startPoint.z;
+        out << space->pointSize.x;
+        out << space->pointSize.y;
+        out << space->pointSize.z;
+        out << space->spaceUnits.x;
+        out << space->spaceUnits.y;
+        out << space->spaceUnits.z;
+        for(int i = 0; i < space->GetSize(); i++)
+        {
+            out << space->mimageData->At(i).Cx;
+            out << space->mimageData->At(i).Cy;
+            out << space->mimageData->At(i).Cz;
+            out << space->mimageData->At(i).Cw;
+            out << space->mimageData->At(i).Ct;
+        }
+        file.close();
+    }
 }
 
 void AppWindow::OpenFile()

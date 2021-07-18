@@ -77,12 +77,14 @@ struct SpaceData
     }
     void CreateMimageData()
     {
+        DeleteZoneData();
         DeleteMimageData();
         mimageData = new CubeMatrix<MimageData>(spaceUnits);
     }
     void CreateZoneData()
     {
         DeleteZoneData();
+        DeleteMimageData();
         zoneData = new CubeMatrix<int>(spaceUnits);
     }
     void DeleteMimageData()

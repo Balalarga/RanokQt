@@ -1,7 +1,7 @@
 #version 330
 
 layout(points) in;
-layout(triangle_strip, max_vertices = 12) out;
+layout(triangle_strip, max_vertices = 24) out;
 
 uniform vec3 voxSize;
 uniform mat4 worldToView;
@@ -22,11 +22,6 @@ void AddQuad(vec4 center, vec4 dy, vec4 dx)
     EndPrimitive();
 }
 
-bool IsCulled(vec4 normal)
-{
-    return normal.z > 0;
-}
-
 void main()
 {
     gColor = vColor[0];
@@ -36,16 +31,10 @@ void main()
     vec4 dy = worldToView[1]/2.0f * voxSize.y;
     vec4 dz = worldToView[2]/2.0f * voxSize.z;
 
-    if(!IsCulled(dx))
     AddQuad(center + dx, dy, dz);
-    if(!IsCulled(-dx))
     AddQuad(center - dx, dz, dy);
-    if(!IsCulled(dy))
     AddQuad(center + dy, dz, dx);
-    if(!IsCulled(-dy))
     AddQuad(center - dy, dx, dz);
-    if(!IsCulled(dz))
     AddQuad(center + dz, dx, dy);
-    if(!IsCulled(-dz))
     AddQuad(center - dz, dy, dx);
 }

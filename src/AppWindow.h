@@ -51,11 +51,13 @@ private slots:
     void SwitchModelMode();
     void SwitchComputeDevice();
     void ImageChanged(QString name);
+    void ZoneChanged(QString name);
     void ComputeLine(QString line);
     void ModelComputeFinished(int start, int end);
     void MimageComputeFinished(int start, int end);
     void StopCalculators();
     bool IsCalculate();
+    void SaveData();
 
 private:
     Mode m_mode;
@@ -74,20 +76,22 @@ private:
     Program* m_lineProgram;
 
     int _currentZone;
-    int _currentType;
-
-    QLabel* _editorMode1Label;
-    QLabel* _editorMode2Label;
-    ToggleButton* m_editorModeButton;
+    int _currentImage;
 
     QLabel* _modelLabel;
     QLabel* _imageLabel;
+    ToggleButton* m_editorModeButton;
+
+    QLabel* _editorMode1Label;
+    QLabel* _editorMode2Label;
     ToggleButton* m_imageModeButton;
 
     QLabel* _computeDevice1;
     QLabel* _computeDevice2;
     ToggleButton* m_computeDevice;
 
+    QComboBox* _modelZone;
+    QStringListModel* _modelZoneModel;
     QComboBox* _imageType;
     QStringListModel* _imageTypeModel;
     QSpinBox* _spaceDepth;
