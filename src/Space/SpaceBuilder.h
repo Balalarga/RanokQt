@@ -78,13 +78,29 @@ struct SpaceData
     void CreateMimageData()
     {
         DeleteZoneData();
-        DeleteMimageData();
+        if(mimageData)
+        {
+            auto oldSize = mimageData->GetSize();
+            if(oldSize.x == spaceUnits.x &&
+                    oldSize.y == spaceUnits.y &&
+                    oldSize.z == spaceUnits.z)
+                return;
+            DeleteMimageData();
+        }
         mimageData = new CubeMatrix<MimageData>(spaceUnits);
     }
     void CreateZoneData()
     {
-        DeleteZoneData();
         DeleteMimageData();
+        if(zoneData)
+        {
+            auto oldSize = zoneData->GetSize();
+            if(oldSize.x == spaceUnits.x &&
+                    oldSize.y == spaceUnits.y &&
+                    oldSize.z == spaceUnits.z)
+                return;
+            DeleteZoneData();
+        }
         zoneData = new CubeMatrix<int>(spaceUnits);
     }
     void DeleteMimageData()
