@@ -6,61 +6,46 @@ CommonCalculator::CommonCalculator(QObject *parent):
 
 }
 
-void CommonCalculator::CalcModel()
+void CommonCalculator::CalcModel(SpaceData* space, int start, int end)
 {
-    auto space = SpaceBuilder::Instance().GetSpace();
     if(!space)
         return;
 
-    space->CreateZoneData();
-
     auto program = GetProgram();
-    int batchSize = GetBatchSize();
     cl_float3 halfSize = space->pointHalfSize;
     constexpr unsigned verticesSize = 8;
     QVector<double> values(8);
     cl_double3 vertices[verticesSize];
     cl_float3 point;
 
-    if(batchSize == 0)
-        batchSize = space->GetSize();
+    if(end == 0)
+        end = space->GetSize();
 
-    for(int batchStart = 0; batchStart < space->GetSize(); )
+    for(int i = start; i < end; ++i)
     {
-        int start = batchStart;
-        int currentSize = batchSize+batchStart < space->GetSize() ?
-                    batchSize+batchStart : space->GetSize();
+        point = space->GetPos(i);
+        vertices[0] = { point.x + halfSize.x, point.y + halfSize.y, point.z + halfSize.z };
+        vertices[1] = { point.x + halfSize.x, point.y + halfSize.y, point.z - halfSize.z };
+        vertices[2] = { point.x + halfSize.x, point.y - halfSize.y, point.z + halfSize.z };
+        vertices[3] = { point.x + halfSize.x, point.y - halfSize.y, point.z - halfSize.z };
+        vertices[4] = { point.x - halfSize.x, point.y + halfSize.y, point.z + halfSize.z };
+        vertices[5] = { point.x - halfSize.x, point.y + halfSize.y, point.z - halfSize.z };
+        vertices[6] = { point.x - halfSize.x, point.y - halfSize.y, point.z + halfSize.z };
+        vertices[7] = { point.x - halfSize.x, point.y - halfSize.y, point.z - halfSize.z };
 
-        for(; batchStart < currentSize; ++batchStart)
-        {
-            point = space->GetPos(batchStart);
-            vertices[0] = { point.x + halfSize.x, point.y + halfSize.y, point.z + halfSize.z };
-            vertices[1] = { point.x + halfSize.x, point.y + halfSize.y, point.z - halfSize.z };
-            vertices[2] = { point.x + halfSize.x, point.y - halfSize.y, point.z + halfSize.z };
-            vertices[3] = { point.x + halfSize.x, point.y - halfSize.y, point.z - halfSize.z };
-            vertices[4] = { point.x - halfSize.x, point.y + halfSize.y, point.z + halfSize.z };
-            vertices[5] = { point.x - halfSize.x, point.y + halfSize.y, point.z - halfSize.z };
-            vertices[6] = { point.x - halfSize.x, point.y - halfSize.y, point.z + halfSize.z };
-            vertices[7] = { point.x - halfSize.x, point.y - halfSize.y, point.z - halfSize.z };
-
-            for(size_t i = 0; i < verticesSize; i++)
-                values[i] = program->Compute(vertices[i]);
-            space->zoneData->At(batchStart) = GetZone(values);
-        }
-        emit ComputedModel(start, currentSize);
+        for(size_t i = 0; i < verticesSize; i++)
+            values[i] = program->Compute(vertices[i]);
+        space->zoneData->At(i) = GetZone(values);
     }
+    emit ComputedModel(start, end);
 }
 
-void CommonCalculator::CalcMImage()
+void CommonCalculator::CalcMImage(SpaceData* space, int start, int end)
 {
-    auto space = SpaceBuilder::Instance().GetSpace();
     if(!space)
         return;
 
-    space->CreateMimageData();
-
     auto program = GetProgram();
-    int batchSize = GetBatchSize();
     cl_float3 size = space->pointSize;
     QVector<double> wv(4);
     QVector<QVector<double>> a;
@@ -70,69 +55,63 @@ void CommonCalculator::CalcMImage()
     QVector<QVector<double>> f;
     cl_float3 point;
 
-    if(batchSize == 0)
-        batchSize = space->GetSize();
+    if(end == 0)
+        end = space->GetSize();
 
-    for(int batchStart = 0; batchStart < space->GetSize(); )
+    for(int i = start; i < end; ++i)
     {
-        int start = batchStart;
-        int currentSize = batchSize+batchStart < space->GetSize() ? batchSize+batchStart : space->GetSize();
+        point = space->GetPos(i);
+        wv[0] = program->Compute({point.x,        point.y,        point.z       });
+        wv[1] = program->Compute({point.x+size.x, point.y,        point.z       });
+        wv[2] = program->Compute({point.x,        point.y+size.y, point.z       });
+        wv[3] = program->Compute({point.x,        point.y,        point.z+size.z});
 
-        for(; batchStart < currentSize; ++batchStart)
-        {
-            point = space->GetPos(batchStart);
-            wv[0] = program->Compute({point.x,        point.y,        point.z       });
-            wv[1] = program->Compute({point.x+size.x, point.y,        point.z       });
-            wv[2] = program->Compute({point.x,        point.y+size.y, point.z       });
-            wv[3] = program->Compute({point.x,        point.y,        point.z+size.z});
+        a = {
+            {point.y,        point.z,        wv[0], 1},
+            {point.y,        point.z,        wv[1], 1},
+            {point.y+size.y, point.z,        wv[2], 1},
+            {point.y,        point.z+size.z, wv[3], 1},
+        };
+        b = {
+            {point.x,        point.z,        wv[0], 1},
+            {point.x+size.x, point.z,        wv[1], 1},
+            {point.x,        point.z,        wv[2], 1},
+            {point.x,        point.z+size.z, wv[3], 1},
+        };
+        c = {
+            {point.x,        point.y,        wv[0], 1},
+            {point.x+size.x, point.y,        wv[1], 1},
+            {point.x,        point.y+size.y, wv[2], 1},
+            {point.x,        point.y,        wv[3], 1},
+        };
+        d = {
+            {point.x,        point.y,        point.z,        1},
+            {point.x+size.x, point.y,        point.z,        1},
+            {point.x,        point.y+size.y, point.z,        1},
+            {point.x,        point.y,        point.z+size.z, 1},
+        };
+        f = {
+            {point.x,        point.y,        point.z,        wv[0]},
+            {point.x+size.x, point.y,        point.z,        wv[1]},
+            {point.x,        point.y+size.y, point.z,        wv[2]},
+            {point.x,        point.y,        point.z+size.z, wv[3]},
+        };
 
-            a = {
-                {point.y,        point.z,        wv[0], 1},
-                {point.y,        point.z,        wv[1], 1},
-                {point.y+size.y, point.z,        wv[2], 1},
-                {point.y,        point.z+size.z, wv[3], 1},
-            };
-            b = {
-                {point.x,        point.z,        wv[0], 1},
-                {point.x+size.x, point.z,        wv[1], 1},
-                {point.x,        point.z,        wv[2], 1},
-                {point.x,        point.z+size.z, wv[3], 1},
-            };
-            c = {
-                {point.x,        point.y,        wv[0], 1},
-                {point.x+size.x, point.y,        wv[1], 1},
-                {point.x,        point.y+size.y, wv[2], 1},
-                {point.x,        point.y,        wv[3], 1},
-            };
-            d = {
-                {point.x,        point.y,        point.z,        1},
-                {point.x+size.x, point.y,        point.z,        1},
-                {point.x,        point.y+size.y, point.z,        1},
-                {point.x,        point.y,        point.z+size.z, 1},
-            };
-            f = {
-                {point.x,        point.y,        point.z,        wv[0]},
-                {point.x+size.x, point.y,        point.z,        wv[1]},
-                {point.x,        point.y+size.y, point.z,        wv[2]},
-                {point.x,        point.y,        point.z+size.z, wv[3]},
-            };
+        double detA = DeterminantOfMatrix(a, 4);
+        double detB = DeterminantOfMatrix(b, 4);
+        double detC = DeterminantOfMatrix(c, 4);
+        double detD = DeterminantOfMatrix(d, 4);
+        double detF = DeterminantOfMatrix(f, 4);
+        double div = sqrt(pow(detA, 2)+pow(detB, 2)+
+                          pow(detC, 2)+pow(detD, 2)+pow(detF, 2));
 
-            double detA = DeterminantOfMatrix(a, 4);
-            double detB = DeterminantOfMatrix(b, 4);
-            double detC = DeterminantOfMatrix(c, 4);
-            double detD = DeterminantOfMatrix(d, 4);
-            double detF = DeterminantOfMatrix(f, 4);
-            double div = sqrt(pow(detA, 2)+pow(detB, 2)+
-                              pow(detC, 2)+pow(detD, 2)+pow(detF, 2));
-
-            space->mimageData->At(batchStart).Cx = detA/div;
-            space->mimageData->At(batchStart).Cy = -detB/div;
-            space->mimageData->At(batchStart).Cz = -detC/div;
-            space->mimageData->At(batchStart).Cw = detD/div;
-            space->mimageData->At(batchStart).Ct = detF/div;
-        }
-        emit ComputedMimage(start, currentSize);
+        space->mimageData->At(i).Cx = detA/div;
+        space->mimageData->At(i).Cy = -detB/div;
+        space->mimageData->At(i).Cz = -detC/div;
+        space->mimageData->At(i).Cw = detD/div;
+        space->mimageData->At(i).Ct = detF/div;
     }
+    emit ComputedMimage(start, end);
 }
 
 double CommonCalculator::DeterminantOfMatrix(QVector<QVector<double>> &mat,

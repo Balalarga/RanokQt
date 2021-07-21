@@ -1,7 +1,8 @@
 #include "BufferedCalculator.h"
 
-BufferedCalculator::BufferedCalculator(QObject *parent):
-    ISpaceCalculator(parent)
+BufferedCalculator::BufferedCalculator(ISpaceCalculator *baseCalc, QObject *parent):
+    ISpaceCalculator(parent),
+    _baseCalculator(baseCalc)
 {
 
 }

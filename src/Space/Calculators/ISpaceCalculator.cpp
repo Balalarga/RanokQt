@@ -5,7 +5,7 @@ ISpaceCalculator::ISpaceCalculator(QObject *parent):
     _mode(CalculatorMode::Model),
     _modelColor({255, 255, 255, 20}),
     _program(0),
-    _batchSize(0)
+    _batchSize(9)
 {
     QVector<QColor> gradColors;
     gradColors.push_back(QColor(255, 255, 0,   20));
@@ -14,6 +14,46 @@ ISpaceCalculator::ISpaceCalculator(QObject *parent):
     gradColors.push_back(QColor(255, 145, 0,   20));
     gradColors.push_back(QColor(214, 0,   255, 20));
     SetMImageColorGradiend(gradColors);
+}
+
+void ISpaceCalculator::run()
+{
+    if(_program)
+    {
+        auto space = SpaceBuilder::Instance().GetSpace();
+        if(!space)
+            return;
+
+        auto theRun = [this](SpaceData* space, int start, int end){
+
+            if(_mode == CalculatorMode::Model)
+            {
+                space->CreateZoneData();
+                CalcModel(space, start, end);
+            }
+            else
+            {
+                space->CreateMimageData();
+                CalcMImage(space, start, end);
+            }
+        };
+
+        if(_batchSize != 0)
+        {
+            int start = 0;
+            while(start + _batchSize < space->GetSize())
+            {
+                theRun(space, start, start+_batchSize);
+                start += _batchSize;
+            }
+            theRun(space, start, space->GetSize());
+        }
+        else
+            theRun(space, 0, 0);
+        qDebug()<<"Complete";
+    }
+    else
+        qDebug()<<"[ISpaceCalculator] Program is null";
 }
 
 void ISpaceCalculator::SetCalculatorMode(CalculatorMode mode)
@@ -53,14 +93,14 @@ void ISpaceCalculator::SetProgram(Program *program)
     _program = program;
 }
 
-void ISpaceCalculator::SetBatchSize(int batchSize)
-{
-    _batchSize = batchSize;
-}
-
 Program *ISpaceCalculator::GetProgram()
 {
     return _program;
+}
+
+void ISpaceCalculator::SetBatchSize(int size)
+{
+    _batchSize = size;
 }
 
 int ISpaceCalculator::GetBatchSize()

@@ -20,8 +20,8 @@ public:
     explicit ISpaceCalculator(QObject *parent = nullptr);
     virtual ~ISpaceCalculator(){}
 
-    virtual void CalcModel() = 0;
-    virtual void CalcMImage() = 0;
+    virtual void CalcModel(SpaceData* space, int start = 0, int end = 0) = 0;
+    virtual void CalcMImage(SpaceData* space, int start = 0, int end = 0) = 0;
 
     void SetCalculatorMode(CalculatorMode mode);
     CalculatorMode GetCalculatorMode();
@@ -33,29 +33,18 @@ public:
     void SetModelColor(const QColor &newDefaultColor);
 
     void SetProgram(Program *program);
-    void SetBatchSize(int batchSize);
-
     Program* GetProgram();
+
+    void SetBatchSize(int size);
     int GetBatchSize();
 
 signals:
-    void ComputedModel(int start, int count);
-    void ComputedMimage(int start, int count);
+    void ComputedModel(int start, int end);
+    void ComputedMimage(int start, int end);
 
 
 protected:
-    void run() override
-    {
-        if(_program)
-        {
-            if(_mode == CalculatorMode::Model)
-                CalcModel();
-            else
-                CalcMImage();
-        }
-        else
-            qDebug()<<"[ISpaceCalculator] Program is null";
-    }
+    void run() override;
 
 
 private:
@@ -65,6 +54,7 @@ private:
     LinearGradientModel _mimageColorModel;
 
     Program* _program;
+
     int _batchSize;
 };
 

@@ -125,7 +125,8 @@ AppWindow::AppWindow(QWidget *parent)
     _spaceDepth->setRange(1, 10);
     _spaceDepth->setValue(4);
 
-    _batchSize->setRange(0, 10000);
+    _batchSize->setRange(0, 16384);
+    _batchSize->setSingleStep(256);
     _batchSize->setValue(0);
 
     m_addLineButton->setVisible(false);

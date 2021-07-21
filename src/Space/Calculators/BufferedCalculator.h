@@ -6,14 +6,14 @@
 class BufferedCalculator : public ISpaceCalculator
 {
 public:
-    explicit BufferedCalculator(QObject *parent = nullptr);
+    explicit BufferedCalculator(ISpaceCalculator* baseCalc, QObject *parent = nullptr);
 
     void CalcModel();
     void CalcMImage();
 
 
 protected:
-
+    ISpaceCalculator* _baseCalculator;
 
 };
 

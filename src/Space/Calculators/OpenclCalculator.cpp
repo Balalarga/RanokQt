@@ -1,6 +1,7 @@
 #include "OpenclCalculator.h"
 #include <QDebug>
 #include <sstream>
+#include <CL/cl.h>
 using namespace std;
 
 OpenclCalculator::OpenclCalculator(QObject *parent):
@@ -87,16 +88,18 @@ int checkZone(double *values)
 
     result << R"(
 kernel void __calcualteModel(global int *resultZones,
+                           const int startId,
                            const uint3 spaceSize,
                            const float3 startPoint,
                            const float3 pointSize,
                            const float3 halfSize)
 {
     int id = get_global_id(0);
+    int spaceId = startId + id;
     float3 point;
-    point.x = startPoint.x + pointSize.x * (id / ( spaceSize.z * spaceSize.y ));
-    point.y = startPoint.y + pointSize.y * (( id / spaceSize.z ) % spaceSize.y);
-    point.z = startPoint.z + pointSize.z * (id % spaceSize.z);
+    point.x = startPoint.x + pointSize.x * (spaceId / ( spaceSize.z * spaceSize.y ));
+    point.y = startPoint.y + pointSize.y * ((spaceId / spaceSize.z ) % spaceSize.y);
+    point.z = startPoint.z + pointSize.z * (spaceId % spaceSize.z);
 
 
     double values[8];
@@ -113,16 +116,18 @@ kernel void __calcualteModel(global int *resultZones,
 }
 
 kernel void __calculateMImage(global double *result,
+                           const int startId,
                            const uint3 spaceSize,
                            const float3 startPoint,
                            const float3 pointSize,
                            const float3 halfSize)
 {
     int id = get_global_id(0);
+    int spaceId = startId + id;
     float3 point;
-    point.x = startPoint.x + pointSize.x * (id / ( spaceSize.z * spaceSize.y ));
-    point.y = startPoint.y + pointSize.y * (( id / spaceSize.z ) % spaceSize.y);
-    point.z = startPoint.z + pointSize.z * (id % spaceSize.z);
+    point.x = startPoint.x + pointSize.x * (spaceId / ( spaceSize.z * spaceSize.y ));
+    point.y = startPoint.y + pointSize.y * ((spaceId / spaceSize.z ) % spaceSize.y);
+    point.z = startPoint.z + pointSize.z * (spaceId % spaceSize.z);
 
     double wv[4];
     wv[0] = __resultFunc(point.x,             point.y,             point.z            );
@@ -178,16 +183,18 @@ kernel void __calculateMImage(global double *result,
     return QString::fromStdString(result.str());
 }
 
-
-void OpenclCalculator::CalcModel()
+int OpenclCalculator::GetLocalGroupSize()
 {
-    auto space = SpaceBuilder::Instance().GetSpace();
+    return localGroupSize;
+}
+
+
+void OpenclCalculator::CalcModel(SpaceData* space, int start, int end)
+{
     if(!space)
         return;
-    space->CreateZoneData();
 
     auto prog = GetProgram();
-    int batchSize = GetBatchSize();
     QString source = CreateOpenclSource(*prog);
     QByteArray ba = source.toLocal8Bit();
     const char* src_str = ba.data();
@@ -229,84 +236,77 @@ void OpenclCalculator::CalcModel()
         return;
     }
 
-    if(batchSize == 0)
-        batchSize = space->GetSize();
+    if(end == 0)
+        end = space->GetSize();
 
-    for(int batchStart = 0; batchStart < space->GetSize(); batchStart += batchSize)
+    // Create gpu buffers
+    cl_mem out_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+                                        (end-start) * sizeof(cl_int), NULL, &ret);
+    if (!out_mem_obj)
     {
-        int batchEnd = batchSize+batchStart < space->GetSize() ? batchSize+batchStart : space->GetSize();
-
-        // Create gpu buffers
-        cl_mem out_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
-                                            (batchEnd-batchStart) * sizeof(cl_int), NULL, &ret);
-        if (!out_mem_obj)
-        {
-            qDebug()<<"Error: Failed to allocate device memory!";
-            return;
-        }
-
-        ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&out_mem_obj);
-        ret = clSetKernelArg(kernel, 1, sizeof(cl_uint3), &space->spaceUnits);
-        ret = clSetKernelArg(kernel, 2, sizeof(cl_float3), &space->startPoint);
-        ret = clSetKernelArg(kernel, 3, sizeof(cl_float3), &space->pointSize);
-        ret = clSetKernelArg(kernel, 4, sizeof(cl_float3), &space->pointHalfSize);
-        if (ret != CL_SUCCESS)
-        {
-            qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
-            clReleaseMemObject(out_mem_obj);
-            return;
-        }
-        // Get the maximum work group size for executing the kernel on the device
-        //
-        size_t global;                      // global domain size for our calculation
-        size_t local;                       // local domain size for our calculation
-        ret = clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE,
-                                       sizeof(local), &local, NULL);
-        if (ret != CL_SUCCESS)
-        {
-            qDebug()<<"Error: Failed to retrieve kernel work group info! " << ret;
-            clReleaseMemObject(out_mem_obj);
-            return;
-        }
-
-        // Execute the kernel over the entire range of our 1d input data set
-        // using the maximum number of work group items for this device
-        //
-        global = (batchEnd-batchStart);
-
-        ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
-                                     &global, &local, 0, NULL, NULL);
-        if (ret)
-        {
-            qDebug()<<"Error: Failed to execute kernel!\n";
-            clReleaseMemObject(out_mem_obj);
-            return;
-        }
-        clFinish(command_queue);
-
-        ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0,
-                                  (batchEnd-batchStart) * sizeof(int), &space->zoneData->At(batchStart), 0, NULL, NULL);
-        if (ret != CL_SUCCESS)
-        {
-            qDebug()<<"Error: Failed to read output array! "<<ret;
-            clReleaseMemObject(out_mem_obj);
-            return;
-        }
-        ret = clReleaseMemObject(out_mem_obj);
-        emit ComputedModel(batchStart, batchEnd);
+        qDebug()<<"Error: Failed to allocate device memory!";
+        return;
     }
-    qDebug()<<"Complete\n";
+
+    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&out_mem_obj);
+    ret = clSetKernelArg(kernel, 1, sizeof(cl_int), &start);
+    ret = clSetKernelArg(kernel, 2, sizeof(cl_uint3), &space->spaceUnits);
+    ret = clSetKernelArg(kernel, 3, sizeof(cl_float3), &space->startPoint);
+    ret = clSetKernelArg(kernel, 4, sizeof(cl_float3), &space->pointSize);
+    ret = clSetKernelArg(kernel, 5, sizeof(cl_float3), &space->pointHalfSize);
+    if (ret != CL_SUCCESS)
+    {
+        qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
+        clReleaseMemObject(out_mem_obj);
+        return;
+    }
+    // Get the maximum work group size for executing the kernel on the device
+    //
+    size_t global;                      // global domain size for our calculation
+    size_t local;                       // local domain size for our calculation
+    ret = clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE,
+                                   sizeof(local), &local, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        qDebug()<<"Error: Failed to retrieve kernel work group info! " << ret;
+        clReleaseMemObject(out_mem_obj);
+        return;
+    }
+
+    // Execute the kernel over the entire range of our 1d input data set
+    // using the maximum number of work group items for this device
+    //
+    global = (end-start);
+    localGroupSize = local;
+
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
+                                 &global, &local, 0, NULL, NULL);
+    if (ret)
+    {
+        qDebug()<<"Error: Failed to execute kernel!\n";
+        clReleaseMemObject(out_mem_obj);
+        return;
+    }
+    clFinish(command_queue);
+
+    ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0,
+                              (end-start) * sizeof(int), &space->zoneData->At(start), 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        qDebug()<<"Error: Failed to read output array! "<<ret;
+        clReleaseMemObject(out_mem_obj);
+        return;
+    }
+    ret = clReleaseMemObject(out_mem_obj);
+    emit ComputedModel(start, end);
 }
 
-void OpenclCalculator::CalcMImage()
+void OpenclCalculator::CalcMImage(SpaceData* space, int start, int end)
 {
-    auto space = SpaceBuilder::Instance().GetSpace();
     if(!space)
         return;
-    space->CreateMimageData();
 
     auto prog = GetProgram();
-    int batchSize = GetBatchSize();
     QString source = CreateOpenclSource(*prog);
     QByteArray ba = source.toLocal8Bit();
     const char* src_str = ba.data();
@@ -348,73 +348,68 @@ void OpenclCalculator::CalcMImage()
         return;
     }
 
-    if(batchSize == 0)
-        batchSize = space->GetSize();
+    if(end == 0)
+        end = space->GetSize();
 
-
-    for(int batchStart = 0; batchStart < space->GetSize(); batchStart += batchSize)
+    // Create gpu buffers
+    cl_mem out_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+                                        (end-start) * 5 * sizeof(cl_double), NULL, &ret);
+    if (!out_mem_obj)
     {
-        int end = batchSize+batchStart < space->GetSize() ? batchSize+batchStart : space->GetSize();
-
-        // Create gpu buffers
-        cl_mem out_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
-                                            (end-batchStart) * 5 * sizeof(cl_double), NULL, &ret);
-        if (!out_mem_obj)
-        {
-            qDebug()<<"Error: Failed to allocate device memory!";
-            return;
-        }
-
-        ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&out_mem_obj);
-        ret = clSetKernelArg(kernel, 1, sizeof(cl_uint3), &space->spaceUnits);
-        ret = clSetKernelArg(kernel, 2, sizeof(cl_float3), &space->startPoint);
-        ret = clSetKernelArg(kernel, 3, sizeof(cl_float3), &space->pointSize);
-        ret = clSetKernelArg(kernel, 4, sizeof(cl_float3), &space->pointHalfSize);
-        if (ret != CL_SUCCESS)
-        {
-            qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
-            ret = clReleaseMemObject(out_mem_obj);
-            return;
-        }
-        // Get the maximum work group size for executing the kernel on the device
-        //
-        size_t global;                      // global domain size for our calculation
-        size_t local;                       // local domain size for our calculation
-        ret = clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE,
-                                       sizeof(local), &local, NULL);
-        if (ret != CL_SUCCESS)
-        {
-            qDebug()<<"Error: Failed to retrieve kernel work group info! " << ret;
-            clReleaseMemObject(out_mem_obj);
-            return;
-        }
-
-        // Execute the kernel over the entire range of our 1d input data set
-        // using the maximum number of work group items for this device
-        //
-        global = (end-batchStart);
-
-        ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
-                                     &global, &local, 0, NULL, NULL);
-        if (ret)
-        {
-            qDebug()<<"Error: Failed to execute kernel!\n";
-            clReleaseMemObject(out_mem_obj);
-            return;
-        }
-        clFinish(command_queue);
-
-        ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0,
-                                  (end-batchStart) * 5 * sizeof(cl_double), space->mimageData->GetPointer()+batchStart,
-                                  0, NULL, NULL);
-        if (ret != CL_SUCCESS)
-        {
-            qDebug()<<"Error: Failed to read output array! "<<ret;
-            clReleaseMemObject(out_mem_obj);
-            return;
-        }
-        ret = clReleaseMemObject(out_mem_obj);
-        emit ComputedMimage(batchStart, end);
+        qDebug()<<"Error: Failed to allocate device memory!";
+        return;
     }
-    qDebug()<<"Complete\n";
+
+    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&out_mem_obj);
+    ret = clSetKernelArg(kernel, 1, sizeof(cl_int), &start);
+    ret = clSetKernelArg(kernel, 2, sizeof(cl_uint3), &space->spaceUnits);
+    ret = clSetKernelArg(kernel, 3, sizeof(cl_float3), &space->startPoint);
+    ret = clSetKernelArg(kernel, 4, sizeof(cl_float3), &space->pointSize);
+    ret = clSetKernelArg(kernel, 5, sizeof(cl_float3), &space->pointHalfSize);
+    if (ret != CL_SUCCESS)
+    {
+        qDebug()<<"Error: Failed to set kernel arguments! "<<ret;
+        ret = clReleaseMemObject(out_mem_obj);
+        return;
+    }
+    // Get the maximum work group size for executing the kernel on the device
+    //
+    size_t global;                      // global domain size for our calculation
+    size_t local;                       // local domain size for our calculation
+    ret = clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE,
+                                   sizeof(local), &local, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        qDebug()<<"Error: Failed to retrieve kernel work group info! " << ret;
+        clReleaseMemObject(out_mem_obj);
+        return;
+    }
+
+    // Execute the kernel over the entire range of our 1d input data set
+    // using the maximum number of work group items for this device
+    //
+    localGroupSize = local;
+    global = (end-start);
+
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
+                                 &global, &local, 0, NULL, NULL);
+    if (ret)
+    {
+        qDebug()<<"Error: Failed to execute kernel!\n";
+        clReleaseMemObject(out_mem_obj);
+        return;
+    }
+    clFinish(command_queue);
+
+    ret = clEnqueueReadBuffer(command_queue, out_mem_obj, CL_TRUE, 0,
+                              (end-start) * 5 * sizeof(cl_double), &space->mimageData->At(start),
+                              0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        qDebug()<<"Error: Failed to read output array! "<<ret;
+        clReleaseMemObject(out_mem_obj);
+        return;
+    }
+    ret = clReleaseMemObject(out_mem_obj);
+    emit ComputedMimage(start, end);
 }

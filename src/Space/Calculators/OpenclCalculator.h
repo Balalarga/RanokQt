@@ -10,10 +10,11 @@ public:
     explicit OpenclCalculator(QObject *parent = nullptr);
     ~OpenclCalculator();
 
-    void CalcModel();
-    void CalcMImage();
+    void CalcModel(SpaceData* space, int start = 0, int end = 0) override;
+    void CalcMImage(SpaceData* space, int start = 0, int end = 0) override;
 
     QString CreateOpenclSource(const Program& program);
+    int GetLocalGroupSize();
 
 private:
     cl_platform_id   platform_id = 0;
@@ -26,6 +27,8 @@ private:
     cl_program       program = 0;
     cl_kernel        kernel = 0;
     QString          prevSource;
+
+    int localGroupSize = 0;
 };
 
 #endif // OPENCLCALCULATOR_H
