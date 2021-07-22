@@ -11,6 +11,7 @@
 #include <QSpinBox>
 #include <QLabel>
 #include <QMap>
+#include <QSlider>
 
 #include "Gui/ToggleButton.h"
 
@@ -95,8 +96,8 @@ private:
     QComboBox* _imageType;
     QStringListModel* _imageTypeModel;
     QSpinBox* _spaceDepth;
-    QSpinBox* _batchSize;
-
+    QSlider* _batchSize;
+    QSpinBox* _batchSizeView;
 
     QPushButton* m_addLineButton;
 };

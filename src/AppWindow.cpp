@@ -30,7 +30,8 @@ AppWindow::AppWindow(QWidget *parent)
       _modelZone(new QComboBox(this)),
       _imageType(new QComboBox(this)),
       _spaceDepth(new QSpinBox(this)),
-      _batchSize(new QSpinBox(this)),
+      _batchSize(new QSlider(this)),
+      _batchSizeView(new QSpinBox(this)),
       _currentZone(0),
       _currentImage(0)
 {
@@ -54,6 +55,7 @@ AppWindow::AppWindow(QWidget *parent)
     QLabel* batchLabel = new QLabel("Размер пачки");
     batchLayout->addWidget(batchLabel);
     batchLayout->addWidget(_batchSize);
+    batchLayout->addWidget(_batchSizeView);
 
 
     modeLayout->addLayout(spinLayout);
@@ -125,9 +127,20 @@ AppWindow::AppWindow(QWidget *parent)
     _spaceDepth->setRange(1, 10);
     _spaceDepth->setValue(4);
 
-    _batchSize->setRange(0, 16384);
+    _batchSize->setOrientation(Qt::Horizontal);
+    _batchSize->setFocusPolicy(Qt::StrongFocus);
+    _batchSize->setTickPosition(QSlider::TicksBothSides);
+    _batchSize->setRange(0, pow(2, 15));
     _batchSize->setSingleStep(256);
     _batchSize->setValue(0);
+    _batchSize->setTickInterval(256);
+
+    _batchSizeView->setReadOnly(true);
+    _batchSizeView->setRange(_batchSize->minimum(), _batchSize->maximum());
+    _batchSizeView->setMinimumWidth(100);
+    connect(_batchSize, &QSlider::valueChanged, [this](int value){
+        _batchSizeView->setValue(value);
+    });
 
     m_addLineButton->setVisible(false);
     wrapWidget->setLayout(modeLayout);
@@ -207,7 +220,7 @@ void AppWindow::Compute()
         _activeCalculator->SetCalculatorMode(m_imageModeButton->isChecked() ?
                                           CalculatorMode::Mimage: CalculatorMode::Model);
 
-        _activeCalculator->SetBatchSize(_batchSize->value());
+        _activeCalculator->SetBatchSize(_batchSizeView->value());
         _activeCalculator->SetProgram(m_program);
         _activeCalculator->start();
     }
