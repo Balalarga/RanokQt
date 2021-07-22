@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <vector>
+#include <clocale>
 #include <fstream>
 #include "Space/Calculators/OpenclCalculator.h"
 #include "Space/Calculators/CommonCalculator.h"
@@ -89,6 +90,8 @@ void ParseArguments(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    setlocale(LC_NUMERIC, "C");
 
     static_assert (sizeof(cl_double) == sizeof(double), "Type size error cl_double != double");
 
