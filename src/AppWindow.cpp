@@ -164,6 +164,7 @@ AppWindow::AppWindow(QWidget *parent)
 
 
     _progressBar->setRange(0, 100);
+    _progressBar->setValue(0);
 
 
     _calculators[CalculatorName::Common] = new CommonCalculator(this);
@@ -416,6 +417,7 @@ void AppWindow::MimageComputeFinished(int start, int count)
 
 void AppWindow::StopCalculators()
 {
+    _progressBar->setValue(0);
     for(auto& i: _calculators)
     {
         if(i->isRunning())
