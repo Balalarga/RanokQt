@@ -165,7 +165,7 @@ AppWindow::AppWindow(QWidget *parent)
     m_toolVLayout->setMenuBar(menuBar);
 
 
-    _progressBar->setFixedSize(120, 50);
+    _progressBar->setRange(0, 100);
 
 
     _calculators[CalculatorName::Common] = new CommonCalculator(this);
@@ -209,6 +209,7 @@ void AppWindow::Compute()
     QString source = m_codeEditor->GetActiveText();
     if(!source.isEmpty())
     {
+        _progressBar->setValue(0);
         m_parser.SetText(source.toStdString());
         if(m_program)
             delete m_program;
@@ -366,49 +367,53 @@ void AppWindow::ComputeLine(QString line)
     }
 }
 
-void AppWindow::ModelComputeFinished(int start, int end)
+void AppWindow::ModelComputeFinished(int start, int count)
 {
     auto space = SpaceBuilder::Instance().GetSpace();
 
     int zone = 0;
     QColor modelColor = _activeCalculator->GetModelColor();
-    for(int i = start; i < end; ++i)
+    for(; start < count; ++start)
     {
-        cl_float3 point = space->GetPos(i);
-        zone = space->zoneData->At(i);
+        cl_float3 point = space->GetPos(start);
+        zone = space->zoneData->At(start);
         if(zone == _currentZone)
             m_sceneView->AddObject(point.x, point.y, point.z,
                                    modelColor.redF(), modelColor.greenF(),
                                    modelColor.blueF(), modelColor.alphaF());
     }
     m_sceneView->Flush();
+    int procent = 100.f*start/space->GetSize();
+    _progressBar->setValue(procent);
 }
 
-void AppWindow::MimageComputeFinished(int start, int end)
+void AppWindow::MimageComputeFinished(int start, int count)
 {
     auto space = SpaceBuilder::Instance().GetSpace();
     double value;
     cl_float3 point;
-    for(int i = start; i < end; ++i)
+    for(; start < count; ++start)
     {
-        point = space->GetPos(i);
+        point = space->GetPos(start);
         if(_currentImage == 0)
-            value = space->mimageData->At(i).Cx;
+            value = space->mimageData->At(start).Cx;
         else if(_currentImage == 1)
-            value = space->mimageData->At(i).Cy;
+            value = space->mimageData->At(start).Cy;
         else if(_currentImage == 2)
-            value = space->mimageData->At(i).Cz;
+            value = space->mimageData->At(start).Cz;
         else if(_currentImage == 3)
-            value = space->mimageData->At(i).Cw;
+            value = space->mimageData->At(start).Cw;
         else if(_currentImage == 4)
-            value = space->mimageData->At(i).Ct;
+            value = space->mimageData->At(start).Ct;
 
         QColor color = _activeCalculator->GetMImageColor(value);
         m_sceneView->AddObject(point.x, point.y, point.z,
-                               color.redF(), color.greenF(), color.blueF(),
-                               color.alphaF());
+                               color.redF(), color.greenF(),
+                               color.blueF(), color.alphaF());
     }
     m_sceneView->Flush();
+    int procent = 100.f*start/space->GetSize();
+    _progressBar->setValue(procent);
 }
 
 void AppWindow::StopCalculators()

@@ -56,7 +56,7 @@ private slots:
     void ZoneChanged(QString name);
     void ComputeLine(QString line);
     void ModelComputeFinished(int start, int end);
-    void MimageComputeFinished(int start, int end);
+    void MimageComputeFinished(int start, int count);
     void StopCalculators();
     bool IsCalculate();
     void SaveData();
