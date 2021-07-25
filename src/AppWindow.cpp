@@ -139,9 +139,7 @@ AppWindow::AppWindow(QWidget *parent)
     _batchSizeView->setReadOnly(true);
     _batchSizeView->setRange(_batchSize->minimum(), _batchSize->maximum());
     _batchSizeView->setMinimumWidth(100);
-    connect(_batchSize, &QSlider::valueChanged, [this](int value){
-        _batchSizeView->setValue(value);
-    });
+    connect(_batchSize, &QSlider::valueChanged, _batchSizeView, &QSpinBox::setValue);
 
     m_addLineButton->setVisible(false);
     wrapWidget->setLayout(modeLayout);
