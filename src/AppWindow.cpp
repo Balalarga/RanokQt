@@ -33,7 +33,8 @@ AppWindow::AppWindow(QWidget *parent)
       _batchSize(new QSlider(this)),
       _batchSizeView(new QSpinBox(this)),
       _currentZone(0),
-      _currentImage(0)
+      _currentImage(0),
+      _progressBar(new QProgressBar(m_sceneView))
 {
     QVBoxLayout* m_toolVLayout = new QVBoxLayout(this);
     m_toolVLayout->addWidget(m_toolBar);
@@ -164,6 +165,9 @@ AppWindow::AppWindow(QWidget *parent)
     m_toolVLayout->setMenuBar(menuBar);
 
 
+    _progressBar->setFixedSize(120, 50);
+
+
     _calculators[CalculatorName::Common] = new CommonCalculator(this);
     _calculators[CalculatorName::Opencl] = new OpenclCalculator(this);
     for(auto& i: _calculators)
@@ -176,7 +180,6 @@ AppWindow::AppWindow(QWidget *parent)
     m_codeEditor->AddFile("../examples/NewFuncs/sphere.txt");
     m_codeEditor->AddFile("../examples/NewFuncs/Bone.txt");
     m_codeEditor->AddFile("../examples/NewFuncs/Chainik.txt");
-
 
     connect(_imageType, &QComboBox::currentTextChanged, this, &AppWindow::ImageChanged);
     connect(_modelZone, &QComboBox::currentTextChanged, this, &AppWindow::ZoneChanged);
@@ -197,12 +200,15 @@ AppWindow::~AppWindow()
 using namespace std;
 void AppWindow::Compute()
 {
+    if(IsCalculate())
+    {
+        StopCalculators();
+        return;
+    }
+
     QString source = m_codeEditor->GetActiveText();
     if(!source.isEmpty())
     {
-        if(IsCalculate())
-            return;
-
         m_parser.SetText(source.toStdString());
         if(m_program)
             delete m_program;
@@ -463,10 +469,7 @@ void AppWindow::SaveData()
         out << space->spaceUnits.x;
         out << space->spaceUnits.y;
         out << space->spaceUnits.z;
-        for(int i = 0; i < space->GetSize(); i++)
-        {
-            out << space->zoneData->At(i);
-        }
+        out.writeBytes((const char*)space->zoneData, space->GetSize()*sizeof(int));
         file.close();
     }
     else if(SpaceBuilder::Instance().GetSpace()->mimageData)
@@ -499,14 +502,7 @@ void AppWindow::SaveData()
         out << space->spaceUnits.x;
         out << space->spaceUnits.y;
         out << space->spaceUnits.z;
-        for(int i = 0; i < space->GetSize(); i++)
-        {
-            out << space->mimageData->At(i).Cx;
-            out << space->mimageData->At(i).Cy;
-            out << space->mimageData->At(i).Cz;
-            out << space->mimageData->At(i).Cw;
-            out << space->mimageData->At(i).Ct;
-        }
+        out.writeBytes((const char*)space->mimageData, space->GetSize()*5*sizeof(double));
         file.close();
     }
 }

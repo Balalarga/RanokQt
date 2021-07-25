@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QMap>
 #include <QSlider>
+#include <QProgressBar>
 
 #include "Gui/ToggleButton.h"
 
@@ -98,7 +99,10 @@ private:
     QSpinBox* _spaceDepth;
     QSlider* _batchSize;
     QSpinBox* _batchSizeView;
+    QProgressBar* _progressBar;
+
 
     QPushButton* m_addLineButton;
+
 };
 #endif // WIDGET_H
