@@ -60,6 +60,7 @@ private slots:
     void StopCalculators();
     bool IsCalculate();
     void SaveData();
+    void SetBatchSize(int value);
 
 private:
     Mode m_mode;

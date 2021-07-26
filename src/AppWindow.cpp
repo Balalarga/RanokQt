@@ -129,17 +129,13 @@ AppWindow::AppWindow(QWidget *parent)
     _spaceDepth->setValue(4);
 
     _batchSize->setOrientation(Qt::Horizontal);
-    _batchSize->setFocusPolicy(Qt::StrongFocus);
-    _batchSize->setTickPosition(QSlider::TicksBothSides);
-    _batchSize->setRange(0, pow(2, 15));
-    _batchSize->setSingleStep(256);
+    _batchSize->setRange(0, 21);
     _batchSize->setValue(0);
-    _batchSize->setTickInterval(256);
 
     _batchSizeView->setReadOnly(true);
-    _batchSizeView->setRange(_batchSize->minimum(), _batchSize->maximum());
+    _batchSizeView->setRange(_batchSize->minimum(), pow(2, _batchSize->maximum()));
     _batchSizeView->setMinimumWidth(100);
-    connect(_batchSize, &QSlider::valueChanged, _batchSizeView, &QSpinBox::setValue);
+    connect(_batchSize, &QSlider::valueChanged, this, &AppWindow::SetBatchSize);
 
     m_addLineButton->setVisible(false);
     wrapWidget->setLayout(modeLayout);
@@ -389,7 +385,7 @@ void AppWindow::ModelComputeFinished(int start, int count)
 void AppWindow::MimageComputeFinished(int start, int count)
 {
     auto space = SpaceBuilder::Instance().GetSpace();
-    double value;
+    double value = 0;
     cl_float3 point;
     for(; start < count; ++start)
     {
@@ -510,6 +506,11 @@ void AppWindow::SaveData()
         out.writeBytes((const char*)space->mimageData, space->GetSize()*5*sizeof(double));
         file.close();
     }
+}
+
+void AppWindow::SetBatchSize(int value)
+{
+    _batchSizeView->setValue(pow(2, value));
 }
 
 void AppWindow::OpenFile()
