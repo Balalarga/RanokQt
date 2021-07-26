@@ -14,6 +14,8 @@ ISpaceCalculator::ISpaceCalculator(QObject *parent):
     gradColors.push_back(QColor(255, 145, 0,   20));
     gradColors.push_back(QColor(214, 0,   255, 20));
     SetMImageColorGradiend(gradColors);
+
+    QThread::setTerminationEnabled(true);
 }
 
 void ISpaceCalculator::run()

@@ -6,8 +6,6 @@
 #include "Space/Calculators/CommonCalculator.h"
 #include "Space/Calculators/OpenclCalculator.h"
 
-#include <iostream>
-
 #include <QDebug>
 #include <QFileDialog>
 #include <QMenuBar>
@@ -34,7 +32,8 @@ AppWindow::AppWindow(QWidget *parent)
       _batchSizeView(new QSpinBox(this)),
       _currentZone(0),
       _currentImage(0),
-      _progressBar(new QProgressBar(m_sceneView))
+      _progressBar(new QProgressBar(m_sceneView)),
+      _timer(new QElapsedTimer())
 {
     QVBoxLayout* m_toolVLayout = new QVBoxLayout(this);
     m_toolVLayout->addWidget(m_toolBar);
@@ -172,7 +171,7 @@ AppWindow::AppWindow(QWidget *parent)
     }
 
     StyleLoader::attach("../assets/styles/dark.qss");
-    m_codeEditor->AddFile("../examples/NewFuncs/sphere.txt");
+    m_codeEditor->AddFile("../examples/NewFuncs/lopatka.txt");
     m_codeEditor->AddFile("../examples/NewFuncs/Bone.txt");
     m_codeEditor->AddFile("../examples/NewFuncs/Chainik.txt");
 
@@ -182,17 +181,20 @@ AppWindow::AppWindow(QWidget *parent)
     connect(m_imageModeButton, &QPushButton::clicked, this, &AppWindow::SwitchModelMode);
     connect(m_computeDevice, &QPushButton::clicked, this, &AppWindow::SwitchComputeDevice);
     connect(m_addLineButton, &QPushButton::clicked, m_lineEditor, &LineEditor::addItem);
-    connect(m_lineEditor, &LineEditor::runLine, this, &AppWindow::ComputeLine);
 }
 
 
 AppWindow::~AppWindow()
 {
+    if(IsCalculate())
+    {
+        for(auto& i: _calculators)
+            i->wait();
+    }
     StopCalculators();
+    delete _timer;
 }
 
-#include <iostream>
-using namespace std;
 void AppWindow::Compute()
 {
     if(IsCalculate())
@@ -224,7 +226,9 @@ void AppWindow::Compute()
 
         _activeCalculator->SetBatchSize(_batchSizeView->value());
         _activeCalculator->SetProgram(m_program);
+        _timer->start();
         _activeCalculator->start();
+        qDebug()<<"Start";
     }
 }
 
@@ -378,8 +382,10 @@ void AppWindow::ModelComputeFinished(int start, int count)
                                    modelColor.blueF(), modelColor.alphaF());
     }
     m_sceneView->Flush();
-    int procent = 100.f*start/space->GetSize();
-    _progressBar->setValue(procent);
+    int percent = 100.f*start/space->GetSize();
+    _progressBar->setValue(percent);
+    if(start == space->GetSize())
+        QMessageBox::information(this, "Расчет окончен", "Время расчета = "+QString::number(_timer->restart()/1000.f)+"s");
 }
 
 void AppWindow::MimageComputeFinished(int start, int count)
@@ -407,17 +413,21 @@ void AppWindow::MimageComputeFinished(int start, int count)
                                color.blueF(), color.alphaF());
     }
     m_sceneView->Flush();
-    int procent = 100.f*start/space->GetSize();
-    _progressBar->setValue(procent);
+    int percent = 100.f*start/space->GetSize();
+    _progressBar->setValue(percent);
+    if(start == space->GetSize())
+        QMessageBox::information(this, "Расчет окончен", "Время расчета = "+QString::number(_timer->restart()));
 }
 
 void AppWindow::StopCalculators()
 {
-    _progressBar->setValue(0);
     for(auto& i: _calculators)
     {
         if(i->isRunning())
+        {
             i->terminate();
+            qDebug()<<"StopCalculator";
+        }
     }
 }
 

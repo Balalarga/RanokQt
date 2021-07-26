@@ -18,7 +18,7 @@ class ISpaceCalculator : public QThread
     Q_OBJECT
 public:
     explicit ISpaceCalculator(QObject *parent = nullptr);
-    virtual ~ISpaceCalculator(){}
+    virtual ~ISpaceCalculator(){ quit(); }
 
     virtual void CalcModel(SpaceData* space, int start = 0, int end = 0) = 0;
     virtual void CalcMImage(SpaceData* space, int start = 0, int end = 0) = 0;

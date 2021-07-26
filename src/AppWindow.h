@@ -13,6 +13,7 @@
 #include <QMap>
 #include <QSlider>
 #include <QProgressBar>
+#include <QElapsedTimer>
 
 #include "Gui/ToggleButton.h"
 
@@ -101,6 +102,8 @@ private:
     QSlider* _batchSize;
     QSpinBox* _batchSizeView;
     QProgressBar* _progressBar;
+
+    QElapsedTimer* _timer;
 
 
     QPushButton* m_addLineButton;
