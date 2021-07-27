@@ -520,7 +520,11 @@ void AppWindow::SaveData()
 
 void AppWindow::SetBatchSize(int value)
 {
-    _batchSizeView->setValue(pow(2, value));
+    if(value == 0)
+        _batchSizeView->setValue(0);
+    else
+        _batchSizeView->setValue(pow(2, value));
+
 }
 
 void AppWindow::OpenFile()
