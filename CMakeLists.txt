@@ -39,8 +39,8 @@ else()
     endif()
 endif()
 
-add_subdirectory(./RanokCore RanokCore)
-include_directories(./RanokCore/src)
+add_subdirectory(./Core/RanokCoreLib RanokCore)
+
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::OpenGL RanokCore)

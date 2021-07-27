@@ -22,7 +22,7 @@
 #include "Gui/CodeEditor/LineEditor.h"
 
 #include "Language/Parser.h"
-#include "Space/Calculators/ISpaceCalculator.h"
+#include "QSpaceCalculatorWrapper.h"
 
 enum class Mode
 {
@@ -56,8 +56,7 @@ private slots:
     void ImageChanged(QString name);
     void ZoneChanged(QString name);
     void ComputeLine(QString line);
-    void ModelComputeFinished(int start, int end);
-    void MimageComputeFinished(int start, int count);
+    void ComputeFinished(CalculatorMode mode, int start, int end);
     void StopCalculators();
     bool IsCalculate();
     void SaveData();
@@ -71,8 +70,8 @@ private:
 
     CodeEditor* m_codeEditor;
     LineEditor* m_lineEditor;
-    QMap<CalculatorName, ISpaceCalculator*> _calculators;
-    ISpaceCalculator* _activeCalculator;
+    QMap<CalculatorName, QSpaceCalculatorWrapper*> _calculators;
+    QSpaceCalculatorWrapper* _activeCalculator;
 
     Parser m_parser;
     Program* m_program;
