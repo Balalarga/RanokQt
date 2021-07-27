@@ -2,7 +2,7 @@
 #define ISPACECALCULATOR_H
 
 #include <QThread>
-#include <QColor>
+#include <QtGui/qcolor.h>
 #include "../SpaceBuilder.h"
 #include "Language/Program.h"
 #include "LinearGradientModel.h"

@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QVector>
-#include <QColor>
+#include <QtGui/qcolor.h>
 
 class LinearGradientModel : public QObject
 {

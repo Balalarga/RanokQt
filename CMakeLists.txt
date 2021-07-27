@@ -19,9 +19,6 @@ include_directories(src)
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS OpenGL REQUIRED)
-find_package(OpenCL REQUIRED)
-include_directories(${OpenCL_INCLUDE_DIRS})
-link_directories(${OpenCL_LIBRARY})
 
 file(GLOB_RECURSE PROJECT_SOURCES src/*.cpp src/*.h examples/*.txt *.qrc)
 
@@ -42,8 +39,11 @@ else()
     endif()
 endif()
 
+add_subdirectory(./RanokCore RanokCore)
+include_directories(./RanokCore/src)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::OpenGL ${OpenCL_LIBRARY})
+    Qt${QT_VERSION_MAJOR}::OpenGL RanokCore)
 
 if(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -52,6 +52,7 @@ else()
     target_link_libraries(${PROJECT_NAME} PRIVATE
         GL GLU)
 endif()
+
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
