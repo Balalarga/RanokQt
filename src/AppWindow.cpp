@@ -167,9 +167,9 @@ AppWindow::AppWindow(QWidget *parent)
 
 
     StyleLoader::attach("../assets/styles/dark.qss");
-    m_codeEditor->AddFile("../examples/NewFuncs/lopatka.txt");
-    m_codeEditor->AddFile("../examples/NewFuncs/Bone.txt");
-    m_codeEditor->AddFile("../examples/NewFuncs/Chainik.txt");
+    m_codeEditor->AddFile("../Core/Examples/NewFuncs/lopatka.txt");
+    m_codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
+    m_codeEditor->AddFile("../Core/Examples/NewFuncs/Chainik.txt");
 
     connect(_imageType, &QComboBox::currentTextChanged, this, &AppWindow::ImageChanged);
     connect(_modelZone, &QComboBox::currentTextChanged, this, &AppWindow::ZoneChanged);
