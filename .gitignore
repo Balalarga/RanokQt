@@ -3,3 +3,6 @@ release/
 .idea/
 .cache/
 *.user
+
+.ccls
+compile_commands.json
