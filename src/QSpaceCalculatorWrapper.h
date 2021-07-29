@@ -2,7 +2,6 @@
 #define QSPACECALCULATORWRAPPER_H
 
 #include <QThread>
-#include <qthread.h>
 #include "SpaceCalculators.h"
 
 
