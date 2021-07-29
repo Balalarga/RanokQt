@@ -2,6 +2,8 @@
 #define SCENEVIEW_H
 
 #include <QGLWidget>
+#include <QOpenGLFunctions>
+#include <QThread>
 #include <QVector>
 #include <QVector4D>
 
@@ -9,6 +11,7 @@
 #include "GridObject.h"
 #include "VoxelObject.h"
 #include "WcsObject.h"
+
 
 class SceneView : public QGLWidget
 {

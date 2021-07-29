@@ -12,6 +12,8 @@
 #include <QStringListModel>
 #include <QMessageBox>
 
+
+
 AppWindow::AppWindow(QWidget *parent)
     : QWidget(parent),
       m_mode(Mode::Common),
@@ -32,8 +34,10 @@ AppWindow::AppWindow(QWidget *parent)
       _batchSizeView(new QSpinBox(this)),
       _currentZone(0),
       _currentImage(0),
+      _currentCalculatorName(CalculatorName::Common),
       _progressBar(new QProgressBar(m_sceneView)),
       _timer(new QElapsedTimer())
+
 {
     QVBoxLayout* m_toolVLayout = new QVBoxLayout(this);
     m_toolVLayout->addWidget(m_toolBar);
@@ -162,18 +166,20 @@ AppWindow::AppWindow(QWidget *parent)
     _progressBar->setValue(0);
 
 
-    _calculators[CalculatorName::Common] = new CommonCalculator(this);
-    _calculators[CalculatorName::Opencl] = new OpenclCalculator(this);
-    for(auto& i: _calculators)
-    {
-        connect(i, &OpenclCalculator::ComputedModel, this, &AppWindow::ModelComputeFinished);
-        connect(i, &OpenclCalculator::ComputedMimage, this, &AppWindow::MimageComputeFinished);
-    }
+    CommonCalculatorThread* commonCalculator = new CommonCalculatorThread(this);
+    OpenclCalculatorThread* openclCalculator = new OpenclCalculatorThread(this);
+    _calculators[CalculatorName::Common] = commonCalculator;
+    _calculators[CalculatorName::Opencl] = openclCalculator;
+
+    qRegisterMetaType<CalculatorMode>("CalculatorMode");
+    connect(commonCalculator, &CommonCalculatorThread::Computed, this, &AppWindow::ComputeFinished);
+    connect(openclCalculator , &OpenclCalculatorThread::Computed, this, &AppWindow::ComputeFinished);
+
 
     StyleLoader::attach("../assets/styles/dark.qss");
-    m_codeEditor->AddFile("../examples/NewFuncs/lopatka.txt");
-    m_codeEditor->AddFile("../examples/NewFuncs/Bone.txt");
-    m_codeEditor->AddFile("../examples/NewFuncs/Chainik.txt");
+    m_codeEditor->AddFile("../Core/Examples/NewFuncs/lopatka.txt");
+    m_codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
+    m_codeEditor->AddFile("../Core/Examples/NewFuncs/Chainik.txt");
 
     connect(_imageType, &QComboBox::currentTextChanged, this, &AppWindow::ImageChanged);
     connect(_modelZone, &QComboBox::currentTextChanged, this, &AppWindow::ZoneChanged);
@@ -217,9 +223,9 @@ void AppWindow::Compute()
                 args[2]->limits, _spaceDepth->value());
         m_sceneView->CreateVoxelObject(space->GetSize());
 
-        _activeCalculator = m_computeDevice->isChecked() ?
+        _activeCalculator = dynamic_cast<ISpaceCalculator*>(m_computeDevice->isChecked() ?
                     _calculators[CalculatorName::Opencl] :
-                _calculators[CalculatorName::Common];
+                _calculators[CalculatorName::Common]);
 
         _activeCalculator->SetCalculatorMode(m_imageModeButton->isChecked() ?
                                           CalculatorMode::Mimage: CalculatorMode::Model);
@@ -227,7 +233,7 @@ void AppWindow::Compute()
         _activeCalculator->SetBatchSize(_batchSizeView->value());
         _activeCalculator->SetProgram(m_program);
         _timer->start();
-        _activeCalculator->start();
+        _calculators[_currentCalculatorName]->start();
         qDebug()<<"Start";
     }
 }
@@ -284,12 +290,14 @@ void AppWindow::SwitchComputeDevice()
         // Gpu
         _computeDevice1->setStyleSheet("QLabel { color : #888888; }");
         _computeDevice2->setStyleSheet("QLabel { color : #ffffff; }");
+        _currentCalculatorName = CalculatorName::Opencl;
     }
     else
     {
         // Cpu
         _computeDevice1->setStyleSheet("QLabel { color : #ffffff; }");
         _computeDevice2->setStyleSheet("QLabel { color : #888888; }");
+        _currentCalculatorName = CalculatorName::Common;
     }
 }
 
@@ -312,7 +320,7 @@ void AppWindow::ImageChanged(QString name)
         auto size = SpaceBuilder::Instance().GetSpace()->GetSize();
         m_sceneView->ClearObjects();
         m_sceneView->CreateVoxelObject(size);
-        MimageComputeFinished(0, size);
+        ComputeFinished(CalculatorMode::Mimage, 0, size);
     }
 }
 
@@ -331,7 +339,7 @@ void AppWindow::ZoneChanged(QString name)
         auto size = SpaceBuilder::Instance().GetSpace()->GetSize();
         m_sceneView->ClearObjects();
         m_sceneView->CreateVoxelObject(size);
-        ModelComputeFinished(0, size);
+        ComputeFinished(CalculatorMode::Model, 0, size);
     }
 }
 
@@ -366,20 +374,47 @@ void AppWindow::ComputeLine(QString line)
     }
 }
 
-void AppWindow::ModelComputeFinished(int start, int count)
+void AppWindow::ComputeFinished(CalculatorMode mode, int start, int end)
 {
     auto space = SpaceBuilder::Instance().GetSpace();
 
-    int zone = 0;
-    QColor modelColor = _activeCalculator->GetModelColor();
-    for(; start < count; ++start)
+    if(mode == CalculatorMode::Model)
     {
-        cl_float3 point = space->GetPos(start);
-        zone = space->zoneData->At(start);
-        if(zone == _currentZone)
+        int zone = 0;
+        Color modelColor = _activeCalculator->GetModelColor();
+        for(; start < end; ++start)
+        {
+            cl_float3 point = space->GetPos(start);
+            zone = space->zoneData->At(start);
+            if(zone == _currentZone)
+                m_sceneView->AddObject(point.x, point.y, point.z,
+                                       modelColor.red, modelColor.green,
+                                       modelColor.blue, modelColor.alpha);
+        }
+    }
+    else
+    {
+        double value = 0;
+        cl_float3 point;
+        for(; start < end; ++start)
+        {
+            point = space->GetPos(start);
+            if(_currentImage == 0)
+                value = space->mimageData->At(start).Cx;
+            else if(_currentImage == 1)
+                value = space->mimageData->At(start).Cy;
+            else if(_currentImage == 2)
+                value = space->mimageData->At(start).Cz;
+            else if(_currentImage == 3)
+                value = space->mimageData->At(start).Cw;
+            else if(_currentImage == 4)
+                value = space->mimageData->At(start).Ct;
+
+            Color color = _activeCalculator->GetMImageColor(value);
             m_sceneView->AddObject(point.x, point.y, point.z,
-                                   modelColor.redF(), modelColor.greenF(),
-                                   modelColor.blueF(), modelColor.alphaF());
+                                   color.red, color.green,
+                                   color.blue, color.alpha);
+        }
     }
     m_sceneView->Flush();
     int percent = 100.f*start/space->GetSize();
@@ -388,36 +423,6 @@ void AppWindow::ModelComputeFinished(int start, int count)
         QMessageBox::information(this, "Расчет окончен", "Время расчета = "+QString::number(_timer->restart()/1000.f)+"s");
 }
 
-void AppWindow::MimageComputeFinished(int start, int count)
-{
-    auto space = SpaceBuilder::Instance().GetSpace();
-    double value = 0;
-    cl_float3 point;
-    for(; start < count; ++start)
-    {
-        point = space->GetPos(start);
-        if(_currentImage == 0)
-            value = space->mimageData->At(start).Cx;
-        else if(_currentImage == 1)
-            value = space->mimageData->At(start).Cy;
-        else if(_currentImage == 2)
-            value = space->mimageData->At(start).Cz;
-        else if(_currentImage == 3)
-            value = space->mimageData->At(start).Cw;
-        else if(_currentImage == 4)
-            value = space->mimageData->At(start).Ct;
-
-        QColor color = _activeCalculator->GetMImageColor(value);
-        m_sceneView->AddObject(point.x, point.y, point.z,
-                               color.redF(), color.greenF(),
-                               color.blueF(), color.alphaF());
-    }
-    m_sceneView->Flush();
-    int percent = 100.f*start/space->GetSize();
-    _progressBar->setValue(percent);
-    if(start == space->GetSize())
-        QMessageBox::information(this, "Расчет окончен", "Время расчета = "+QString::number(_timer->restart()));
-}
 
 void AppWindow::StopCalculators()
 {
@@ -520,7 +525,11 @@ void AppWindow::SaveData()
 
 void AppWindow::SetBatchSize(int value)
 {
-    _batchSizeView->setValue(pow(2, value));
+    if(value == 0)
+        _batchSizeView->setValue(0);
+    else
+        _batchSizeView->setValue(pow(2, value));
+
 }
 
 void AppWindow::OpenFile()

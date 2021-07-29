@@ -1,0 +1,4 @@
+[submodule "Core"]
+	path = Core
+	url = git@github.com:Balalarga/RanokCore.git
+	branch = master
