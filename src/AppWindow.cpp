@@ -12,6 +12,8 @@
 #include <QStringListModel>
 #include <QMessageBox>
 
+
+
 AppWindow::AppWindow(QWidget *parent)
     : QWidget(parent),
       m_mode(Mode::Common),
@@ -32,8 +34,10 @@ AppWindow::AppWindow(QWidget *parent)
       _batchSizeView(new QSpinBox(this)),
       _currentZone(0),
       _currentImage(0),
+      _currentCalculatorName(CalculatorName::Common),
       _progressBar(new QProgressBar(m_sceneView)),
       _timer(new QElapsedTimer())
+
 {
     QVBoxLayout* m_toolVLayout = new QVBoxLayout(this);
     m_toolVLayout->addWidget(m_toolBar);
@@ -162,8 +166,14 @@ AppWindow::AppWindow(QWidget *parent)
     _progressBar->setValue(0);
 
 
-    _calculators[CalculatorName::Common] = new QSpaceCalculatorWrapper(new CommonCalculator([this](CalculatorMode mode, int start, int end){ComputeFinished(mode, start, end);}), this);
-    _calculators[CalculatorName::Opencl] = new QSpaceCalculatorWrapper(new OpenclCalculator([this](CalculatorMode mode, int start, int end){ComputeFinished(mode, start, end);}), this);
+    CommonCalculatorThread* commonCalculator = new CommonCalculatorThread(this);
+    OpenclCalculatorThread* openclCalculator = new OpenclCalculatorThread(this);
+    _calculators[CalculatorName::Common] = commonCalculator;
+    _calculators[CalculatorName::Opencl] = openclCalculator;
+
+    qRegisterMetaType<CalculatorMode>("CalculatorMode");
+    connect(commonCalculator, &CommonCalculatorThread::Computed, this, &AppWindow::ComputeFinished);
+    connect(openclCalculator , &OpenclCalculatorThread::Computed, this, &AppWindow::ComputeFinished);
 
 
     StyleLoader::attach("../assets/styles/dark.qss");
@@ -213,17 +223,17 @@ void AppWindow::Compute()
                 args[2]->limits, _spaceDepth->value());
         m_sceneView->CreateVoxelObject(space->GetSize());
 
-        _activeCalculator = m_computeDevice->isChecked() ?
+        _activeCalculator = dynamic_cast<ISpaceCalculator*>(m_computeDevice->isChecked() ?
                     _calculators[CalculatorName::Opencl] :
-                _calculators[CalculatorName::Common];
+                _calculators[CalculatorName::Common]);
 
-        _activeCalculator->Get()->SetCalculatorMode(m_imageModeButton->isChecked() ?
+        _activeCalculator->SetCalculatorMode(m_imageModeButton->isChecked() ?
                                           CalculatorMode::Mimage: CalculatorMode::Model);
 
-        _activeCalculator->Get()->SetBatchSize(_batchSizeView->value());
-        _activeCalculator->Get()->SetProgram(m_program);
+        _activeCalculator->SetBatchSize(_batchSizeView->value());
+        _activeCalculator->SetProgram(m_program);
         _timer->start();
-        _activeCalculator->start();
+        _calculators[_currentCalculatorName]->start();
         qDebug()<<"Start";
     }
 }
@@ -280,12 +290,14 @@ void AppWindow::SwitchComputeDevice()
         // Gpu
         _computeDevice1->setStyleSheet("QLabel { color : #888888; }");
         _computeDevice2->setStyleSheet("QLabel { color : #ffffff; }");
+        _currentCalculatorName = CalculatorName::Opencl;
     }
     else
     {
         // Cpu
         _computeDevice1->setStyleSheet("QLabel { color : #ffffff; }");
         _computeDevice2->setStyleSheet("QLabel { color : #888888; }");
+        _currentCalculatorName = CalculatorName::Common;
     }
 }
 
@@ -369,7 +381,7 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int end)
     if(mode == CalculatorMode::Model)
     {
         int zone = 0;
-        Color modelColor = _activeCalculator->Get()->GetModelColor();
+        Color modelColor = _activeCalculator->GetModelColor();
         for(; start < end; ++start)
         {
             cl_float3 point = space->GetPos(start);
@@ -398,7 +410,7 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int end)
             else if(_currentImage == 4)
                 value = space->mimageData->At(start).Ct;
 
-            Color color = _activeCalculator->Get()->GetMImageColor(value);
+            Color color = _activeCalculator->GetMImageColor(value);
             m_sceneView->AddObject(point.x, point.y, point.z,
                                    color.red, color.green,
                                    color.blue, color.alpha);

@@ -2,37 +2,57 @@
 #define QSPACECALCULATORWRAPPER_H
 
 #include <QThread>
+#include <qthread.h>
 #include "SpaceCalculators.h"
 
-class QSpaceCalculatorWrapper: public QThread
+
+class CommonCalculatorThread: public QThread, public CommonCalculator
 {
     Q_OBJECT
 public:
-    QSpaceCalculatorWrapper(ISpaceCalculator* calculator, QObject* parent):
+    CommonCalculatorThread(QObject* parent):
         QThread(parent),
-        _calculator(calculator)
+        CommonCalculator([this](CalculatorMode m, int s, int e){ emit Computed(m, s, e); })
     {
 
     }
+    
 
-    ~QSpaceCalculatorWrapper()
-    {
-        if(_calculator)
-            delete _calculator;
-    }
+signals:
+    void Computed(CalculatorMode mode, int start, int end);
 
-    ISpaceCalculator* Get()
-    {
-        return _calculator;
-    }
 
 protected:
-    void run()
+    void run() override
     {
-        _calculator->Run();
+        Run();
+    }
+};
+
+
+
+class OpenclCalculatorThread: public QThread, public OpenclCalculator
+{
+    Q_OBJECT
+public:
+    OpenclCalculatorThread(QObject* parent):
+        QThread(parent),
+        OpenclCalculator([this](CalculatorMode m, int s, int e){ emit Computed(m, s, e); })
+    {
+
+    }
+    
+
+signals:
+    void Computed(CalculatorMode mode, int start, int end);
+
+
+protected:
+    void run() override
+    {
+        Run();
     }
 
-    ISpaceCalculator* _calculator;
 };
 
 #endif // QSPACECALCULATORWRAPPER_H

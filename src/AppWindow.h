@@ -70,8 +70,9 @@ private:
 
     CodeEditor* m_codeEditor;
     LineEditor* m_lineEditor;
-    QMap<CalculatorName, QSpaceCalculatorWrapper*> _calculators;
-    QSpaceCalculatorWrapper* _activeCalculator;
+    QMap<CalculatorName, QThread*> _calculators;
+    ISpaceCalculator* _activeCalculator;
+    CalculatorName _currentCalculatorName;
 
     Parser m_parser;
     Program* m_program;
