@@ -219,9 +219,13 @@ void AppWindow::Compute()
         m_program = m_parser.GetProgram();
         m_sceneView->ClearObjects();
         auto args = m_program->GetSymbolTable().GetAllArgs();
-        SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
-                args[2]->limits, _spaceDepth->value());
-        SpaceManager::Self().ResetBufferSize();
+        if(SpaceManager::ComputeSpaceSize(_spaceDepth->value()) !=
+                SpaceManager::Self().GetSpaceSize())
+        {
+            SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
+                    args[2]->limits, _spaceDepth->value());
+        }
+        SpaceManager::Self().ResetBufferSize(pow(2, 28)/4);
         m_sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
 
         _activeCalculator = dynamic_cast<ISpaceCalculator*>(m_computeDevice->isChecked() ?
@@ -375,7 +379,7 @@ void AppWindow::ComputeLine(QString line)
     }
 }
 
-void AppWindow::ComputeFinished(CalculatorMode mode, int batchStart, int start, int end)
+void AppWindow::ComputeFinished(CalculatorMode mode, int start, int batchStart, int end)
 {
     SpaceManager& space = SpaceManager::Self();
 
@@ -384,10 +388,10 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int batchStart, int start, 
         int zone = 0;
         cl_float3 point;
         Color modelColor = _activeCalculator->GetModelColor();
-        for(; start < end; ++start)
+        for(; batchStart < end; ++batchStart)
         {
             point = space.GetPointCoords(batchStart+start);
-            zone = space.GetZone(start);
+            zone = space.GetZone(batchStart);
             if(zone == _currentZone)
                 m_sceneView->AddObject(point.x, point.y, point.z,
                                        modelColor.red, modelColor.green,
@@ -398,19 +402,19 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int batchStart, int start, 
     {
         double value = 0;
         cl_float3 point;
-        for(; start < end; ++start)
+        for(; batchStart < end; ++batchStart)
         {
             point = space.GetPointCoords(batchStart+start);
             if(_currentImage == 0)
-                value = space.GetMimage(start).Cx;
+                value = space.GetMimage(batchStart).Cx;
             else if(_currentImage == 1)
-                value = space.GetMimage(start).Cy;
+                value = space.GetMimage(batchStart).Cy;
             else if(_currentImage == 2)
-                value = space.GetMimage(start).Cz;
+                value = space.GetMimage(batchStart).Cz;
             else if(_currentImage == 3)
-                value = space.GetMimage(start).Cw;
+                value = space.GetMimage(batchStart).Cw;
             else if(_currentImage == 4)
-                value = space.GetMimage(start).Ct;
+                value = space.GetMimage(batchStart).Ct;
 
             Color color = _activeCalculator->GetMImageColor(value);
             m_sceneView->AddObject(point.x, point.y, point.z,
@@ -421,7 +425,7 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int batchStart, int start, 
     m_sceneView->Flush();
     int percent = 100.f*(batchStart+start)/space.GetSpaceSize();
     _progressBar->setValue(percent);
-    if(start == space.GetSpaceSize())
+    if(_progressBar->isMaximized())
         QMessageBox::information(this, "Расчет окончен", "Время расчета = "+
                                  QString::number(_timer->restart()/1000.f)+"s");
 }
