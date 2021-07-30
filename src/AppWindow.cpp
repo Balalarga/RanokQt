@@ -225,7 +225,7 @@ void AppWindow::Compute()
             SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
                     args[2]->limits, _spaceDepth->value());
         }
-        SpaceManager::Self().ResetBufferSize(pow(2, 28)/4);
+        SpaceManager::Self().ResetBufferSize(pow(2, 10));
         m_sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
 
         _activeCalculator = dynamic_cast<ISpaceCalculator*>(m_computeDevice->isChecked() ?
@@ -425,7 +425,7 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int batchStart, 
     m_sceneView->Flush();
     int percent = 100.f*(batchStart+start)/space.GetSpaceSize();
     _progressBar->setValue(percent);
-    if(_progressBar->isMaximized())
+    if(percent == 100)
         QMessageBox::information(this, "Расчет окончен", "Время расчета = "+
                                  QString::number(_timer->restart()/1000.f)+"s");
 }
