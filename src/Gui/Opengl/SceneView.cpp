@@ -1,6 +1,6 @@
 #include "SceneView.h"
 
-#include "Space/SpaceBuilder.h"
+#include "Space/SpaceManager.h"
 #include <QMouseEvent>
 
 SceneView::SceneView(QWidget *parent):
@@ -83,10 +83,9 @@ void SceneView::resizeGL(int width, int height)
 void SceneView::paintGL()
 {
     cl_float3 voxSize = {0.2, 0.2, 0.2};
-    if(SpaceBuilder::Instance().GetSpace())
-    {
-        voxSize = SpaceBuilder::Instance().GetSpace()->pointSize;
-    }
+    if(SpaceManager::Self().WasInited())
+        voxSize = SpaceManager::Self().GetPointSize();
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glClearColor(backColor.x(), backColor.y(), backColor.z(), backColor.w());

@@ -2,7 +2,7 @@
 
 #include "Gui/StyleLoader.h"
 
-#include "Space/SpaceBuilder.h"
+#include "Space/SpaceManager.h"
 #include "Space/Calculators/CommonCalculator.h"
 #include "Space/Calculators/OpenclCalculator.h"
 
@@ -219,9 +219,10 @@ void AppWindow::Compute()
         m_program = m_parser.GetProgram();
         m_sceneView->ClearObjects();
         auto args = m_program->GetSymbolTable().GetAllArgs();
-        auto space = SpaceBuilder::Instance().CreateSpace(args[0]->limits, args[1]->limits,
+        SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
                 args[2]->limits, _spaceDepth->value());
-        m_sceneView->CreateVoxelObject(space->GetSize());
+        SpaceManager::Self().ResetBufferSize();
+        m_sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
 
         _activeCalculator = dynamic_cast<ISpaceCalculator*>(m_computeDevice->isChecked() ?
                     _calculators[CalculatorName::Opencl] :
@@ -314,13 +315,13 @@ void AppWindow::ImageChanged(QString name)
     else if(name == "Ct")
         _currentImage = 4;
 
-    if(SpaceBuilder::Instance().GetSpace() &&
-            SpaceBuilder::Instance().GetSpace()->mimageData)
+    if(SpaceManager::Self().WasInited() &&
+            SpaceManager::Self().GetMimageBuffer())
     {
-        auto size = SpaceBuilder::Instance().GetSpace()->GetSize();
+        auto size = SpaceManager::Self().GetSpaceSize();
         m_sceneView->ClearObjects();
         m_sceneView->CreateVoxelObject(size);
-        ComputeFinished(CalculatorMode::Mimage, 0, size);
+        ComputeFinished(CalculatorMode::Mimage, 0, 0, size);
     }
 }
 
@@ -333,13 +334,13 @@ void AppWindow::ZoneChanged(QString name)
     else if(name == "Положительная")
         _currentZone = 1;
 
-    if(SpaceBuilder::Instance().GetSpace() &&
-            SpaceBuilder::Instance().GetSpace()->zoneData)
+    if(SpaceManager::Self().WasInited() &&
+            SpaceManager::Self().GetZoneBuffer())
     {
-        auto size = SpaceBuilder::Instance().GetSpace()->GetSize();
+        auto size = SpaceManager::Self().GetSpaceSize();
         m_sceneView->ClearObjects();
         m_sceneView->CreateVoxelObject(size);
-        ComputeFinished(CalculatorMode::Model, 0, size);
+        ComputeFinished(CalculatorMode::Model, 0, 0, size);
     }
 }
 
@@ -374,18 +375,19 @@ void AppWindow::ComputeLine(QString line)
     }
 }
 
-void AppWindow::ComputeFinished(CalculatorMode mode, int start, int end)
+void AppWindow::ComputeFinished(CalculatorMode mode, int batchStart, int start, int end)
 {
-    auto space = SpaceBuilder::Instance().GetSpace();
+    SpaceManager& space = SpaceManager::Self();
 
     if(mode == CalculatorMode::Model)
     {
         int zone = 0;
+        cl_float3 point;
         Color modelColor = _activeCalculator->GetModelColor();
         for(; start < end; ++start)
         {
-            cl_float3 point = space->GetPos(start);
-            zone = space->zoneData->At(start);
+            point = space.GetPointCoords(batchStart+start);
+            zone = space.GetZone(start);
             if(zone == _currentZone)
                 m_sceneView->AddObject(point.x, point.y, point.z,
                                        modelColor.red, modelColor.green,
@@ -398,17 +400,17 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int end)
         cl_float3 point;
         for(; start < end; ++start)
         {
-            point = space->GetPos(start);
+            point = space.GetPointCoords(batchStart+start);
             if(_currentImage == 0)
-                value = space->mimageData->At(start).Cx;
+                value = space.GetMimage(start).Cx;
             else if(_currentImage == 1)
-                value = space->mimageData->At(start).Cy;
+                value = space.GetMimage(start).Cy;
             else if(_currentImage == 2)
-                value = space->mimageData->At(start).Cz;
+                value = space.GetMimage(start).Cz;
             else if(_currentImage == 3)
-                value = space->mimageData->At(start).Cw;
+                value = space.GetMimage(start).Cw;
             else if(_currentImage == 4)
-                value = space->mimageData->At(start).Ct;
+                value = space.GetMimage(start).Ct;
 
             Color color = _activeCalculator->GetMImageColor(value);
             m_sceneView->AddObject(point.x, point.y, point.z,
@@ -417,10 +419,11 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int end)
         }
     }
     m_sceneView->Flush();
-    int percent = 100.f*start/space->GetSize();
+    int percent = 100.f*(batchStart+start)/space.GetSpaceSize();
     _progressBar->setValue(percent);
-    if(start == space->GetSize())
-        QMessageBox::information(this, "Расчет окончен", "Время расчета = "+QString::number(_timer->restart()/1000.f)+"s");
+    if(start == space.GetSpaceSize())
+        QMessageBox::information(this, "Расчет окончен", "Время расчета = "+
+                                 QString::number(_timer->restart()/1000.f)+"s");
 }
 
 
@@ -448,79 +451,12 @@ bool AppWindow::IsCalculate()
 
 void AppWindow::SaveData()
 {
-    if(!SpaceBuilder::Instance().GetSpace())
-    {
+//    if(!SpaceManager::Self().WasInited())
+//    {
         QMessageBox::information(this, "Nothing to save",
                                  "You must calculate model or mimage first");
-        return;
-    }
-
-    if(SpaceBuilder::Instance().GetSpace()->zoneData)
-    {
-        QString fileName = QFileDialog::getSaveFileName(this,
-            tr("Save model"), "",
-            tr("Binary (.mranok)"));
-        if (fileName.isEmpty())
-            return;
-
-        if(!fileName.endsWith(".mranok"))
-            fileName += ".mranok";
-        QFile file(fileName);
-        if (!file.open(QIODevice::WriteOnly))
-        {
-            QMessageBox::information(this, tr("Unable to open file"),
-                                     file.errorString());
-            return;
-        }
-        auto space = SpaceBuilder::Instance().GetSpace();
-
-        QDataStream out(&file);
-        out.setVersion(QDataStream::Qt_4_5);
-        out << space->startPoint.x;
-        out << space->startPoint.y;
-        out << space->startPoint.z;
-        out << space->pointSize.x;
-        out << space->pointSize.y;
-        out << space->pointSize.z;
-        out << space->spaceUnits.x;
-        out << space->spaceUnits.y;
-        out << space->spaceUnits.z;
-        out.writeBytes((const char*)space->zoneData, space->GetSize()*sizeof(int));
-        file.close();
-    }
-    else if(SpaceBuilder::Instance().GetSpace()->mimageData)
-    {
-        QString fileName = QFileDialog::getSaveFileName(this,
-            tr("Save MImage"), "",
-            tr("Binary (.iranok)"));
-        if (fileName.isEmpty())
-            return;
-
-        if(!fileName.endsWith(".iranok"))
-            fileName += ".iranok";
-        QFile file(fileName);
-        if (!file.open(QIODevice::WriteOnly))
-        {
-            QMessageBox::information(this, tr("Unable to open file"),
-                                     file.errorString());
-            return;
-        }
-        auto space = SpaceBuilder::Instance().GetSpace();
-
-        QDataStream out(&file);
-        out.setVersion(QDataStream::Qt_4_5);
-        out << space->startPoint.x;
-        out << space->startPoint.y;
-        out << space->startPoint.z;
-        out << space->pointSize.x;
-        out << space->pointSize.y;
-        out << space->pointSize.z;
-        out << space->spaceUnits.x;
-        out << space->spaceUnits.y;
-        out << space->spaceUnits.z;
-        out.writeBytes((const char*)space->mimageData, space->GetSize()*5*sizeof(double));
-        file.close();
-    }
+//        return;
+//    }
 }
 
 void AppWindow::SetBatchSize(int value)
