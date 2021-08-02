@@ -56,7 +56,7 @@ private slots:
     void ImageChanged(QString name);
     void ZoneChanged(QString name);
     void ComputeLine(QString line);
-    void ComputeFinished(CalculatorMode mode, int start, int end);
+    void ComputeFinished(CalculatorMode mode, int start, int batchStart, int end);
     void StopCalculators();
     bool IsCalculate();
     void SaveData();
@@ -99,12 +99,13 @@ private:
     QComboBox* _imageType;
     QStringListModel* _imageTypeModel;
     QSpinBox* _spaceDepth;
+    QLabel* _batchLabel;
     QSlider* _batchSize;
     QSpinBox* _batchSizeView;
     QProgressBar* _progressBar;
 
     QElapsedTimer* _timer;
-
+    QFile* _fileBuffer;
 
     QPushButton* m_addLineButton;
 
