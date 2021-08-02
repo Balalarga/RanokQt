@@ -99,6 +99,7 @@ private:
     QComboBox* _imageType;
     QStringListModel* _imageTypeModel;
     QSpinBox* _spaceDepth;
+    QLabel* _batchLabel;
     QSlider* _batchSize;
     QSpinBox* _batchSizeView;
     QProgressBar* _progressBar;

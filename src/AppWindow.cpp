@@ -56,8 +56,10 @@ AppWindow::AppWindow(QWidget *parent)
     spinLayout->addWidget(_spaceDepth);
 
     QHBoxLayout* batchLayout = new QHBoxLayout();
-    QLabel* batchLabel = new QLabel("Размер пачки");
-    batchLayout->addWidget(batchLabel);
+    _batchLabel = new QLabel("Размер пачки");
+    _batchSize->setEnabled(false);
+    _batchLabel->setStyleSheet("QLabel { color : #888888; }");
+    batchLayout->addWidget(_batchLabel);
     batchLayout->addWidget(_batchSize);
     batchLayout->addWidget(_batchSizeView);
 
@@ -225,7 +227,7 @@ void AppWindow::Compute()
             SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
                     args[2]->limits, _spaceDepth->value());
         }
-        SpaceManager::Self().ResetBufferSize(pow(2, 10));
+        SpaceManager::Self().ResetBufferSize(pow(2, 29));
         m_sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
 
         _activeCalculator = dynamic_cast<ISpaceCalculator*>(m_computeDevice->isChecked() ?
@@ -234,8 +236,10 @@ void AppWindow::Compute()
 
         _activeCalculator->SetCalculatorMode(m_imageModeButton->isChecked() ?
                                           CalculatorMode::Mimage: CalculatorMode::Model);
-
-        _activeCalculator->SetBatchSize(_batchSizeView->value());
+        if(m_computeDevice->isChecked())
+            _activeCalculator->SetBatchSize(_batchSizeView->value());
+        else
+            _activeCalculator->SetBatchSize(0);
         _activeCalculator->SetProgram(m_program);
         _timer->start();
         _calculators[_currentCalculatorName]->start();
@@ -296,6 +300,8 @@ void AppWindow::SwitchComputeDevice()
         _computeDevice1->setStyleSheet("QLabel { color : #888888; }");
         _computeDevice2->setStyleSheet("QLabel { color : #ffffff; }");
         _currentCalculatorName = CalculatorName::Opencl;
+        _batchSize->setEnabled(true);
+        _batchLabel->setStyleSheet("QLabel { color : #ffffff; }");
     }
     else
     {
@@ -303,6 +309,8 @@ void AppWindow::SwitchComputeDevice()
         _computeDevice1->setStyleSheet("QLabel { color : #ffffff; }");
         _computeDevice2->setStyleSheet("QLabel { color : #888888; }");
         _currentCalculatorName = CalculatorName::Common;
+        _batchSize->setEnabled(false);
+        _batchLabel->setStyleSheet("QLabel { color : #888888; }");
     }
 }
 

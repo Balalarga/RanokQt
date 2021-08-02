@@ -154,8 +154,8 @@ void SceneView::mouseMoveEvent(QMouseEvent *event)
 void SceneView::wheelEvent(QWheelEvent *event)
 {
     if(event->angleDelta().y() > 0 && m_camera.zoom < -0.5f)
-        m_camera.zoom += 0.4f;
+        m_camera.zoom += 0.8f;
     else if(event->angleDelta().y() < 0)
-        m_camera.zoom -= 0.4f;
+        m_camera.zoom -= 0.8f;
     UpdateMvpMatrix();
 }
