@@ -36,6 +36,9 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
+
 
     void UpdateMvpMatrix();
 
@@ -63,7 +66,7 @@ private:
         QPoint pos;
         bool pressed = false;
     } m_mouseState;
-
+    bool _shiftPressed;
 };
 
 #endif // SCENEVIEW_H

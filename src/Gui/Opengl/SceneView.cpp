@@ -128,6 +128,18 @@ void SceneView::mouseReleaseEvent(QMouseEvent *event)
     }
 }
 
+void SceneView::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::Key_Shift)
+        _shiftPressed = true;
+}
+
+void SceneView::keyReleaseEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::Key_Shift)
+        _shiftPressed = false;
+}
+
 void SceneView::UpdateMvpMatrix()
 {
     viewMatrix.setToIdentity();
@@ -153,9 +165,12 @@ void SceneView::mouseMoveEvent(QMouseEvent *event)
 
 void SceneView::wheelEvent(QWheelEvent *event)
 {
-    if(event->angleDelta().y() > 0 && m_camera.zoom < -0.5f)
-        m_camera.zoom += 0.8f;
+    double dz = 3;
+    if(_shiftPressed)
+        dz = 0.5;
+    if(event->angleDelta().y() > 0 && m_camera.zoom < -dz)
+        m_camera.zoom += dz;
     else if(event->angleDelta().y() < 0)
-        m_camera.zoom -= 0.8f;
+        m_camera.zoom -= dz;
     UpdateMvpMatrix();
 }

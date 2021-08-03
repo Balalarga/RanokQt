@@ -16,17 +16,17 @@
 
 AppWindow::AppWindow(QWidget *parent)
     : QWidget(parent),
-      m_mode(Mode::Common),
-      m_toolBar(new QToolBar(this)),
-      m_sceneView(new SceneView(this)),
-      m_codeEditor(new CodeEditor(this)),
-      m_lineEditor(new LineEditor(this)),
-      m_program(nullptr),
-      m_lineProgram(nullptr),
+      _mode(Mode::Common),
+      _toolBar(new QToolBar(this)),
+      _sceneView(new SceneView(this)),
+      _codeEditor(new CodeEditor(this)),
+      _lineEditor(new LineEditor(this)),
+      _program(nullptr),
+      _lineProgram(nullptr),
       m_editorModeButton(new ToggleButton(8, 10, this)),
-      m_imageModeButton(new ToggleButton(8, 10, this)),
-      m_computeDevice(new ToggleButton(8, 10, this)),
-      m_addLineButton(new QPushButton("Добавить строку", this)),
+      _imageModeButton(new ToggleButton(8, 10, this)),
+      _computeDevice(new ToggleButton(8, 10, this)),
+      _addLineButton(new QPushButton("Добавить строку", this)),
       _modelZone(new QComboBox(this)),
       _imageType(new QComboBox(this)),
       _spaceDepth(new QSpinBox(this)),
@@ -35,16 +35,16 @@ AppWindow::AppWindow(QWidget *parent)
       _currentZone(0),
       _currentImage(0),
       _currentCalculatorName(CalculatorName::Common),
-      _progressBar(new QProgressBar(m_sceneView)),
+      _progressBar(new QProgressBar(_sceneView)),
       _timer(new QElapsedTimer())
 
 {
-    QVBoxLayout* m_toolVLayout = new QVBoxLayout(this);
-    m_toolVLayout->addWidget(m_toolBar);
+    QVBoxLayout* toolVLayout = new QVBoxLayout(this);
+    toolVLayout->addWidget(_toolBar);
 
-    m_toolBar->addAction(QPixmap("assets/images/playIcon.svg"),
+    _toolBar->addAction(QPixmap("assets/images/playIcon.svg"),
                          "Run", this, &AppWindow::Compute);
-    m_toolBar->addAction(QPixmap("assets/images/saveIcon.png"),
+    _toolBar->addAction(QPixmap("assets/images/saveIcon.png"),
                          "Save", this, &AppWindow::SaveData);
 
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
@@ -66,9 +66,9 @@ AppWindow::AppWindow(QWidget *parent)
 
     modeLayout->addLayout(spinLayout);
     modeLayout->addLayout(batchLayout);
-    modeLayout->addWidget(m_codeEditor);
-    modeLayout->addWidget(m_lineEditor);
-    modeLayout->addWidget(m_addLineButton);
+    modeLayout->addWidget(_codeEditor);
+    modeLayout->addWidget(_lineEditor);
+    modeLayout->addWidget(_addLineButton);
 
     QHBoxLayout* editorModeBtnLayout = new QHBoxLayout;
     editorModeBtnLayout->setContentsMargins(0, 10, 0, 0);
@@ -94,7 +94,7 @@ AppWindow::AppWindow(QWidget *parent)
     _imageLabel->setStyleSheet("QLabel { color : #888888; }");
     _imageLabel->setAlignment(Qt::AlignVCenter);
     modelModeBtnLayout->addWidget(_modelLabel);
-    modelModeBtnLayout->addWidget(m_imageModeButton);
+    modelModeBtnLayout->addWidget(_imageModeButton);
     modelModeBtnLayout->addWidget(_imageLabel);
     modeLayout->addLayout(modelModeBtnLayout);
 
@@ -109,7 +109,7 @@ AppWindow::AppWindow(QWidget *parent)
     _computeDevice2->setStyleSheet("QLabel { color : #888888; }");
     _computeDevice2->setAlignment(Qt::AlignVCenter);
     deviceModeLayout->addWidget(_computeDevice1);
-    deviceModeLayout->addWidget(m_computeDevice);
+    deviceModeLayout->addWidget(_computeDevice);
     deviceModeLayout->addWidget(_computeDevice2);
     modeLayout->addLayout(deviceModeLayout);
 
@@ -142,15 +142,15 @@ AppWindow::AppWindow(QWidget *parent)
     _batchSizeView->setMinimumWidth(100);
     connect(_batchSize, &QSlider::valueChanged, this, &AppWindow::SetBatchSize);
 
-    m_addLineButton->setVisible(false);
+    _addLineButton->setVisible(false);
     wrapWidget->setLayout(modeLayout);
-    m_lineEditor->setVisible(false);
+    _lineEditor->setVisible(false);
 
     splitter->addWidget(wrapWidget);
-    splitter->addWidget(m_sceneView);
+    splitter->addWidget(_sceneView);
     splitter->setMidLineWidth(2);
-    m_sceneView->setMinimumWidth(500);
-    m_toolVLayout->addWidget(splitter);
+    _sceneView->setMinimumWidth(500);
+    toolVLayout->addWidget(splitter);
 
     QMenuBar* menuBar = new QMenuBar(this);
     QMenu *fileMenu = new QMenu("Файл");
@@ -161,7 +161,7 @@ AppWindow::AppWindow(QWidget *parent)
     connect(saveAction, &QAction::triggered, this, &AppWindow::OpenFile);
     fileMenu->addAction(saveAction);
 
-    m_toolVLayout->setMenuBar(menuBar);
+    toolVLayout->setMenuBar(menuBar);
 
 
     _progressBar->setRange(0, 100);
@@ -179,16 +179,16 @@ AppWindow::AppWindow(QWidget *parent)
 
 
     StyleLoader::attach("../assets/styles/dark.qss");
-    m_codeEditor->AddFile("../Core/Examples/NewFuncs/lopatka.txt");
-    m_codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
-    m_codeEditor->AddFile("../Core/Examples/NewFuncs/Chainik.txt");
+    _codeEditor->AddFile("../Core/Examples/NewFuncs/lopatka.txt");
+    _codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
+    _codeEditor->AddFile("../Core/Examples/NewFuncs/Chainik.txt");
 
     connect(_imageType, &QComboBox::currentTextChanged, this, &AppWindow::ImageChanged);
     connect(_modelZone, &QComboBox::currentTextChanged, this, &AppWindow::ZoneChanged);
     connect(m_editorModeButton, &QPushButton::clicked, this, &AppWindow::SwitchEditorMode);
-    connect(m_imageModeButton, &QPushButton::clicked, this, &AppWindow::SwitchModelMode);
-    connect(m_computeDevice, &QPushButton::clicked, this, &AppWindow::SwitchComputeDevice);
-    connect(m_addLineButton, &QPushButton::clicked, m_lineEditor, &LineEditor::addItem);
+    connect(_imageModeButton, &QPushButton::clicked, this, &AppWindow::SwitchModelMode);
+    connect(_computeDevice, &QPushButton::clicked, this, &AppWindow::SwitchComputeDevice);
+    connect(_addLineButton, &QPushButton::clicked, _lineEditor, &LineEditor::addItem);
 }
 
 
@@ -211,36 +211,38 @@ void AppWindow::Compute()
         return;
     }
 
-    QString source = m_codeEditor->GetActiveText();
+    QString source = _codeEditor->GetActiveText();
     if(!source.isEmpty())
     {
         _progressBar->setValue(0);
-        m_parser.SetText(source.toStdString());
-        if(m_program)
-            delete m_program;
-        m_program = m_parser.GetProgram();
-        m_sceneView->ClearObjects();
-        auto args = m_program->GetSymbolTable().GetAllArgs();
+        _parser.SetText(source.toStdString());
+        if(_program)
+            delete _program;
+        _program = _parser.GetProgram();
+        _sceneView->ClearObjects();
+        auto args = _program->GetSymbolTable().GetAllArgs();
         if(SpaceManager::ComputeSpaceSize(_spaceDepth->value()) !=
-                SpaceManager::Self().GetSpaceSize())
+                SpaceManager::Self().GetSpaceSize() ||
+                _prevArguments != args)
         {
+            _prevArguments = args;
             SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
                     args[2]->limits, _spaceDepth->value());
+            SpaceManager::Self().ResetBufferSize(pow(2, 29));
         }
-        SpaceManager::Self().ResetBufferSize(pow(2, 29));
-        m_sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
+        _sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
 
-        _activeCalculator = dynamic_cast<ISpaceCalculator*>(m_computeDevice->isChecked() ?
+        _activeCalculator = dynamic_cast<ISpaceCalculator*>(_computeDevice->isChecked() ?
                     _calculators[CalculatorName::Opencl] :
                 _calculators[CalculatorName::Common]);
 
-        _activeCalculator->SetCalculatorMode(m_imageModeButton->isChecked() ?
+        _activeCalculator->SetCalculatorMode(_imageModeButton->isChecked() ?
                                           CalculatorMode::Mimage: CalculatorMode::Model);
-        if(m_computeDevice->isChecked())
+        if(_computeDevice->isChecked())
             _activeCalculator->SetBatchSize(_batchSizeView->value());
         else
             _activeCalculator->SetBatchSize(0);
-        _activeCalculator->SetProgram(m_program);
+        _activeCalculator->SetProgram(_program);
         _timer->start();
         _calculators[_currentCalculatorName]->start();
         qDebug()<<"Start";
@@ -250,23 +252,23 @@ void AppWindow::Compute()
 
 void AppWindow::SwitchEditorMode()
 {
-    if(m_mode == Mode::Common)
+    if(_mode == Mode::Common)
     {
-        m_codeEditor->setVisible(false);
-        m_lineEditor->setVisible(true);
-        m_addLineButton->setVisible(true);
-        m_mode = Mode::Line;
-        //        m_modeButton->setText("Построчный режим");
+        _codeEditor->setVisible(false);
+        _lineEditor->setVisible(true);
+        _addLineButton->setVisible(true);
+        _mode = Mode::Line;
+        //        _modeButton->setText("Построчный режим");
         _editorMode1Label->setStyleSheet("QLabel { color : #888888; }");
         _editorMode2Label->setStyleSheet("QLabel { color : #ffffff; }");
     }
     else
     {
-        m_codeEditor->setVisible(true);
-        m_lineEditor->setVisible(false);
-        m_addLineButton->setVisible(false);
-        m_mode = Mode::Common;
-        //        m_modeButton->setText("Обычный режим");
+        _codeEditor->setVisible(true);
+        _lineEditor->setVisible(false);
+        _addLineButton->setVisible(false);
+        _mode = Mode::Common;
+        //        _modeButton->setText("Обычный режим");
         _editorMode1Label->setStyleSheet("QLabel { color : #ffffff; }");
         _editorMode2Label->setStyleSheet("QLabel { color : #888888; }");
     }
@@ -274,7 +276,7 @@ void AppWindow::SwitchEditorMode()
 
 void AppWindow::SwitchModelMode()
 {
-    if(m_imageModeButton->isChecked())
+    if(_imageModeButton->isChecked())
     {
         // image mode
         _modelLabel->setStyleSheet("QLabel { color : #888888; }");
@@ -294,7 +296,7 @@ void AppWindow::SwitchModelMode()
 
 void AppWindow::SwitchComputeDevice()
 {
-    if(m_computeDevice->isChecked())
+    if(_computeDevice->isChecked())
     {
         // Gpu
         _computeDevice1->setStyleSheet("QLabel { color : #888888; }");
@@ -331,8 +333,8 @@ void AppWindow::ImageChanged(QString name)
             SpaceManager::Self().GetMimageBuffer())
     {
         auto size = SpaceManager::Self().GetSpaceSize();
-        m_sceneView->ClearObjects();
-        m_sceneView->CreateVoxelObject(size);
+        _sceneView->ClearObjects();
+        _sceneView->CreateVoxelObject(size);
         ComputeFinished(CalculatorMode::Mimage, 0, 0, size);
     }
 }
@@ -350,22 +352,22 @@ void AppWindow::ZoneChanged(QString name)
             SpaceManager::Self().GetZoneBuffer())
     {
         auto size = SpaceManager::Self().GetSpaceSize();
-        m_sceneView->ClearObjects();
-        m_sceneView->CreateVoxelObject(size);
+        _sceneView->ClearObjects();
+        _sceneView->CreateVoxelObject(size);
         ComputeFinished(CalculatorMode::Model, 0, 0, size);
     }
 }
 
 void AppWindow::ComputeLine(QString line)
 {
-    m_lineParser.SetText(line.toStdString());
+    _lineParser.SetText(line.toStdString());
 
-    if(m_lineProgram)
+    if(_lineProgram)
     {
-        Program* lineProg = m_lineParser.GetProgram(&m_lineProgram->GetSymbolTable());
-        if(auto res = m_lineProgram->MergeProgram(lineProg))
+        Program* lineProg = _lineParser.GetProgram(&_lineProgram->GetSymbolTable());
+        if(auto res = _lineProgram->MergeProgram(lineProg))
         {
-            m_lineProgram->SetResult(res);
+            _lineProgram->SetResult(res);
             delete lineProg;
         }
         else
@@ -376,14 +378,14 @@ void AppWindow::ComputeLine(QString line)
     }
     else
     {
-        m_lineProgram = m_lineParser.GetProgram();
+        _lineProgram = _lineParser.GetProgram();
     }
 
-    if(!m_lineProgram->GetSymbolTable().GetAllArgs().empty())
+    if(!_lineProgram->GetSymbolTable().GetAllArgs().empty())
     {
-//        m_modelThread->SetProgram(m_lineProgram);
-//        m_sceneView->ClearObjects();
-//        m_modelThread->start();
+//        _modelThread->SetProgram(_lineProgram);
+//        _sceneView->ClearObjects();
+//        _modelThread->start();
     }
 }
 
@@ -401,7 +403,7 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int batchStart, 
             point = space.GetPointCoords(batchStart+start);
             zone = space.GetZone(batchStart);
             if(zone == _currentZone)
-                m_sceneView->AddObject(point.x, point.y, point.z,
+                _sceneView->AddObject(point.x, point.y, point.z,
                                        modelColor.red, modelColor.green,
                                        modelColor.blue, modelColor.alpha);
         }
@@ -425,12 +427,12 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int batchStart, 
                 value = space.GetMimage(batchStart).Ct;
 
             Color color = _activeCalculator->GetMImageColor(value);
-            m_sceneView->AddObject(point.x, point.y, point.z,
+            _sceneView->AddObject(point.x, point.y, point.z,
                                    color.red, color.green,
                                    color.blue, color.alpha);
         }
     }
-    m_sceneView->Flush();
+    _sceneView->Flush();
     int percent = 100.f*(batchStart+start)/space.GetSpaceSize();
     _progressBar->setValue(percent);
     if(percent == 100)
@@ -486,7 +488,7 @@ void AppWindow::OpenFile()
                                                     tr("Open program file"), "../",
                                                     tr("Plan text(*.txt)"));
     if(!fileName.isEmpty())
-        m_codeEditor->AddFile(fileName);
+        _codeEditor->AddFile(fileName);
 }
 
 bool AppWindow::eventFilter(QObject *obj, QEvent *event)

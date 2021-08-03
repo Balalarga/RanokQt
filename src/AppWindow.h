@@ -63,21 +63,22 @@ private slots:
     void SetBatchSize(int value);
 
 private:
-    Mode m_mode;
-    QToolBar* m_toolBar;
+    Mode _mode;
+    QToolBar* _toolBar;
 
-    SceneView* m_sceneView;
+    SceneView* _sceneView;
 
-    CodeEditor* m_codeEditor;
-    LineEditor* m_lineEditor;
+    CodeEditor* _codeEditor;
+    LineEditor* _lineEditor;
     QMap<CalculatorName, QThread*> _calculators;
     ISpaceCalculator* _activeCalculator;
     CalculatorName _currentCalculatorName;
 
-    Parser m_parser;
-    Program* m_program;
-    Parser m_lineParser;
-    Program* m_lineProgram;
+    Parser _parser;
+    Program* _program;
+    Parser _lineParser;
+    Program* _lineProgram;
+    std::vector<ArgumentExpr*> _prevArguments;
 
     int _currentZone;
     int _currentImage;
@@ -88,11 +89,11 @@ private:
 
     QLabel* _editorMode1Label;
     QLabel* _editorMode2Label;
-    ToggleButton* m_imageModeButton;
+    ToggleButton* _imageModeButton;
 
     QLabel* _computeDevice1;
     QLabel* _computeDevice2;
-    ToggleButton* m_computeDevice;
+    ToggleButton* _computeDevice;
 
     QComboBox* _modelZone;
     QStringListModel* _modelZoneModel;
@@ -105,9 +106,9 @@ private:
     QProgressBar* _progressBar;
 
     QElapsedTimer* _timer;
-    QFile* _fileBuffer;
 
-    QPushButton* m_addLineButton;
+
+    QPushButton* _addLineButton;
 
 };
 #endif // WIDGET_H
