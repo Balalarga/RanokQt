@@ -24,7 +24,7 @@ public slots:
     void AddObject(float x, float y, float z,
                    float r, float g, float b, float a);
     void Flush();
-    void ClearObjects();
+    void ClearObjects(bool soft = false);
     void CreateVoxelObject(int count);
 
 protected:

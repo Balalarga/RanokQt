@@ -76,8 +76,7 @@ private:
 
     Parser _parser;
     Program* _program;
-    Parser _lineParser;
-    Program* _lineProgram;
+    Program* _singleLineProgram;
     std::vector<ArgumentExpr*> _prevArguments;
 
     int _currentZone;

@@ -42,9 +42,12 @@ void SceneView::Flush()
     updateGL();
 }
 
-void SceneView::ClearObjects()
+void SceneView::ClearObjects(bool soft)
 {
-    voxelObject->Destroy();
+    if(!soft)
+        voxelObject->Destroy();
+    else
+        voxelObject->Recreate(m_voxelShader->GetRawProgram());
 }
 
 void SceneView::CreateVoxelObject(int count)
