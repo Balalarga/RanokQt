@@ -274,6 +274,7 @@ void AppWindow::SwitchEditorMode()
         //        _modeButton->setText("Обычный режим");
         _editorMode1Label->setStyleSheet("QLabel { color : #ffffff; }");
         _editorMode2Label->setStyleSheet("QLabel { color : #888888; }");
+        _lineEditor->resetLinesState();
     }
 }
 
@@ -295,6 +296,7 @@ void AppWindow::SwitchModelMode()
         _imageType->setVisible(false);
         _modelZone->setVisible(true);
     }
+    _lineEditor->resetLinesState();
 }
 
 void AppWindow::SwitchComputeDevice()
@@ -361,8 +363,11 @@ void AppWindow::ZoneChanged(QString name)
     }
 }
 
-void AppWindow::ComputeLine(QString line)
+void AppWindow::ComputeLine(int id, QString line)
 {
+    if(line.isEmpty())
+        return;
+
     _parser.SetText(line.toStdString());
 
     if(_singleLineProgram)
@@ -381,6 +386,7 @@ void AppWindow::ComputeLine(QString line)
         }
         else
         {
+            _lineEditor->setLineState(id, true);
             delete lineProg;
             return;
         }
@@ -416,6 +422,7 @@ void AppWindow::ComputeLine(QString line)
 //        _timer->start();
         _calculators[_currentCalculatorName]->start();
         qDebug()<<"Start";
+        _lineEditor->setLineState(id, true);
     }
 }
 

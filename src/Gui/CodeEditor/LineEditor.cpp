@@ -37,7 +37,20 @@ void LineEditor::addItem()
     QPushButton* btn = new QPushButton(QPixmap("assets/images/playIcon.svg"), "");
     btn->setMaximumWidth(30);
     setCellWidget(row, 1, btn);
-    connect(btn, &QPushButton::clicked, this, [this, row](){ emit runLine(this->item(row, 0)->text()); });
+    connect(btn, &QPushButton::clicked, this, [this, row](){ emit runLine(row, this->item(row, 0)->text()); });
+}
+
+void LineEditor::resetLinesState()
+{
+    for(int i = 0; i < rowCount(); i++)
+    {
+        item(i, 0)->setBackground(QBrush(0x202020));
+    }
+}
+
+void LineEditor::setLineState(int line, bool enabled)
+{
+    item(line, 0)->setBackground(QBrush(0x3e6b38));
 }
 
 bool LineEditor::eventFilter(QObject *obj, QEvent *evt)
@@ -47,7 +60,7 @@ bool LineEditor::eventFilter(QObject *obj, QEvent *evt)
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(evt);
         if (keyEvent->key() == Qt::Key_Enter)
         {
-            emit runLine(this->item(rowCount()-1, 0)->text());
+            emit runLine(rowCount()-1, this->item(rowCount()-1, 0)->text());
             return true;
         }
         else

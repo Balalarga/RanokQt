@@ -4,7 +4,8 @@ bool VoxelObject::Create(int count, QOpenGLShaderProgram* shader)
 {
     vertexCount = count;
     bufferSize = sizeof(float)*count*7;
-    vao.create();
+    if(!vao.isCreated())
+        vao.create();
     vao.bind();
 
     vbo.create();
