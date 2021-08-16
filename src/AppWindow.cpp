@@ -11,7 +11,7 @@
 #include <QMenuBar>
 #include <QStringListModel>
 #include <QMessageBox>
-
+#include <fstream>
 
 
 AppWindow::AppWindow(QWidget *parent)
@@ -22,7 +22,7 @@ AppWindow::AppWindow(QWidget *parent)
       _codeEditor(new CodeEditor(this)),
       _lineEditor(new LineEditor(this)),
       _program(nullptr),
-      _lineProgram(nullptr),
+      _singleLineProgram(nullptr),
       m_editorModeButton(new ToggleButton(8, 10, this)),
       _imageModeButton(new ToggleButton(8, 10, this)),
       _computeDevice(new ToggleButton(8, 10, this)),
@@ -189,6 +189,7 @@ AppWindow::AppWindow(QWidget *parent)
     connect(_imageModeButton, &QPushButton::clicked, this, &AppWindow::SwitchModelMode);
     connect(_computeDevice, &QPushButton::clicked, this, &AppWindow::SwitchComputeDevice);
     connect(_addLineButton, &QPushButton::clicked, _lineEditor, &LineEditor::addItem);
+    connect(_lineEditor, &LineEditor::runLine, this, &AppWindow::ComputeLine);
 }
 
 
@@ -258,6 +259,7 @@ void AppWindow::SwitchEditorMode()
         _lineEditor->setVisible(true);
         _addLineButton->setVisible(true);
         _mode = Mode::Line;
+        _toolBar->actions()[0]->setEnabled(false);
         //        _modeButton->setText("Построчный режим");
         _editorMode1Label->setStyleSheet("QLabel { color : #888888; }");
         _editorMode2Label->setStyleSheet("QLabel { color : #ffffff; }");
@@ -268,9 +270,11 @@ void AppWindow::SwitchEditorMode()
         _lineEditor->setVisible(false);
         _addLineButton->setVisible(false);
         _mode = Mode::Common;
+        _toolBar->actions()[0]->setEnabled(true);
         //        _modeButton->setText("Обычный режим");
         _editorMode1Label->setStyleSheet("QLabel { color : #ffffff; }");
         _editorMode2Label->setStyleSheet("QLabel { color : #888888; }");
+        _lineEditor->resetLinesState();
     }
 }
 
@@ -292,6 +296,7 @@ void AppWindow::SwitchModelMode()
         _imageType->setVisible(false);
         _modelZone->setVisible(true);
     }
+    _lineEditor->resetLinesState();
 }
 
 void AppWindow::SwitchComputeDevice()
@@ -358,34 +363,66 @@ void AppWindow::ZoneChanged(QString name)
     }
 }
 
-void AppWindow::ComputeLine(QString line)
+void AppWindow::ComputeLine(int id, QString line)
 {
-    _lineParser.SetText(line.toStdString());
+    if(line.isEmpty())
+        return;
 
-    if(_lineProgram)
+    _parser.SetText(line.toStdString());
+
+    if(_singleLineProgram)
     {
-        Program* lineProg = _lineParser.GetProgram(&_lineProgram->GetSymbolTable());
-        if(auto res = _lineProgram->MergeProgram(lineProg))
+        Program* lineProg = _parser.GetProgram(&_singleLineProgram->GetSymbolTable());
+        if(!lineProg)
         {
-            _lineProgram->SetResult(res);
+            qDebug()<< "[AppWindow::ComputeLine] Fatal error";
+            return;
+        }
+        lineProg->SetResult(lineProg->GetSymbolTable().GetLastVar());
+        if(auto res = _singleLineProgram->MergeProgram(lineProg))
+        {
+            _singleLineProgram->SetResult(res);
             delete lineProg;
         }
         else
         {
-            qDebug()<<"Program merging error:"<<line;
+            _lineEditor->setLineState(id, true);
+            delete lineProg;
             return;
         }
     }
     else
     {
-        _lineProgram = _lineParser.GetProgram();
+        _singleLineProgram = _parser.GetProgram();
     }
-
-    if(!_lineProgram->GetSymbolTable().GetAllArgs().empty())
+    auto args = _singleLineProgram->GetSymbolTable().GetAllArgs();
+    if(!args.empty())
     {
-//        _modelThread->SetProgram(_lineProgram);
-//        _sceneView->ClearObjects();
-//        _modelThread->start();
+        if(_prevArguments != args)
+        {
+            _prevArguments = args;
+            SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
+                    args[2]->limits, _spaceDepth->value());
+            SpaceManager::Self().ResetBufferSize(pow(2, 29));
+            _sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
+        }
+        else
+            _sceneView->ClearObjects(true);
+        _activeCalculator = dynamic_cast<ISpaceCalculator*>(_computeDevice->isChecked() ?
+                    _calculators[CalculatorName::Opencl] :
+                _calculators[CalculatorName::Common]);
+
+        _activeCalculator->SetCalculatorMode(_imageModeButton->isChecked() ?
+                                          CalculatorMode::Mimage: CalculatorMode::Model);
+        if(_computeDevice->isChecked())
+            _activeCalculator->SetBatchSize(_batchSizeView->value());
+        else
+            _activeCalculator->SetBatchSize(0);
+        _activeCalculator->SetProgram(_singleLineProgram);
+//        _timer->start();
+        _calculators[_currentCalculatorName]->start();
+        qDebug()<<"Start";
+        _lineEditor->setLineState(id, true);
     }
 }
 
@@ -435,7 +472,7 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int batchStart, 
     _sceneView->Flush();
     int percent = 100.f*(batchStart+start)/space.GetSpaceSize();
     _progressBar->setValue(percent);
-    if(percent == 100)
+    if(percent == 100 && _timer->isValid())
         QMessageBox::information(this, "Расчет окончен", "Время расчета = "+
                                  QString::number(_timer->restart()/1000.f)+"s");
 }
@@ -465,12 +502,33 @@ bool AppWindow::IsCalculate()
 
 void AppWindow::SaveData()
 {
-//    if(!SpaceManager::Self().WasInited())
-//    {
+    if(!SpaceManager::Self().WasInited())
+    {
         QMessageBox::information(this, "Nothing to save",
                                  "You must calculate model or mimage first");
-//        return;
-//    }
+        return;
+    }
+    QString file = QFileDialog::getSaveFileName(this,"","","*.bin");
+
+    if(!file.endsWith(".bin"))
+        file += ".bin";
+
+    std::ofstream stream(file.toStdString());
+    if(!stream)
+    {
+        QMessageBox::information(this, "Couldn't open file",
+                                 "Error while openin file "+file);
+        return;
+    }
+
+    if(_activeCalculator->GetCalculatorMode() == CalculatorMode::Model)
+        SpaceManager::Self().SaveZoneRange(stream, 0);
+    else
+        SpaceManager::Self().SaveMimageRange(stream, 0);
+    stream.close();
+
+    QMessageBox::information(this, "Saved",
+                             "Data saved at "+file);
 }
 
 void AppWindow::SetBatchSize(int value)

@@ -18,11 +18,13 @@ protected:
     void resizeEvent(QResizeEvent*) override;
 
 signals:
-    void runLine(QString line);
+    void runLine(int line, QString text);
 
 
 public slots:
     void addItem();
+    void resetLinesState();
+    void setLineState(int line, bool enabled);
 
 };
 

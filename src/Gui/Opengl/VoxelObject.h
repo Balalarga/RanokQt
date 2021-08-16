@@ -18,6 +18,7 @@ public:
     void Destroy();
     void Render();
     bool IsCreated();
+    void Recreate(QOpenGLShaderProgram* shader);
 
 private:
     QOpenGLVertexArrayObject vao;
@@ -27,6 +28,8 @@ private:
     QVector<float> buffer;
     int flushCount = 700;
     bool isCreated = false;
+
+    int vertexCount;
 };
 
 #endif // VOXELOBJECT_H

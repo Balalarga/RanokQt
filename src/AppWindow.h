@@ -55,7 +55,7 @@ private slots:
     void SwitchComputeDevice();
     void ImageChanged(QString name);
     void ZoneChanged(QString name);
-    void ComputeLine(QString line);
+    void ComputeLine(int id, QString line);
     void ComputeFinished(CalculatorMode mode, int start, int batchStart, int end);
     void StopCalculators();
     bool IsCalculate();
@@ -76,8 +76,7 @@ private:
 
     Parser _parser;
     Program* _program;
-    Parser _lineParser;
-    Program* _lineProgram;
+    Program* _singleLineProgram;
     std::vector<ArgumentExpr*> _prevArguments;
 
     int _currentZone;
