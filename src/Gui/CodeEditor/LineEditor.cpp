@@ -48,9 +48,9 @@ void LineEditor::resetLinesState()
     }
 }
 
-void LineEditor::setLineState(int line, bool enabled)
+void LineEditor::setLineColor(int line, QColor color)
 {
-    item(line, 0)->setBackground(QBrush(0x3e6b38));
+    item(line, 0)->setBackground(QBrush(color));
 }
 
 bool LineEditor::eventFilter(QObject *obj, QEvent *evt)

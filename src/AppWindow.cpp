@@ -16,6 +16,7 @@
 
 AppWindow::AppWindow(QWidget *parent)
     : QWidget(parent),
+      _bufferSize(29),
       _mode(Mode::Common),
       _toolBar(new QToolBar(this)),
       _sceneView(new SceneView(this)),
@@ -39,6 +40,12 @@ AppWindow::AppWindow(QWidget *parent)
       _timer(new QElapsedTimer())
 
 {
+//    Qt::WindowFlags flags;
+//    flags = Qt::Window;
+//    flags |= Qt::WindowStaysOnBottomHint;
+//    setWindowFlags(flags);
+
+
     QVBoxLayout* toolVLayout = new QVBoxLayout(this);
     toolVLayout->addWidget(_toolBar);
 
@@ -101,11 +108,11 @@ AppWindow::AppWindow(QWidget *parent)
 
     QHBoxLayout* deviceModeLayout = new QHBoxLayout;
     deviceModeLayout->setContentsMargins(0, 10, 0, 0);
-    _computeDevice1 = new QLabel("CPU");
+    _computeDevice1 = new QLabel("Медленно");
     _computeDevice1->setAlignment(Qt::AlignVCenter);
     _computeDevice1->setAlignment(Qt::AlignRight);
     _computeDevice1->setStyleSheet("QLabel { color : #ffffff; }");
-    _computeDevice2 = new QLabel("GPU");
+    _computeDevice2 = new QLabel("Быстро");
     _computeDevice2->setStyleSheet("QLabel { color : #888888; }");
     _computeDevice2->setAlignment(Qt::AlignVCenter);
     deviceModeLayout->addWidget(_computeDevice1);
@@ -134,7 +141,7 @@ AppWindow::AppWindow(QWidget *parent)
     _spaceDepth->setValue(4);
 
     _batchSize->setOrientation(Qt::Horizontal);
-    _batchSize->setRange(0, 21);
+    _batchSize->setRange(0, _bufferSize);
     _batchSize->setValue(0);
 
     _batchSizeView->setReadOnly(true);
@@ -176,6 +183,16 @@ AppWindow::AppWindow(QWidget *parent)
     qRegisterMetaType<CalculatorMode>("CalculatorMode");
     connect(commonCalculator, &CommonCalculatorThread::Computed, this, &AppWindow::ComputeFinished);
     connect(openclCalculator , &OpenclCalculatorThread::Computed, this, &AppWindow::ComputeFinished);
+
+    _linePallet.append(Color::fromUint(0x03, 0x7e, 0xf3, 60));
+    _linePallet.append(Color::fromUint(0xf8, 0x5a, 0x40, 60));
+    _linePallet.append(Color::fromUint(0x00, 0xc1, 0x6e, 60));
+    _linePallet.append(Color::fromUint(0x75, 0x52, 0xcc, 60));
+    _linePallet.append(Color::fromUint(0x0c, 0xb9, 0xc1, 60));
+    _linePallet.append(Color::fromUint(0xf4, 0x89, 0x24, 60));
+    _linePallet.append(Color::fromUint(0xff, 0xc8, 0x45, 60));
+    _linePallet.append(Color::fromUint(0x52, 0x56, 0x5e, 60));
+    _linePallet.append(Color::fromUint(0xf3, 0xf4, 0xf7, 60));
 
 
     StyleLoader::attach("../assets/styles/dark.qss");
@@ -229,7 +246,7 @@ void AppWindow::Compute()
             _prevArguments = args;
             SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
                     args[2]->limits, _spaceDepth->value());
-            SpaceManager::Self().ResetBufferSize(pow(2, 29));
+            SpaceManager::Self().ResetBufferSize(pow(2, _bufferSize));
         }
         _sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
 
@@ -370,6 +387,8 @@ void AppWindow::ComputeLine(int id, QString line)
 
     _parser.SetText(line.toStdString());
 
+    bool needClear = false;
+
     if(_singleLineProgram)
     {
         Program* lineProg = _parser.GetProgram(&_singleLineProgram->GetSymbolTable());
@@ -382,11 +401,15 @@ void AppWindow::ComputeLine(int id, QString line)
         if(auto res = _singleLineProgram->MergeProgram(lineProg))
         {
             _singleLineProgram->SetResult(res);
+            Color topColor = _linePallet.front();
+            _lineEditor->setLineColor(id, QColor::fromRgbF(topColor.red/2.f,
+                                                           topColor.green/2.f,
+                                                           topColor.blue/2.f));
             delete lineProg;
         }
         else
         {
-            _lineEditor->setLineState(id, true);
+            _lineEditor->setLineColor(id, QColor(0x3e, 0x6b, 0x38));
             delete lineProg;
             return;
         }
@@ -403,10 +426,11 @@ void AppWindow::ComputeLine(int id, QString line)
             _prevArguments = args;
             SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
                     args[2]->limits, _spaceDepth->value());
-            SpaceManager::Self().ResetBufferSize(pow(2, 29));
+            SpaceManager::Self().ResetBufferSize(pow(2, _bufferSize));
             _sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
+            return;
         }
-        else
+        if(needClear)
             _sceneView->ClearObjects(true);
         _activeCalculator = dynamic_cast<ISpaceCalculator*>(_computeDevice->isChecked() ?
                     _calculators[CalculatorName::Opencl] :
@@ -419,10 +443,8 @@ void AppWindow::ComputeLine(int id, QString line)
         else
             _activeCalculator->SetBatchSize(0);
         _activeCalculator->SetProgram(_singleLineProgram);
-//        _timer->start();
         _calculators[_currentCalculatorName]->start();
         qDebug()<<"Start";
-        _lineEditor->setLineState(id, true);
     }
 }
 
@@ -434,7 +456,15 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int batchStart, 
     {
         int zone = 0;
         cl_float3 point;
-        Color modelColor = _activeCalculator->GetModelColor();
+        Color modelColor;
+        if(_mode == Mode::Common)
+        modelColor = _activeCalculator->GetModelColor();
+        else
+        {
+            modelColor = _linePallet.front();
+            _linePallet.pop_front();
+            _linePallet.append(modelColor);
+        }
         for(; batchStart < end; ++batchStart)
         {
             point = space.GetPointCoords(batchStart+start);
@@ -473,7 +503,7 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int batchStart, 
     int percent = 100.f*(batchStart+start)/space.GetSpaceSize();
     _progressBar->setValue(percent);
     if(percent == 100 && _timer->isValid())
-        QMessageBox::information(this, "Расчет окончен", "Время расчета = "+
+        QMessageBox::about(this, "Расчет окончен", "Время расчета = "+
                                  QString::number(_timer->restart()/1000.f)+"s");
 }
 
@@ -504,7 +534,7 @@ void AppWindow::SaveData()
 {
     if(!SpaceManager::Self().WasInited())
     {
-        QMessageBox::information(this, "Nothing to save",
+        QMessageBox::about(this, "Nothing to save",
                                  "You must calculate model or mimage first");
         return;
     }
@@ -516,7 +546,7 @@ void AppWindow::SaveData()
     std::ofstream stream(file.toStdString());
     if(!stream)
     {
-        QMessageBox::information(this, "Couldn't open file",
+        QMessageBox::about(this, "Couldn't open file",
                                  "Error while openin file "+file);
         return;
     }
@@ -527,7 +557,7 @@ void AppWindow::SaveData()
         SpaceManager::Self().SaveMimageRange(stream, 0);
     stream.close();
 
-    QMessageBox::information(this, "Saved",
+    QMessageBox::about(this, "Saved",
                              "Data saved at "+file);
 }
 

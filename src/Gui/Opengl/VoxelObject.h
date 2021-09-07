@@ -26,7 +26,7 @@ private:
     int bufferSize;
     int bufferFill = 0;
     QVector<float> buffer;
-    int flushCount = 700;
+    int flushCount = 4096;
     bool isCreated = false;
 
     int vertexCount;

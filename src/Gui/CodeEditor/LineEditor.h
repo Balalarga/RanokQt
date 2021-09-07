@@ -24,7 +24,7 @@ signals:
 public slots:
     void addItem();
     void resetLinesState();
-    void setLineState(int line, bool enabled);
+    void setLineColor(int line, QColor color);
 
 };
 

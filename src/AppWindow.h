@@ -14,6 +14,7 @@
 #include <QSlider>
 #include <QProgressBar>
 #include <QElapsedTimer>
+#include <QQueue>
 
 #include "Gui/ToggleButton.h"
 
@@ -63,6 +64,8 @@ private slots:
     void SetBatchSize(int value);
 
 private:
+    int _bufferSize;
+
     Mode _mode;
     QToolBar* _toolBar;
 
@@ -108,6 +111,7 @@ private:
 
 
     QPushButton* _addLineButton;
+    QQueue<Color> _linePallet;
 
 };
 #endif // WIDGET_H

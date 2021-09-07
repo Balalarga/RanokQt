@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(PROJECT_NAME Ranok)
+set(PROJECT_NAME RanokQt)
 
 project(${PROJECT_NAME} VERSION 0.1 LANGUAGES CXX)
 
