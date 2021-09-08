@@ -11,14 +11,14 @@ class CommonCalculatorThread: public QThread, public CommonCalculator
 public:
     CommonCalculatorThread(QObject* parent):
         QThread(parent),
-        CommonCalculator([this](CalculatorMode mode, int batchStart, int start, int end){ emit Computed(mode, batchStart, start, end); })
+        CommonCalculator([this](CalculatorMode mode, int batchStart, int end){ emit Computed(mode, batchStart, end); })
     {
 
     }
     
 
 signals:
-    void Computed(CalculatorMode mode, int batchStart, int start, int end);
+    void Computed(CalculatorMode mode, int batchStart, int end);
 
 
 protected:
@@ -36,14 +36,14 @@ class OpenclCalculatorThread: public QThread, public OpenclCalculator
 public:
     OpenclCalculatorThread(QObject* parent):
         QThread(parent),
-        OpenclCalculator([this](CalculatorMode mode, int batchStart, int start, int end){ emit Computed(mode, batchStart, start, end); })
+        OpenclCalculator([this](CalculatorMode mode, int batchStart, int end){ emit Computed(mode, batchStart, end); })
     {
 
     }
     
 
 signals:
-void Computed(CalculatorMode mode, int batchStart, int start, int end);
+void Computed(CalculatorMode mode, int batchStart, int end);
 
 
 protected:

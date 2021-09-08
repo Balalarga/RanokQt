@@ -57,15 +57,13 @@ private slots:
     void ImageChanged(QString name);
     void ZoneChanged(QString name);
     void ComputeLine(int id, QString line);
-    void ComputeFinished(CalculatorMode mode, int start, int batchStart, int end);
+    void ComputeFinished(CalculatorMode mode, int batchStart, int end);
     void StopCalculators();
     bool IsCalculate();
     void SaveData();
     void SetBatchSize(int value);
 
 private:
-    int _bufferSize;
-
     Mode _mode;
     QToolBar* _toolBar;
 

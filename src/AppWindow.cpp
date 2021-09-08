@@ -16,7 +16,6 @@
 
 AppWindow::AppWindow(QWidget *parent)
     : QWidget(parent),
-      _bufferSize(29),
       _mode(Mode::Common),
       _toolBar(new QToolBar(this)),
       _sceneView(new SceneView(this)),
@@ -64,7 +63,6 @@ AppWindow::AppWindow(QWidget *parent)
 
     QHBoxLayout* batchLayout = new QHBoxLayout();
     _batchLabel = new QLabel("Размер пачки");
-    _batchSize->setEnabled(false);
     _batchLabel->setStyleSheet("QLabel { color : #888888; }");
     batchLayout->addWidget(_batchLabel);
     batchLayout->addWidget(_batchSize);
@@ -141,13 +139,13 @@ AppWindow::AppWindow(QWidget *parent)
     _spaceDepth->setValue(4);
 
     _batchSize->setOrientation(Qt::Horizontal);
-    _batchSize->setRange(0, _bufferSize);
+    _batchSize->setRange(0, 29);
     _batchSize->setValue(0);
 
     _batchSizeView->setReadOnly(true);
     _batchSizeView->setRange(_batchSize->minimum(), pow(2, _batchSize->maximum()));
     _batchSizeView->setMinimumWidth(100);
-    connect(_batchSize, &QSlider::valueChanged, this, &AppWindow::SetBatchSize);
+    connect(_batchSize, &QSlider::valueChanged, _batchSizeView, &QSpinBox::setValue);
 
     _addLineButton->setVisible(false);
     wrapWidget->setLayout(modeLayout);
@@ -181,8 +179,10 @@ AppWindow::AppWindow(QWidget *parent)
     _calculators[CalculatorName::Opencl] = openclCalculator;
 
     qRegisterMetaType<CalculatorMode>("CalculatorMode");
-    connect(commonCalculator, &CommonCalculatorThread::Computed, this, &AppWindow::ComputeFinished);
-    connect(openclCalculator , &OpenclCalculatorThread::Computed, this, &AppWindow::ComputeFinished);
+    connect(commonCalculator, &CommonCalculatorThread::Computed,
+            this, &AppWindow::ComputeFinished, Qt::BlockingQueuedConnection);
+    connect(openclCalculator , &OpenclCalculatorThread::Computed,
+            this, &AppWindow::ComputeFinished, Qt::BlockingQueuedConnection);
 
     _linePallet.append(Color::fromUint(0x03, 0x7e, 0xf3, 60));
     _linePallet.append(Color::fromUint(0xf8, 0x5a, 0x40, 60));
@@ -208,7 +208,6 @@ AppWindow::AppWindow(QWidget *parent)
     connect(_addLineButton, &QPushButton::clicked, _lineEditor, &LineEditor::addItem);
     connect(_lineEditor, &LineEditor::runLine, this, &AppWindow::ComputeLine);
 }
-
 
 AppWindow::~AppWindow()
 {
@@ -246,7 +245,10 @@ void AppWindow::Compute()
             _prevArguments = args;
             SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
                     args[2]->limits, _spaceDepth->value());
-            SpaceManager::Self().ResetBufferSize(pow(2, _bufferSize));
+            if(_batchSizeView->value() != 0)
+                SpaceManager::Self().ResetBufferSize(pow(2, _batchSizeView->value()));
+            else
+                SpaceManager::Self().ResetBufferSize(0);
         }
         _sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
 
@@ -256,10 +258,7 @@ void AppWindow::Compute()
 
         _activeCalculator->SetCalculatorMode(_imageModeButton->isChecked() ?
                                           CalculatorMode::Mimage: CalculatorMode::Model);
-        if(_computeDevice->isChecked())
-            _activeCalculator->SetBatchSize(_batchSizeView->value());
-        else
-            _activeCalculator->SetBatchSize(0);
+
         _activeCalculator->SetProgram(_program);
         _timer->start();
         _calculators[_currentCalculatorName]->start();
@@ -324,7 +323,6 @@ void AppWindow::SwitchComputeDevice()
         _computeDevice1->setStyleSheet("QLabel { color : #888888; }");
         _computeDevice2->setStyleSheet("QLabel { color : #ffffff; }");
         _currentCalculatorName = CalculatorName::Opencl;
-        _batchSize->setEnabled(true);
         _batchLabel->setStyleSheet("QLabel { color : #ffffff; }");
     }
     else
@@ -333,7 +331,6 @@ void AppWindow::SwitchComputeDevice()
         _computeDevice1->setStyleSheet("QLabel { color : #ffffff; }");
         _computeDevice2->setStyleSheet("QLabel { color : #888888; }");
         _currentCalculatorName = CalculatorName::Common;
-        _batchSize->setEnabled(false);
         _batchLabel->setStyleSheet("QLabel { color : #888888; }");
     }
 }
@@ -357,7 +354,7 @@ void AppWindow::ImageChanged(QString name)
         auto size = SpaceManager::Self().GetSpaceSize();
         _sceneView->ClearObjects();
         _sceneView->CreateVoxelObject(size);
-        ComputeFinished(CalculatorMode::Mimage, 0, 0, size);
+        ComputeFinished(CalculatorMode::Mimage, 0, size);
     }
 }
 
@@ -376,7 +373,7 @@ void AppWindow::ZoneChanged(QString name)
         auto size = SpaceManager::Self().GetSpaceSize();
         _sceneView->ClearObjects();
         _sceneView->CreateVoxelObject(size);
-        ComputeFinished(CalculatorMode::Model, 0, 0, size);
+        ComputeFinished(CalculatorMode::Model, 0, size);
     }
 }
 
@@ -426,7 +423,10 @@ void AppWindow::ComputeLine(int id, QString line)
             _prevArguments = args;
             SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
                     args[2]->limits, _spaceDepth->value());
-            SpaceManager::Self().ResetBufferSize(pow(2, _bufferSize));
+            if(_batchSizeView->value() != 0)
+                SpaceManager::Self().ResetBufferSize(pow(2, _batchSizeView->value()));
+            else
+                SpaceManager::Self().ResetBufferSize(0);
             _sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
             return;
         }
@@ -438,18 +438,15 @@ void AppWindow::ComputeLine(int id, QString line)
 
         _activeCalculator->SetCalculatorMode(_imageModeButton->isChecked() ?
                                           CalculatorMode::Mimage: CalculatorMode::Model);
-        if(_computeDevice->isChecked())
-            _activeCalculator->SetBatchSize(_batchSizeView->value());
-        else
-            _activeCalculator->SetBatchSize(0);
         _activeCalculator->SetProgram(_singleLineProgram);
         _calculators[_currentCalculatorName]->start();
         qDebug()<<"Start";
     }
 }
 
-void AppWindow::ComputeFinished(CalculatorMode mode, int start, int batchStart, int end)
+void AppWindow::ComputeFinished(CalculatorMode mode, int batchStart, int count)
 {
+    qDebug()<<"Compute finish ("<<batchStart<<")";
     SpaceManager& space = SpaceManager::Self();
 
     if(mode == CalculatorMode::Model)
@@ -458,17 +455,17 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int batchStart, 
         cl_float3 point;
         Color modelColor;
         if(_mode == Mode::Common)
-        modelColor = _activeCalculator->GetModelColor();
+            modelColor = _activeCalculator->GetModelColor();
         else
         {
             modelColor = _linePallet.front();
             _linePallet.pop_front();
             _linePallet.append(modelColor);
         }
-        for(; batchStart < end; ++batchStart)
+        for(int i = 0; i < count; ++i)
         {
-            point = space.GetPointCoords(batchStart+start);
-            zone = space.GetZone(batchStart);
+            point = space.GetPointCoords(batchStart+i);
+            zone = space.GetZone(i);
             if(zone == _currentZone)
                 _sceneView->AddObject(point.x, point.y, point.z,
                                        modelColor.red, modelColor.green,
@@ -479,19 +476,19 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int batchStart, 
     {
         double value = 0;
         cl_float3 point;
-        for(; batchStart < end; ++batchStart)
+        for(int i = 0; i < count; ++i)
         {
-            point = space.GetPointCoords(batchStart+start);
+            point = space.GetPointCoords(batchStart+i);
             if(_currentImage == 0)
-                value = space.GetMimage(batchStart).Cx;
+                value = space.GetMimage(i).Cx;
             else if(_currentImage == 1)
-                value = space.GetMimage(batchStart).Cy;
+                value = space.GetMimage(i).Cy;
             else if(_currentImage == 2)
-                value = space.GetMimage(batchStart).Cz;
+                value = space.GetMimage(i).Cz;
             else if(_currentImage == 3)
-                value = space.GetMimage(batchStart).Cw;
+                value = space.GetMimage(i).Cw;
             else if(_currentImage == 4)
-                value = space.GetMimage(batchStart).Ct;
+                value = space.GetMimage(i).Ct;
 
             Color color = _activeCalculator->GetMImageColor(value);
             _sceneView->AddObject(point.x, point.y, point.z,
@@ -500,13 +497,12 @@ void AppWindow::ComputeFinished(CalculatorMode mode, int start, int batchStart, 
         }
     }
     _sceneView->Flush();
-    int percent = 100.f*(batchStart+start)/space.GetSpaceSize();
+    int percent = 100.f*(batchStart+count)/space.GetSpaceSize();
     _progressBar->setValue(percent);
     if(percent == 100 && _timer->isValid())
         QMessageBox::about(this, "Расчет окончен", "Время расчета = "+
                                  QString::number(_timer->restart()/1000.f)+"s");
 }
-
 
 void AppWindow::StopCalculators()
 {
