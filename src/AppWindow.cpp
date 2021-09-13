@@ -446,7 +446,6 @@ void AppWindow::ComputeLine(int id, QString line)
 
 void AppWindow::ComputeFinished(CalculatorMode mode, int batchStart, int count)
 {
-    qDebug()<<"Compute finish ("<<batchStart<<")";
     SpaceManager& space = SpaceManager::Self();
 
     if(mode == CalculatorMode::Model)
