@@ -1,7 +1,6 @@
 #ifndef MODELINGSCREEN_H
 #define MODELINGSCREEN_H
 
-#include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QToolBar>
@@ -25,19 +24,25 @@
 #include "Language/Parser.h"
 #include "QSpaceCalculatorWrapper.h"
 
+#include "ClearableWidget.h"
+
 enum class CalculatorName
 {
     Common, Opencl
 };
 
 
-class ModelingScreen : public QWidget
+class ModelingScreen : public ClearableWidget
 {
     Q_OBJECT
 
 public:
     ModelingScreen(QWidget *parent = nullptr);
     ~ModelingScreen();
+
+
+public slots:
+    void Cleanup() override;
 
 
 private slots:

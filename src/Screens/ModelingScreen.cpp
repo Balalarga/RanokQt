@@ -15,7 +15,7 @@
 
 
 ModelingScreen::ModelingScreen(QWidget *parent)
-    : QWidget(parent),
+    : ClearableWidget(parent),
       _sceneView(new SceneView(this)),
       _codeEditor(new CodeEditor(this)),
       _program(nullptr),
@@ -170,6 +170,11 @@ ModelingScreen::~ModelingScreen()
             i->terminate();
 }
 
+void ModelingScreen::Cleanup()
+{
+    _sceneView->ClearObjects();
+}
+
 void ModelingScreen::Compute()
 {
     if(IsCalculate())
@@ -305,7 +310,7 @@ void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int co
         int zone = 0;
         cl_float3 point;
         Color modelColor;
-        modelColor = _activeCalculator->GetModelColor();
+        modelColor = ISpaceCalculator::GetModelColor();
         for(int i = 0; i < count; ++i)
         {
             point = space.GetPointCoords(batchStart+i);

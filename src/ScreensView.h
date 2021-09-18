@@ -2,6 +2,8 @@
 #define SCREENSVIEW_H
 
 #include <QTabWidget>
+#include <QVector>
+#include "Screens/ClearableWidget.h"
 
 class ScreensView : public QTabWidget
 {
@@ -13,9 +15,12 @@ public:
 signals:
 
 
+private slots:
+    void TabChanged(int id);
+
+
 private:
-
-
+    QVector<ClearableWidget*> _tabs;
 };
 
 #endif // SCREENSVIEW_H
