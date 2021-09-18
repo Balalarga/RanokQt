@@ -32,50 +32,39 @@ ViewerScreen::ViewerScreen(QWidget *parent):
     mainLayout->setMenuBar(menuBar);
 
     _lowMimageLimiter->setRange(-1.0, 1.0);
+    _lowMimageLimiter->setValue(-1.0);
     _lowMimageLimiter->setDecimals(2);
     _lowMimageLimiter->setSingleStep(0.01);
-    _lowMimageLimiter->setValue(-1.0);
     _lowMimageLimiter->setVisible(false);
     connect(_lowMimageLimiter, SIGNAL(valueChanged(double)),
             this, SLOT(LowMimageLimiterChanged(double)));
 
     _highMimageLimiter->setRange(-1.0, 1.0);
-    _highMimageLimiter->setDecimals(2);
     _highMimageLimiter->setValue(1.0);
+    _highMimageLimiter->setDecimals(2);
     _highMimageLimiter->setSingleStep(0.01);
     _highMimageLimiter->setVisible(false);
     connect(_highMimageLimiter, SIGNAL(valueChanged(double)),
             this, SLOT(HighMimageLimiterChanged(double)));
 
-    _xSpaceLimiter->setVisible(false);
     _xSpaceLimiter->setDecimals(2);
     _xSpaceLimiter->setSingleStep(0.01);
-    connect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
-            this, SLOT(XSpaceLimiterChanged(double)));
 
-    _ySpaceLimiter->setVisible(false);
     _ySpaceLimiter->setDecimals(2);
     _ySpaceLimiter->setSingleStep(0.01);
-    connect(_ySpaceLimiter, SIGNAL(valueChanged(double)),
-            this, SLOT(YSpaceLimiterChanged(double)));
 
-    _zSpaceLimiter->setVisible(false);
     _zSpaceLimiter->setDecimals(2);
     _zSpaceLimiter->setSingleStep(0.01);
-    connect(_zSpaceLimiter, SIGNAL(valueChanged(double)),
-            this, SLOT(ZSpaceLimiterChanged(double)));
 
-    QVBoxLayout* mimageLimitersLayout = new QVBoxLayout();
+    QHBoxLayout* mimageLimitersLayout = new QHBoxLayout();
     mimageLimitersLayout->addWidget(_lowMimageLimiter);
     mimageLimitersLayout->addWidget(_highMimageLimiter);
 
-    QVBoxLayout* spaceLimitersLayout = new QVBoxLayout();
-    spaceLimitersLayout->addWidget(_xSpaceLimiter);
-    spaceLimitersLayout->addWidget(_ySpaceLimiter);
-    spaceLimitersLayout->addWidget(_zSpaceLimiter);
-
+    mainLayout->addWidget(_xSpaceLimiter);
+    mainLayout->addWidget(_ySpaceLimiter);
+    mainLayout->addWidget(_zSpaceLimiter);
+    mainLayout->addSpacing(10);
     mainLayout->addLayout(mimageLimitersLayout);
-    mainLayout->addLayout(spaceLimitersLayout);
     mainLayout->addWidget(_view);
 }
 
@@ -104,11 +93,15 @@ void ViewerScreen::OpenFile()
 
 void ViewerScreen::OpenMimage(const QString &filePath)
 {
+    disconnect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(XSpaceLimiterChanged(double)));
+    disconnect(_ySpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(YSpaceLimiterChanged(double)));
+    disconnect(_zSpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(ZSpaceLimiterChanged(double)));
+    _mode = Mode::Mimage;
     _lowMimageLimiter->setVisible(true);
     _highMimageLimiter->setVisible(true);
-    _xSpaceLimiter->setVisible(false);
-    _ySpaceLimiter->setVisible(false);
-    _zSpaceLimiter->setVisible(false);
 
     QFile file(filePath);
     if(!file.open(QIODevice::ReadOnly))
@@ -125,18 +118,48 @@ void ViewerScreen::OpenMimage(const QString &filePath)
     _view->ClearObjects();
     _view->CreateVoxelObject(space.GetSpaceSize());
 
-    UpdateMimageView();
-
     file.close();
+
+    _xSpaceLimiter->setRange(space.metadata.commonData.startPointX +
+                             space.metadata.commonData.pointSizeX,
+                             space.metadata.commonData.pointSizeX *
+                             space.metadata.commonData.spaceUnitsX);
+    _xSpaceLimiter->setValue(space.metadata.commonData.startPointX +
+                             space.metadata.commonData.startPointX);
+
+    _ySpaceLimiter->setRange(space.metadata.commonData.startPointY +
+                             space.metadata.commonData.pointSizeY,
+                             space.metadata.commonData.pointSizeY *
+                             space.metadata.commonData.spaceUnitsY);
+    _ySpaceLimiter->setValue(space.metadata.commonData.startPointY +
+                             space.metadata.commonData.startPointY);
+
+    _zSpaceLimiter->setRange(space.metadata.commonData.startPointZ +
+                             space.metadata.commonData.pointSizeZ,
+                             space.metadata.commonData.pointSizeZ *
+                             space.metadata.commonData.spaceUnitsZ);
+    _zSpaceLimiter->setValue(space.metadata.commonData.startPointZ +
+                             space.metadata.commonData.startPointZ);
+    connect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(XSpaceLimiterChanged(double)));
+    connect(_ySpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(YSpaceLimiterChanged(double)));
+    connect(_zSpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(ZSpaceLimiterChanged(double)));
+    UpdateMimageView();
 }
 
 void ViewerScreen::OpenModel(const QString &filePath)
 {
+    disconnect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(XSpaceLimiterChanged(double)));
+    disconnect(_ySpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(YSpaceLimiterChanged(double)));
+    disconnect(_zSpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(ZSpaceLimiterChanged(double)));
+    _mode = Mode::Model;
     _lowMimageLimiter->setVisible(false);
     _highMimageLimiter->setVisible(false);
-    _xSpaceLimiter->setVisible(true);
-    _ySpaceLimiter->setVisible(true);
-    _zSpaceLimiter->setVisible(true);
 
     QFile file(filePath);
     if(!file.open(QIODevice::ReadOnly))
@@ -176,17 +199,31 @@ void ViewerScreen::OpenModel(const QString &filePath)
     file.close();
 
     _xSpaceLimiter->setRange(space.metadata.commonData.startPointX +
-                             space.metadata.commonData.startPointX,
+                             space.metadata.commonData.pointSizeX,
                              space.metadata.commonData.pointSizeX *
                              space.metadata.commonData.spaceUnitsX);
+    _xSpaceLimiter->setValue(space.metadata.commonData.startPointX +
+                             space.metadata.commonData.startPointX);
+
     _ySpaceLimiter->setRange(space.metadata.commonData.startPointY +
-                             space.metadata.commonData.startPointY,
+                             space.metadata.commonData.pointSizeY,
                              space.metadata.commonData.pointSizeY *
                              space.metadata.commonData.spaceUnitsY);
+    _ySpaceLimiter->setValue(space.metadata.commonData.startPointY +
+                             space.metadata.commonData.startPointY);
+
     _zSpaceLimiter->setRange(space.metadata.commonData.startPointZ +
-                             space.metadata.commonData.startPointZ,
+                             space.metadata.commonData.pointSizeZ,
                              space.metadata.commonData.pointSizeZ *
                              space.metadata.commonData.spaceUnitsZ);
+    _zSpaceLimiter->setValue(space.metadata.commonData.startPointZ +
+                             space.metadata.commonData.startPointZ);
+    connect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(XSpaceLimiterChanged(double)));
+    connect(_ySpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(YSpaceLimiterChanged(double)));
+    connect(_zSpaceLimiter, SIGNAL(valueChanged(double)),
+            this, SLOT(ZSpaceLimiterChanged(double)));
 }
 
 void ViewerScreen::LowMimageLimiterChanged(double value)
@@ -203,17 +240,26 @@ void ViewerScreen::HighMimageLimiterChanged(double value)
 
 void ViewerScreen::XSpaceLimiterChanged(double value)
 {
-    UpdateZoneView();
+    if(_mode == Mode::Model)
+        UpdateZoneView();
+    else
+        UpdateMimageView();
 }
 
 void ViewerScreen::YSpaceLimiterChanged(double value)
 {
-    UpdateZoneView();
+    if(_mode == Mode::Model)
+        UpdateZoneView();
+    else
+        UpdateMimageView();
 }
 
 void ViewerScreen::ZSpaceLimiterChanged(double value)
 {
-    UpdateZoneView();
+    if(_mode == Mode::Model)
+        UpdateZoneView();
+    else
+        UpdateMimageView();
 }
 
 void ViewerScreen::UpdateMimageView()
@@ -230,11 +276,16 @@ void ViewerScreen::UpdateMimageView()
         if(mValue <= _highMimageLimiter->value() &&
                 mValue >= _lowMimageLimiter->value())
         {
-            color = ISpaceCalculator::GetMImageColor(mValue);
             point = space.GetPointCoords(i);
-            _view->AddObject(point.x, point.y, point.z,
-                             color.red, color.green,
-                             color.blue, color.alpha);
+            if(point.x >= _xSpaceLimiter->value() &&
+                    point.y >= _ySpaceLimiter->value() &&
+                    point.z >= _zSpaceLimiter->value())
+            {
+                color = ISpaceCalculator::GetMImageColor(mValue);
+                _view->AddObject(point.x, point.y, point.z,
+                                 color.red, color.green,
+                                 color.blue, color.alpha);
+            }
         }
     }
     _view->Flush();

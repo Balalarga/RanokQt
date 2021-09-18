@@ -9,6 +9,11 @@
 class ViewerScreen : public ClearableWidget
 {
     Q_OBJECT
+    enum class Mode
+    {
+        Mimage, Model
+    };
+
 public:
     explicit ViewerScreen(QWidget *parent = nullptr);
 
@@ -32,6 +37,8 @@ private slots:
     void UpdateZoneView();
 
 private:
+    Mode _mode;
+
     SceneView* _view;
     QDoubleSpinBox* _lowMimageLimiter;
     QDoubleSpinBox* _highMimageLimiter;
