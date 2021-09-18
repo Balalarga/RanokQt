@@ -23,11 +23,10 @@ public:
 public slots:
     void AddObject(float x, float y, float z,
                    float r, float g, float b, float a);
-    void ChangeColor(float x, float y, float z,
-                     float r, float g, float b, float a);
     void Flush();
     void ClearObjects(bool soft = false);
     void CreateVoxelObject(int count);
+    void UseAlphaColor(bool use);
 
 protected:
     void initializeGL() override;

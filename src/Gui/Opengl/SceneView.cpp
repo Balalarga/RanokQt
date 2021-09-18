@@ -15,6 +15,7 @@ SceneView::SceneView(QWidget *parent):
                                       ":/shaders/voxel.geom");
     m_voxelShader->AddUniform("worldToView");
     m_voxelShader->AddUniform("voxSize");
+    m_voxelShader->AddUniform("useAlpha");
     gridObject = new GridObject;
     wcsObject = new WcsObject;
     voxelObject = new VoxelObject;
@@ -36,11 +37,6 @@ void SceneView::AddObject(float x, float y, float z, float r, float g, float b, 
     voxelObject->AddData(x, y, z, r, g, b, a);
 }
 
-void SceneView::ChangeColor(float x, float y, float z, float r, float g, float b, float a)
-{
-    voxelObject->ChangeColor(x, y, z, r, g, b, a);
-}
-
 void SceneView::Flush()
 {
     voxelObject->Flush();
@@ -58,6 +54,17 @@ void SceneView::ClearObjects(bool soft)
 void SceneView::CreateVoxelObject(int count)
 {
     voxelObject->Create(count, m_voxelShader->GetRawProgram());
+}
+
+void SceneView::UseAlphaColor(bool use)
+{
+    if(use)
+        glDisable(GL_DEPTH_TEST);
+    else
+        glEnable(GL_DEPTH_TEST);
+    m_voxelShader->Bind();
+    m_voxelShader->GetRawProgram()->setUniformValue("useAlpha", use);
+    m_voxelShader->Release();
 }
 
 void SceneView::initializeGL()
