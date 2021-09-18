@@ -36,6 +36,11 @@ void VoxelObject::AddData(float x, float y, float z, float r, float g, float b, 
         Flush();
 }
 
+void VoxelObject::ChangeColor(float x, float y, float z, float r, float g, float b, float a)
+{
+
+}
+
 void VoxelObject::Flush()
 {
     vbo.bind();
