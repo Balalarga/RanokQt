@@ -36,6 +36,11 @@ void SceneView::AddObject(float x, float y, float z, float r, float g, float b, 
     voxelObject->AddData(x, y, z, r, g, b, a);
 }
 
+void SceneView::ChangeColor(float x, float y, float z, float r, float g, float b, float a)
+{
+    voxelObject->ChangeColor(x, y, z, r, g, b, a);
+}
+
 void SceneView::Flush()
 {
     voxelObject->Flush();

@@ -14,6 +14,8 @@ public:
     bool Create(int count, QOpenGLShaderProgram* shader);
     void AddData(float x, float y, float z,
                  float r, float g, float b, float a);
+    void ChangeColor(float x, float y, float z,
+                     float r, float g, float b, float a);
     void Flush();
     void Destroy();
     void Render();
