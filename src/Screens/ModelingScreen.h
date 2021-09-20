@@ -15,6 +15,7 @@
 #include <QElapsedTimer>
 #include <QQueue>
 #include <QStringListModel>
+#include <QCheckBox>
 
 #include "Gui/ToggleButton.h"
 
@@ -54,7 +55,6 @@ private slots:
     void ZoneChanged(QString name);
     void ComputeFinished(CalculatorMode mode, int batchStart, int end);
     bool IsCalculate();
-    void SaveData();
     void SetBatchSize(int value);
 
 
@@ -89,6 +89,10 @@ private:
     QProgressBar* _progressBar;
 
     QElapsedTimer _timer;
+
+    QCheckBox* _useView;
+    QString _filenameBuffer;
+    QFile _fileBuffer;
 };
 
 #endif // MODELINGSCREEN_H

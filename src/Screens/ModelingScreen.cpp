@@ -29,15 +29,14 @@ ModelingScreen::ModelingScreen(QWidget *parent)
       _currentZone(0),
       _currentImage(0),
       _currentCalculatorName(CalculatorName::Common),
-      _progressBar(new QProgressBar(_sceneView))
+      _progressBar(new QProgressBar(_sceneView)),
+      _useView(new QCheckBox(this))
 {
     QVBoxLayout* toolVLayout = new QVBoxLayout(this);
 
     QToolBar* _toolBar(new QToolBar(this));
     _toolBar->addAction(QPixmap("assets/images/playIcon.svg"),
-                         "Run", this, &ModelingScreen::Compute);
-    _toolBar->addAction(QPixmap("assets/images/saveIcon.png"),
-                         "Save", this, &ModelingScreen::SaveData);
+                        "Run", this, &ModelingScreen::Compute);
     toolVLayout->addWidget(_toolBar);
 
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
@@ -54,7 +53,12 @@ ModelingScreen::ModelingScreen(QWidget *parent)
     batchLayout->addWidget(_batchSize);
     batchLayout->addWidget(_batchSizeView);
 
+    QHBoxLayout* useViewLayout = new QHBoxLayout();
+    QLabel* _useViewLabel = new QLabel("Включить визуализацию");
+    useViewLayout->addWidget(_useViewLabel);
+    useViewLayout->addWidget(_useView);
 
+    modeLayout->addLayout(useViewLayout);
     modeLayout->addLayout(spinLayout);
     modeLayout->addLayout(batchLayout);
     modeLayout->addWidget(_codeEditor);
@@ -164,6 +168,9 @@ ModelingScreen::ModelingScreen(QWidget *parent)
 
 ModelingScreen::~ModelingScreen()
 {
+    if(_fileBuffer.isOpen())
+        _fileBuffer.close();
+
     for(auto& i: _calculators)
         if(i->isRunning())
             i->terminate();
@@ -182,6 +189,26 @@ void ModelingScreen::Compute()
     }
 
     QString source = _codeEditor->GetActiveText();
+    if(_filenameBuffer.isEmpty() || source != QString::fromStdString(_parser.GetText()))
+    {
+        QMessageBox::StandardButton button = QMessageBox::information(this, "Информация",
+                                                                      "Выберите файл для сохранения модели / образа");
+        if(button == QMessageBox::StandardButton::Ok)
+        {
+            _filenameBuffer = QFileDialog::getSaveFileName(this,"Выберите файл","","");
+            if(_filenameBuffer.isEmpty())
+                return;
+            _fileBuffer.setFileName(_imageModeButton->isChecked() ?
+                                        _filenameBuffer + ".ibin" :
+                                        _filenameBuffer + ".mbin");
+            if(!_fileBuffer.open(QIODevice::WriteOnly))
+            {
+                _filenameBuffer.clear();
+                return;
+            }
+        }
+    }
+
     if(!source.isEmpty())
     {
         _progressBar->setValue(0);
@@ -206,11 +233,11 @@ void ModelingScreen::Compute()
         _sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
 
         _activeCalculator = dynamic_cast<ISpaceCalculator*>(_computeDevice->isChecked() ?
-                    _calculators[CalculatorName::Opencl] :
-                _calculators[CalculatorName::Common]);
+                                                                _calculators[CalculatorName::Opencl] :
+                                                            _calculators[CalculatorName::Common]);
 
         _activeCalculator->SetCalculatorMode(_imageModeButton->isChecked() ?
-                                          CalculatorMode::Mimage: CalculatorMode::Model);
+                                                 CalculatorMode::Mimage: CalculatorMode::Model);
 
         _activeCalculator->SetProgram(_program);
         _timer.start();
@@ -303,6 +330,11 @@ void ModelingScreen::ZoneChanged(QString name)
 void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int count)
 {
     SpaceManager& space = SpaceManager::Self();
+    if(_useView->isChecked())
+    {
+
+        return;
+    }
 
     if(mode == CalculatorMode::Model)
     {
@@ -316,8 +348,8 @@ void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int co
             zone = space.GetZone(i);
             if(zone == _currentZone)
                 _sceneView->AddVoxelObject(point.x, point.y, point.z,
-                                       modelColor.red, modelColor.green,
-                                       modelColor.blue, modelColor.alpha);
+                                           modelColor.red, modelColor.green,
+                                           modelColor.blue, modelColor.alpha);
         }
     }
     else
@@ -340,16 +372,20 @@ void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int co
 
             Color color = _activeCalculator->GetMImageColor(value);
             _sceneView->AddVoxelObject(point.x, point.y, point.z,
-                                   color.red, color.green,
-                                   color.blue, color.alpha);
+                                       color.red, color.green,
+                                       color.blue, color.alpha);
         }
     }
     _sceneView->Flush();
     int percent = 100.f*(batchStart+count)/space.GetSpaceSize();
     _progressBar->setValue(percent);
     if(percent == 100 && _timer.isValid())
+    {
         QMessageBox::about(this, "Расчет окончен", "Время расчета = "+
-                                 QString::number(_timer.restart()/1000.f)+"s");
+                           QString::number(_timer.restart()/1000.f)+"s");
+        if(_fileBuffer.isOpen())
+            _fileBuffer.close();
+    }
 }
 
 
@@ -361,37 +397,6 @@ bool ModelingScreen::IsCalculate()
             return true;
     }
     return false;
-}
-
-void ModelingScreen::SaveData()
-{
-    if(!SpaceManager::Self().WasInited())
-    {
-        QMessageBox::about(this, "Nothing to save",
-                                 "You must calculate model or mimage first");
-        return;
-    }
-    QString file = QFileDialog::getSaveFileName(this,"","","*.bin");
-
-    if(!file.endsWith(".bin"))
-        file += ".bin";
-
-    std::ofstream stream(file.toStdString());
-    if(!stream)
-    {
-        QMessageBox::about(this, "Couldn't open file",
-                                 "Error while openin file "+file);
-        return;
-    }
-
-    if(_activeCalculator->GetCalculatorMode() == CalculatorMode::Model)
-        SpaceManager::Self().SaveZoneRange(stream, 0);
-    else
-        SpaceManager::Self().SaveMimageRange(stream, 0);
-    stream.close();
-
-    QMessageBox::about(this, "Saved",
-                             "Data saved at "+file);
 }
 
 void ModelingScreen::SetBatchSize(int value)

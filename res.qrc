@@ -21,7 +21,6 @@
         <file>shaders/voxel.vert</file>
         <file>shaders/grid.frag</file>
         <file>shaders/grid.vert</file>
-        <file>assets/images/saveIcon.png</file>
         <file>assets/images/Code.svg</file>
         <file>assets/images/Cube1.svg</file>
         <file>assets/images/Cube2.svg</file>
