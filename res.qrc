@@ -25,5 +25,10 @@
         <file>assets/images/Code.svg</file>
         <file>assets/images/Cube1.svg</file>
         <file>assets/images/Cube2.svg</file>
+        <file>shaders/line.frag</file>
+        <file>shaders/line.geom</file>
+        <file>shaders/line.vert</file>
+        <file>shaders/point.frag</file>
+        <file>shaders/point.vert</file>
     </qresource>
 </RCC>

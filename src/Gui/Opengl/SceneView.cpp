@@ -3,22 +3,36 @@
 #include "Space/SpaceManager.h"
 #include <QMouseEvent>
 
-SceneView::SceneView(QWidget *parent):
-    QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
+SceneView::SceneView(ShaderMode shaderMode, QWidget *parent):
+    QGLWidget(QGLFormat(QGL::SampleBuffers), parent),
+    _shaderMode(shaderMode),
+    linesObject(nullptr),
+    voxelObject(nullptr)
 {
     m_gridShader = new ShaderProgram(":/shaders/grid.vert", ":/shaders/grid.frag");
     m_gridShader->AddUniform("worldToView");
     m_gridShader->AddUniform("gridColor");
     m_gridShader->AddUniform("backColor");
-    m_voxelShader = new ShaderProgram(":/shaders/voxel.vert",
-                                      ":/shaders/voxel.frag",
-                                      ":/shaders/voxel.geom");
+    if(_shaderMode == ShaderMode::Voxels)
+        m_voxelShader = new ShaderProgram(":/shaders/voxel.vert",
+                                          ":/shaders/voxel.frag",
+                                          ":/shaders/voxel.geom");
+    else if(_shaderMode == ShaderMode::Points)
+        m_voxelShader = new ShaderProgram(":/shaders/point.vert",
+                                          ":/shaders/point.frag");
+    else
+        m_voxelShader = new ShaderProgram(":/shaders/line.vert",
+                                          ":/shaders/line.frag",
+                                          ":/shaders/line.geom");
     m_voxelShader->AddUniform("worldToView");
     m_voxelShader->AddUniform("voxSize");
     m_voxelShader->AddUniform("useAlpha");
     gridObject = new GridObject;
     wcsObject = new WcsObject;
-    voxelObject = new VoxelObject;
+    if(_shaderMode != ShaderMode::Lines)
+        voxelObject = new VoxelObject;
+    else
+        linesObject  = new LinesObject;
 }
 
 SceneView::~SceneView()
@@ -29,31 +43,59 @@ SceneView::~SceneView()
     delete m_gridShader;
     delete gridObject;
     delete wcsObject;
-    delete voxelObject;
+    if(voxelObject)
+        delete voxelObject;
+    else if(linesObject)
+        delete linesObject;
 }
 
-void SceneView::AddObject(float x, float y, float z, float r, float g, float b, float a)
+void SceneView::AddVoxelObject(float x, float y, float z, float r, float g, float b, float a)
 {
-    voxelObject->AddData(x, y, z, r, g, b, a);
+    if(voxelObject)
+        voxelObject->AddData(x, y, z, r, g, b, a);
+}
+
+void SceneView::AddLineObject(float x, float y, float z, float x2, float y2, float z2,
+                              float r, float g, float b, float a)
+{
+    if(linesObject)
+        linesObject->AddData(x, y, z, x2, y2, z2, r, g, b, a);
 }
 
 void SceneView::Flush()
 {
-    voxelObject->Flush();
+    if(voxelObject)
+        voxelObject->Flush();
+    else if(linesObject)
+        linesObject->Flush();
+
     updateGL();
 }
 
 void SceneView::ClearObjects(bool soft)
 {
     if(!soft)
-        voxelObject->Destroy();
+    {
+        if(voxelObject)
+            voxelObject->Destroy();
+        else if(linesObject)
+            linesObject->Destroy();
+    }
     else
-        voxelObject->Recreate(m_voxelShader->GetRawProgram());
+    {
+        if(voxelObject)
+            voxelObject->Recreate(m_voxelShader->GetRawProgram());
+        else if(linesObject)
+            linesObject->Recreate(m_voxelShader->GetRawProgram());
+    }
 }
 
 void SceneView::CreateVoxelObject(int count)
 {
-    voxelObject->Create(count, m_voxelShader->GetRawProgram());
+    if(voxelObject)
+        voxelObject->Create(count, m_voxelShader->GetRawProgram());
+    else if(linesObject)
+        linesObject->Create(count, m_voxelShader->GetRawProgram());
 }
 
 void SceneView::UseAlphaColor(bool use)
@@ -111,12 +153,20 @@ void SceneView::paintGL()
     gridObject->Render();
     m_gridShader->Release();
 
-    if(voxelObject->IsCreated())
+    if(voxelObject && voxelObject->IsCreated())
     {
         m_voxelShader->Bind();
         m_voxelShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
         m_voxelShader->GetRawProgram()->setUniformValue("voxSize", voxSize.x, voxSize.y, voxSize.z);
         voxelObject->Render();
+        m_voxelShader->Release();
+    }
+    else if(linesObject && linesObject->IsCreated())
+    {
+        m_voxelShader->Bind();
+        m_voxelShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
+        m_voxelShader->GetRawProgram()->setUniformValue("voxSize", voxSize.x, voxSize.y, voxSize.z);
+        linesObject->Render();
         m_voxelShader->Release();
     }
 

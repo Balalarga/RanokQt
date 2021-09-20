@@ -16,7 +16,7 @@
 
 ModelingScreen::ModelingScreen(QWidget *parent)
     : ClearableWidget(parent),
-      _sceneView(new SceneView(this)),
+      _sceneView(new SceneView(SceneView::ShaderMode::Voxels, this)),
       _codeEditor(new CodeEditor(this)),
       _program(nullptr),
       _imageModeButton(new ToggleButton(8, 10, this)),
@@ -152,7 +152,6 @@ ModelingScreen::ModelingScreen(QWidget *parent)
     connect(openclCalculator , &OpenclCalculatorThread::Computed,
             this, &ModelingScreen::ComputeFinished, Qt::BlockingQueuedConnection);
 
-    StyleLoader::attach("../assets/styles/dark.qss");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/lopatka.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/Chainik.txt");
@@ -316,7 +315,7 @@ void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int co
             point = space.GetPointCoords(batchStart+i);
             zone = space.GetZone(i);
             if(zone == _currentZone)
-                _sceneView->AddObject(point.x, point.y, point.z,
+                _sceneView->AddVoxelObject(point.x, point.y, point.z,
                                        modelColor.red, modelColor.green,
                                        modelColor.blue, modelColor.alpha);
         }
@@ -340,7 +339,7 @@ void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int co
                 value = space.GetMimage(i).Ct;
 
             Color color = _activeCalculator->GetMImageColor(value);
-            _sceneView->AddObject(point.x, point.y, point.z,
+            _sceneView->AddVoxelObject(point.x, point.y, point.z,
                                    color.red, color.green,
                                    color.blue, color.alpha);
         }

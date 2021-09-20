@@ -10,18 +10,29 @@
 #include "ShaderProgram.h"
 #include "GridObject.h"
 #include "VoxelObject.h"
+#include "LinesObject.h"
 #include "WcsObject.h"
+
 
 
 class SceneView : public QGLWidget
 {
     Q_OBJECT
 public:
-    explicit SceneView(QWidget *parent = nullptr);
+    enum class ShaderMode
+    {
+        Voxels, Points, Lines
+    };
+
+
+    explicit SceneView(ShaderMode shaderMode = ShaderMode::Points,
+                       QWidget *parent = nullptr);
     ~SceneView();
 
 public slots:
-    void AddObject(float x, float y, float z,
+    void AddVoxelObject(float x, float y, float z,
+                   float r, float g, float b, float a);
+    void AddLineObject(float x, float y, float z, float x2, float y2, float z2,
                    float r, float g, float b, float a);
     void Flush();
     void ClearObjects(bool soft = false);
@@ -44,6 +55,7 @@ protected:
     void UpdateMvpMatrix();
 
 private:
+    ShaderMode _shaderMode;
     ShaderProgram* m_voxelShader;
     ShaderProgram* m_gridShader;
     QMatrix4x4 viewMatrix;
@@ -52,6 +64,7 @@ private:
 
     GridObject* gridObject;
     VoxelObject* voxelObject;
+    LinesObject* linesObject;
     WcsObject* wcsObject;
 
     QVector4D backColor{0.1f, 0.15f, 0.3f, 0.5f};

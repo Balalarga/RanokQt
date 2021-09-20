@@ -11,7 +11,7 @@
 
 ViewerScreen::ViewerScreen(QWidget *parent):
     ClearableWidget(parent),
-    _view(new SceneView(this)),
+    _view(new SceneView(SceneView::ShaderMode::Lines, this)),
     _lowMimageLimiter(new QDoubleSpinBox(this)),
     _highMimageLimiter(new QDoubleSpinBox(this)),
     _xSpaceLimiter(new QDoubleSpinBox(this)),
@@ -192,9 +192,10 @@ void ViewerScreen::OpenModel(const QString &filePath)
             space.GetZoneBuffer()[zeroCounter] = i;
             ++zeroCounter;
             point = space.GetPointCoords(i);
-            _view->AddObject(point.x, point.y, point.z,
-                             color.red, color.green,
-                             color.blue, color.alpha);
+            _view->AddLineObject(point.x, point.y, point.z,
+                                 0, 0, 0,
+                                 color.red, color.green,
+                                 color.blue, color.alpha);
         }
     }
     _view->Flush();
@@ -271,22 +272,25 @@ void ViewerScreen::UpdateMimageView()
     cl_float3 point;
     Color color;
     int spaceSize = space.GetSpaceSize();
-    double mValue;
+    MimageData mValue;
+    double limitValue;
     for(int i = 0; i < spaceSize; ++i)
     {
-        mValue = space.GetMimage(i).Cx;
-        if(mValue <= _highMimageLimiter->value() &&
-                mValue >= _lowMimageLimiter->value())
+        mValue = space.GetMimage(i);
+        limitValue = mValue.Cw;
+        if(limitValue <= _highMimageLimiter->value() &&
+                limitValue >= _lowMimageLimiter->value())
         {
             point = space.GetPointCoords(i);
             if(point.x >= _xSpaceLimiter->value() &&
                     point.y >= _ySpaceLimiter->value() &&
                     point.z >= _zSpaceLimiter->value())
             {
-                color = ISpaceCalculator::GetMImageColor(mValue);
-                _view->AddObject(point.x, point.y, point.z,
-                                 color.red, color.green,
-                                 color.blue, color.alpha);
+                color = ISpaceCalculator::GetMImageColor(limitValue);
+                _view->AddLineObject(point.x, point.y, point.z,
+                                     mValue.Cx, mValue.Cy, mValue.Cz,
+                                     color.red, color.green,
+                                     color.blue, color.alpha);
             }
         }
     }
@@ -308,9 +312,10 @@ void ViewerScreen::UpdateZoneView()
         if(point.x >= _xSpaceLimiter->value() &&
                 point.y >= _ySpaceLimiter->value() &&
                 point.z >= _zSpaceLimiter->value())
-        _view->AddObject(point.x, point.y, point.z,
-                         color.red, color.green,
-                         color.blue, color.alpha);
+        _view->AddLineObject(point.x, point.y, point.z,
+                             0, 0, 0,
+                             color.red, color.green,
+                             color.blue, color.alpha);
     }
     _view->Flush();
 }
