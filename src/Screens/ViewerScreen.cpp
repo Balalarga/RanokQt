@@ -11,7 +11,8 @@
 
 ViewerScreen::ViewerScreen(QWidget *parent):
     ClearableWidget(parent),
-    _view(new SceneView(SceneView::ShaderMode::Lines, this)),
+    _shaderMode(SceneView::ShaderMode::Voxels),
+    _view(new SceneView(_shaderMode, this)),
     _lowMimageLimiter(new QDoubleSpinBox(this)),
     _highMimageLimiter(new QDoubleSpinBox(this)),
     _xSpaceLimiter(new QDoubleSpinBox(this)),
@@ -33,28 +34,23 @@ ViewerScreen::ViewerScreen(QWidget *parent):
 
     _lowMimageLimiter->setRange(-1.0, 1.0);
     _lowMimageLimiter->setValue(-1.0);
-    _lowMimageLimiter->setDecimals(2);
-    _lowMimageLimiter->setSingleStep(0.01);
+    _lowMimageLimiter->setSingleStep(1);
     _lowMimageLimiter->setVisible(false);
     connect(_lowMimageLimiter, SIGNAL(valueChanged(double)),
             this, SLOT(LowMimageLimiterChanged(double)));
 
     _highMimageLimiter->setRange(-1.0, 1.0);
     _highMimageLimiter->setValue(1.0);
-    _highMimageLimiter->setDecimals(2);
-    _highMimageLimiter->setSingleStep(0.01);
+    _highMimageLimiter->setSingleStep(1);
     _highMimageLimiter->setVisible(false);
+
     connect(_highMimageLimiter, SIGNAL(valueChanged(double)),
             this, SLOT(HighMimageLimiterChanged(double)));
+    _xSpaceLimiter->setSingleStep(0.05);
 
-    _xSpaceLimiter->setDecimals(2);
-    _xSpaceLimiter->setSingleStep(0.01);
+    _ySpaceLimiter->setSingleStep(0.05);
 
-    _ySpaceLimiter->setDecimals(2);
-    _ySpaceLimiter->setSingleStep(0.01);
-
-    _zSpaceLimiter->setDecimals(2);
-    _zSpaceLimiter->setSingleStep(0.01);
+    _zSpaceLimiter->setSingleStep(0.05);
 
     QHBoxLayout* mimageLimitersLayout = new QHBoxLayout();
     mimageLimitersLayout->addWidget(_lowMimageLimiter);
@@ -96,11 +92,11 @@ void ViewerScreen::OpenFile()
 void ViewerScreen::OpenMimage(const QString &filePath)
 {
     disconnect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
-            this, SLOT(XSpaceLimiterChanged(double)));
+               this, SLOT(XSpaceLimiterChanged(double)));
     disconnect(_ySpaceLimiter, SIGNAL(valueChanged(double)),
-            this, SLOT(YSpaceLimiterChanged(double)));
+               this, SLOT(YSpaceLimiterChanged(double)));
     disconnect(_zSpaceLimiter, SIGNAL(valueChanged(double)),
-            this, SLOT(ZSpaceLimiterChanged(double)));
+               this, SLOT(ZSpaceLimiterChanged(double)));
     _mode = Mode::Mimage;
     _lowMimageLimiter->setVisible(true);
     _highMimageLimiter->setVisible(true);
@@ -142,6 +138,7 @@ void ViewerScreen::OpenMimage(const QString &filePath)
                              space.metadata.commonData.spaceUnitsZ);
     _zSpaceLimiter->setValue(space.metadata.commonData.startPointZ +
                              space.metadata.commonData.startPointZ);
+
     connect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
             this, SLOT(XSpaceLimiterChanged(double)));
     connect(_ySpaceLimiter, SIGNAL(valueChanged(double)),
@@ -154,11 +151,11 @@ void ViewerScreen::OpenMimage(const QString &filePath)
 void ViewerScreen::OpenModel(const QString &filePath)
 {
     disconnect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
-            this, SLOT(XSpaceLimiterChanged(double)));
+               this, SLOT(XSpaceLimiterChanged(double)));
     disconnect(_ySpaceLimiter, SIGNAL(valueChanged(double)),
-            this, SLOT(YSpaceLimiterChanged(double)));
+               this, SLOT(YSpaceLimiterChanged(double)));
     disconnect(_zSpaceLimiter, SIGNAL(valueChanged(double)),
-            this, SLOT(ZSpaceLimiterChanged(double)));
+               this, SLOT(ZSpaceLimiterChanged(double)));
     _mode = Mode::Model;
     _lowMimageLimiter->setVisible(false);
     _highMimageLimiter->setVisible(false);
@@ -179,6 +176,7 @@ void ViewerScreen::OpenModel(const QString &filePath)
     _view->ClearObjects();
     _view->CreateVoxelObject(space.metadata.zeroCount);
 
+    float voxSize = space.metadata.commonData.pointSizeX;
     cl_float3 point;
     int value;
     Color color = ISpaceCalculator::GetModelColor();
@@ -192,10 +190,20 @@ void ViewerScreen::OpenModel(const QString &filePath)
             space.GetZoneBuffer()[zeroCounter] = i;
             ++zeroCounter;
             point = space.GetPointCoords(i);
-            _view->AddLineObject(point.x, point.y, point.z,
-                                 0, 0, 0,
-                                 color.red, color.green,
-                                 color.blue, color.alpha);
+
+            if(_shaderMode == SceneView::ShaderMode::Lines)
+            {
+                _view->AddLineObject(point.x, point.y, point.z,
+                                     color.red, color.green,
+                                     color.blue, color.alpha);
+                _view->AddLineObject(point.x+voxSize, point.y+voxSize, point.z+voxSize,
+                                     color.red, color.green,
+                                     color.blue, color.alpha);
+            }
+            else
+                _view->AddVoxelObject(point.x, point.y, point.z,
+                                      color.red, color.green,
+                                      color.blue, color.alpha);
         }
     }
     _view->Flush();
@@ -231,13 +239,13 @@ void ViewerScreen::OpenModel(const QString &filePath)
 
 void ViewerScreen::LowMimageLimiterChanged(double value)
 {
-    _highMimageLimiter->setMinimum(value+0.01);
+    _highMimageLimiter->setMinimum(value+1);
     UpdateMimageView();
 }
 
 void ViewerScreen::HighMimageLimiterChanged(double value)
 {
-    _lowMimageLimiter->setMaximum(value-0.01);
+    _lowMimageLimiter->setMaximum(value-1);
     UpdateMimageView();
 }
 
@@ -267,8 +275,10 @@ void ViewerScreen::ZSpaceLimiterChanged(double value)
 
 void ViewerScreen::UpdateMimageView()
 {
+
     _view->ClearObjects(true);
     SpaceManager& space = SpaceManager::Self();
+    float voxSize = space.metadata.commonData.pointSizeX;
     cl_float3 point;
     Color color;
     int spaceSize = space.GetSpaceSize();
@@ -287,10 +297,21 @@ void ViewerScreen::UpdateMimageView()
                     point.z >= _zSpaceLimiter->value())
             {
                 color = ISpaceCalculator::GetMImageColor(limitValue);
-                _view->AddLineObject(point.x, point.y, point.z,
-                                     mValue.Cx, mValue.Cy, mValue.Cz,
-                                     color.red, color.green,
-                                     color.blue, color.alpha);
+                if(_shaderMode == SceneView::ShaderMode::Lines)
+                {
+                    _view->AddLineObject(point.x, point.y, point.z,
+                                         color.red, color.green,
+                                         color.blue, color.alpha);
+                    _view->AddLineObject(point.x + mValue.Cx * voxSize,
+                                         point.y - mValue.Cy * voxSize,
+                                         point.z - mValue.Cz * voxSize,
+                                         color.red, color.green,
+                                         color.blue, color.alpha);
+                }
+                else
+                    _view->AddVoxelObject(point.x, point.y, point.z,
+                                          color.red, color.green,
+                                          color.blue, color.alpha);
             }
         }
     }
@@ -301,6 +322,7 @@ void ViewerScreen::UpdateZoneView()
 {
     _view->ClearObjects(true);
     SpaceManager& space = SpaceManager::Self();
+    float voxSize = space.metadata.commonData.pointSizeX;
     cl_float3 point;
     int rawId;
     Color color = ISpaceCalculator::GetModelColor();
@@ -312,10 +334,21 @@ void ViewerScreen::UpdateZoneView()
         if(point.x >= _xSpaceLimiter->value() &&
                 point.y >= _ySpaceLimiter->value() &&
                 point.z >= _zSpaceLimiter->value())
-        _view->AddLineObject(point.x, point.y, point.z,
-                             0, 0, 0,
-                             color.red, color.green,
-                             color.blue, color.alpha);
+        {
+            if(_shaderMode == SceneView::ShaderMode::Lines)
+            {
+                _view->AddLineObject(point.x, point.y, point.z,
+                                     color.red, color.green,
+                                     color.blue, color.alpha);
+                _view->AddLineObject(point.x+voxSize, point.y+voxSize, point.z+voxSize,
+                                     color.red, color.green,
+                                     color.blue, color.alpha);
+            }
+            else
+                _view->AddVoxelObject(point.x, point.y, point.z,
+                                      color.red, color.green,
+                                      color.blue, color.alpha);
+        }
     }
     _view->Flush();
 }

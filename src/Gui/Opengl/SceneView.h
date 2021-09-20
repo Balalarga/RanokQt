@@ -32,7 +32,7 @@ public:
 public slots:
     void AddVoxelObject(float x, float y, float z,
                    float r, float g, float b, float a);
-    void AddLineObject(float x, float y, float z, float x2, float y2, float z2,
+    void AddLineObject(float x, float y, float z,
                    float r, float g, float b, float a);
     void Flush();
     void ClearObjects(bool soft = false);

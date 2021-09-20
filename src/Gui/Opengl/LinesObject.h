@@ -12,7 +12,7 @@ class LinesObject
 public:
     LinesObject() = default;
     bool Create(int count, QOpenGLShaderProgram* shader);
-    void AddData(float x, float y, float z, float x2, float y2, float z2,
+    void AddData(float x, float y, float z,
                  float r, float g, float b, float a);
     void Flush();
     void Destroy();

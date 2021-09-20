@@ -3,8 +3,9 @@
 
 bool LinesObject::Create(int count, QOpenGLShaderProgram* shader)
 {
+    count *= 2;
     vertexCount = count;
-    bufferSize = sizeof(float)*count*10;
+    bufferSize = sizeof(float)*count*7;
     if(!vao.isCreated())
         vao.create();
     vao.bind();
@@ -14,11 +15,9 @@ bool LinesObject::Create(int count, QOpenGLShaderProgram* shader)
     vbo.bind();
     vbo.allocate(nullptr, bufferSize);
     shader->enableAttributeArray(0);
-    shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, 10*sizeof(float));
+    shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, 7*sizeof(float));
     shader->enableAttributeArray(1);
-    shader->setAttributeBuffer(1, GL_FLOAT, 3*sizeof(float), 3, 10*sizeof(float));
-    shader->enableAttributeArray(2);
-    shader->setAttributeBuffer(2, GL_FLOAT, 6*sizeof(float), 4, 10*sizeof(float));
+    shader->setAttributeBuffer(1, GL_FLOAT, 3*sizeof(float), 4, 7*sizeof(float));
 
     vao.release();
     vbo.release();
@@ -26,15 +25,12 @@ bool LinesObject::Create(int count, QOpenGLShaderProgram* shader)
     return isCreated;
 }
 
-void LinesObject::AddData(float x, float y, float z, float x2, float y2, float z2,
+void LinesObject::AddData(float x, float y, float z,
                           float r, float g, float b, float a)
 {
     buffer.push_back(x);
     buffer.push_back(y);
     buffer.push_back(z);
-    buffer.push_back(x2);
-    buffer.push_back(y2);
-    buffer.push_back(z2);
     buffer.push_back(r);
     buffer.push_back(g);
     buffer.push_back(b);
@@ -46,10 +42,10 @@ void LinesObject::AddData(float x, float y, float z, float x2, float y2, float z
 void LinesObject::Flush()
 {
     vbo.bind();
-    vbo.write(bufferFill*10*sizeof(float), buffer.data(), buffer.size()*sizeof(float));
+    vbo.write(bufferFill*7*sizeof(float), buffer.data(), buffer.size()*sizeof(float));
     vbo.release();
 
-    bufferFill += buffer.size()/10;
+    bufferFill += buffer.size()/7;
     buffer.clear();
 }
 
@@ -66,7 +62,7 @@ void LinesObject::Destroy()
 void LinesObject::Render()
 {
     vao.bind();
-    glDrawArrays(GL_POINTS, 0, bufferFill);
+    glDrawArrays(GL_LINES, 0, bufferFill);
     vao.release();
 }
 

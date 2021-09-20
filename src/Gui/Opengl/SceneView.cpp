@@ -22,8 +22,7 @@ SceneView::SceneView(ShaderMode shaderMode, QWidget *parent):
                                           ":/shaders/point.frag");
     else
         m_voxelShader = new ShaderProgram(":/shaders/line.vert",
-                                          ":/shaders/line.frag",
-                                          ":/shaders/line.geom");
+                                          ":/shaders/line.frag");
     m_voxelShader->AddUniform("worldToView");
     m_voxelShader->AddUniform("voxSize");
     m_voxelShader->AddUniform("useAlpha");
@@ -49,17 +48,18 @@ SceneView::~SceneView()
         delete linesObject;
 }
 
-void SceneView::AddVoxelObject(float x, float y, float z, float r, float g, float b, float a)
+void SceneView::AddVoxelObject(float x, float y, float z,
+                               float r, float g, float b, float a)
 {
     if(voxelObject)
         voxelObject->AddData(x, y, z, r, g, b, a);
 }
 
-void SceneView::AddLineObject(float x, float y, float z, float x2, float y2, float z2,
+void SceneView::AddLineObject(float x, float y, float z,
                               float r, float g, float b, float a)
 {
     if(linesObject)
-        linesObject->AddData(x, y, z, x2, y2, z2, r, g, b, a);
+        linesObject->AddData(x, y, z, r, g, b, a);
 }
 
 void SceneView::Flush()
@@ -157,7 +157,8 @@ void SceneView::paintGL()
     {
         m_voxelShader->Bind();
         m_voxelShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
-        m_voxelShader->GetRawProgram()->setUniformValue("voxSize", voxSize.x, voxSize.y, voxSize.z);
+        m_voxelShader->GetRawProgram()->setUniformValue("voxSize", voxSize.x,
+                                                        voxSize.y, voxSize.z);
         voxelObject->Render();
         m_voxelShader->Release();
     }
@@ -165,7 +166,8 @@ void SceneView::paintGL()
     {
         m_voxelShader->Bind();
         m_voxelShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
-        m_voxelShader->GetRawProgram()->setUniformValue("voxSize", voxSize.x, voxSize.y, voxSize.z);
+        m_voxelShader->GetRawProgram()->setUniformValue("voxSize", voxSize.x,
+                                                        voxSize.y, voxSize.z);
         linesObject->Render();
         m_voxelShader->Release();
     }
