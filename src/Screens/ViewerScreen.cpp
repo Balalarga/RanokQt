@@ -11,7 +11,7 @@
 
 ViewerScreen::ViewerScreen(QWidget *parent):
     ClearableWidget(parent),
-    _shaderMode(SceneView::ShaderMode::Voxels),
+    _shaderMode(SceneView::ShaderMode::Lines),
     _view(new SceneView(_shaderMode, this)),
     _lowMimageLimiter(new QDoubleSpinBox(this)),
     _highMimageLimiter(new QDoubleSpinBox(this)),

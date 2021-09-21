@@ -159,6 +159,7 @@ ModelingScreen::ModelingScreen(QWidget *parent)
     _codeEditor->AddFile("../Core/Examples/NewFuncs/lopatka.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/Chainik.txt");
+    _codeEditor->AddFile("../Core/Examples/NewFuncs/sphere.txt");
 
     connect(_imageType, &QComboBox::currentTextChanged, this, &ModelingScreen::ImageChanged);
     connect(_modelZone, &QComboBox::currentTextChanged, this, &ModelingScreen::ZoneChanged);
@@ -191,22 +192,22 @@ void ModelingScreen::Compute()
     QString source = _codeEditor->GetActiveText();
     if(_filenameBuffer.isEmpty() || source != QString::fromStdString(_parser.GetText()))
     {
-        QMessageBox::StandardButton button = QMessageBox::information(this, "Информация",
-                                                                      "Выберите файл для сохранения модели / образа");
-        if(button == QMessageBox::StandardButton::Ok)
-        {
-            _filenameBuffer = QFileDialog::getSaveFileName(this,"Выберите файл","","");
-            if(_filenameBuffer.isEmpty())
-                return;
-            _fileBuffer.setFileName(_imageModeButton->isChecked() ?
-                                        _filenameBuffer + ".ibin" :
-                                        _filenameBuffer + ".mbin");
-            if(!_fileBuffer.open(QIODevice::WriteOnly))
-            {
-                _filenameBuffer.clear();
-                return;
-            }
-        }
+//        QMessageBox::StandardButton button = QMessageBox::information(this, "Информация",
+//                                                                      "Выберите файл для сохранения модели / образа");
+//        if(button == QMessageBox::StandardButton::Ok)
+//        {
+//            _filenameBuffer = QFileDialog::getSaveFileName(this,"Выберите файл","","");
+//            if(_filenameBuffer.isEmpty())
+//                return;
+//            _fileBuffer.setFileName(_imageModeButton->isChecked() ?
+//                                        _filenameBuffer + ".ibin" :
+//                                        _filenameBuffer + ".mbin");
+//            if(!_fileBuffer.open(QIODevice::WriteOnly))
+//            {
+//                _filenameBuffer.clear();
+//                return;
+//            }
+//        }
     }
 
     if(!source.isEmpty())
@@ -381,8 +382,7 @@ void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int co
     _progressBar->setValue(percent);
     if(percent == 100 && _timer.isValid())
     {
-        QMessageBox::about(this, "Расчет окончен", "Время расчета = "+
-                           QString::number(_timer.restart()/1000.f)+"s");
+        qDebug()<<"Compute at "<<QString::number(_timer.restart()/1000.f)<<" sec";
         if(_fileBuffer.isOpen())
             _fileBuffer.close();
     }
