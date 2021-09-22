@@ -32,7 +32,7 @@ void CodeEditor::AddFile(const QString &sourceFile)
         setCurrentIndex(newTabId);
     }
     else
-        QMessageBox::critical(this, "Ошибка", "Невозможно открыть файл");
+        QMessageBox::about(this, "Ошибка", "Невозможно открыть файл");
 }
 
 QString CodeEditor::GetActiveText()

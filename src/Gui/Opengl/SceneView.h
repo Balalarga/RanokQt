@@ -6,6 +6,7 @@
 #include <QThread>
 #include <QVector>
 #include <QVector4D>
+#include <QMap>
 
 #include "ShaderProgram.h"
 #include "GridObject.h"
@@ -32,7 +33,7 @@ public:
 public slots:
     void AddVoxelObject(float x, float y, float z,
                    float r, float g, float b, float a);
-    void AddLineObject(float x, float y, float z,
+    void AddLineObject(float x, float y, float z, float x1, float y1, float z1,
                    float r, float g, float b, float a);
     void Flush();
     void ClearObjects(bool soft = false);
@@ -56,6 +57,7 @@ protected:
 
 private:
     ShaderMode _shaderMode;
+    ShaderProgram* m_pointShader;
     ShaderProgram* m_voxelShader;
     ShaderProgram* m_gridShader;
     QMatrix4x4 viewMatrix;
@@ -74,11 +76,12 @@ private:
         float zoom = -5;
         float xAngle = -30;
         float zAngle = 30;
+        QVector3D pos{0, 0, 0};
     } m_camera;
     struct MouseState
     {
         QPoint pos;
-        bool pressed = false;
+        QMap<Qt::MouseButton, bool> pressed;
     } m_mouseState;
     bool _shiftPressed;
 };

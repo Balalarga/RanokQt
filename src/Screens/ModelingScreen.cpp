@@ -55,6 +55,7 @@ ModelingScreen::ModelingScreen(QWidget *parent)
 
     QHBoxLayout* useViewLayout = new QHBoxLayout();
     QLabel* _useViewLabel = new QLabel("Включить визуализацию");
+    _useView->setChecked(true);
     useViewLayout->addWidget(_useViewLabel);
     useViewLayout->addWidget(_useView);
 
@@ -160,6 +161,7 @@ ModelingScreen::ModelingScreen(QWidget *parent)
     _codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/Chainik.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/sphere.txt");
+    _oldTabId = _codeEditor->currentIndex();
 
     connect(_imageType, &QComboBox::currentTextChanged, this, &ModelingScreen::ImageChanged);
     connect(_modelZone, &QComboBox::currentTextChanged, this, &ModelingScreen::ZoneChanged);
@@ -181,72 +183,6 @@ void ModelingScreen::Cleanup()
 {
     _sceneView->ClearObjects();
 }
-
-void ModelingScreen::Compute()
-{
-    if(IsCalculate())
-    {
-        return;
-    }
-
-    QString source = _codeEditor->GetActiveText();
-    if(_filenameBuffer.isEmpty() || source != QString::fromStdString(_parser.GetText()))
-    {
-//        QMessageBox::StandardButton button = QMessageBox::information(this, "Информация",
-//                                                                      "Выберите файл для сохранения модели / образа");
-//        if(button == QMessageBox::StandardButton::Ok)
-//        {
-//            _filenameBuffer = QFileDialog::getSaveFileName(this,"Выберите файл","","");
-//            if(_filenameBuffer.isEmpty())
-//                return;
-//            _fileBuffer.setFileName(_imageModeButton->isChecked() ?
-//                                        _filenameBuffer + ".ibin" :
-//                                        _filenameBuffer + ".mbin");
-//            if(!_fileBuffer.open(QIODevice::WriteOnly))
-//            {
-//                _filenameBuffer.clear();
-//                return;
-//            }
-//        }
-    }
-
-    if(!source.isEmpty())
-    {
-        _progressBar->setValue(0);
-        _parser.SetText(source.toStdString());
-        if(_program)
-            delete _program;
-        _program = _parser.GetProgram();
-        _sceneView->ClearObjects();
-        auto args = _program->GetSymbolTable().GetAllArgs();
-        if(SpaceManager::ComputeSpaceSize(_spaceDepth->value()) !=
-                SpaceManager::Self().GetSpaceSize() ||
-                _prevArguments != args)
-        {
-            _prevArguments = args;
-            SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
-                    args[2]->limits, _spaceDepth->value());
-            if(_batchSizeView->value() != 0)
-                SpaceManager::Self().ResetBufferSize(pow(2, _batchSizeView->value()));
-            else
-                SpaceManager::Self().ResetBufferSize(0);
-        }
-        _sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
-
-        _activeCalculator = dynamic_cast<ISpaceCalculator*>(_computeDevice->isChecked() ?
-                                                                _calculators[CalculatorName::Opencl] :
-                                                            _calculators[CalculatorName::Common]);
-
-        _activeCalculator->SetCalculatorMode(_imageModeButton->isChecked() ?
-                                                 CalculatorMode::Mimage: CalculatorMode::Model);
-
-        _activeCalculator->SetProgram(_program);
-        _timer.start();
-        _calculators[_currentCalculatorName]->start();
-        qDebug()<<"Start";
-    }
-}
-
 
 void ModelingScreen::SwitchModelMode()
 {
@@ -328,63 +264,141 @@ void ModelingScreen::ZoneChanged(QString name)
     }
 }
 
-void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int count)
+void ModelingScreen::Compute()
 {
-    SpaceManager& space = SpaceManager::Self();
-    if(_useView->isChecked())
+    if(IsCalculate())
     {
-
         return;
     }
 
+    QString source = _codeEditor->GetActiveText();
+    if(_filenameBuffer.isEmpty() || _oldTabId != _codeEditor->currentIndex())
+    {
+        _oldTabId = _codeEditor->currentIndex();
+        static QMessageBox msgBox;
+        QMessageBox::about(this, "Информация", "Выберите файл для сохранения модели / образа");
+
+        _filenameBuffer = QFileDialog::getSaveFileName(this,"Выберите файл","","");
+        if(_filenameBuffer.isEmpty())
+            return;
+        if(_filenameBuffer.endsWith(".mbin") ||
+                _filenameBuffer.endsWith(".ibin"))
+            _filenameBuffer.chop(5);
+        qDebug()<<_filenameBuffer;
+    }
+
+    if(!source.isEmpty())
+    {
+        _progressBar->setValue(0);
+        _parser.SetText(source.toStdString());
+        if(_program)
+            delete _program;
+        _program = _parser.GetProgram();
+        _sceneView->ClearObjects();
+        auto args = _program->GetSymbolTable().GetAllArgs();
+        SpaceManager& space = SpaceManager::Self();
+        if(SpaceManager::ComputeSpaceSize(_spaceDepth->value()) !=
+                space.GetSpaceSize() ||
+                _prevArguments != args)
+        {
+            _prevArguments = args;
+            space.InitSpace(args[0]->limits, args[1]->limits,
+                    args[2]->limits, _spaceDepth->value());
+            if(_batchSizeView->value() != 0)
+                space.ResetBufferSize(pow(2, _batchSizeView->value()));
+            else
+                space.ResetBufferSize(0);
+        }
+        _sceneView->CreateVoxelObject(space.GetSpaceSize());
+
+        _activeCalculator = dynamic_cast<ISpaceCalculator*>(_computeDevice->isChecked() ?
+                                                                _calculators[CalculatorName::Opencl] :
+                                                            _calculators[CalculatorName::Common]);
+
+        _activeCalculator->SetCalculatorMode(_imageModeButton->isChecked() ?
+                                                 CalculatorMode::Mimage: CalculatorMode::Model);
+        _fileBuffer.setFileName(_imageModeButton->isChecked() ?
+                                    _filenameBuffer + ".ibin" :
+                                    _filenameBuffer + ".mbin");
+        if(!_fileBuffer.open(QIODevice::WriteOnly))
+        {
+            qDebug()<<"Couldn't open file";
+            _filenameBuffer.clear();
+            return;
+        }
+        QDataStream _bufferStream(&_fileBuffer);
+        _bufferStream.writeRawData((char*)&space.metadata, sizeof(SpaceManager::ModelMetadata));
+
+        _activeCalculator->SetProgram(_program);
+        _timer.start();
+        _calculators[_currentCalculatorName]->start();
+        qDebug()<<"Start";
+    }
+}
+
+void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int count)
+{
+    SpaceManager& space = SpaceManager::Self();
+
+    QDataStream _bufferStream(&_fileBuffer);
     if(mode == CalculatorMode::Model)
     {
-        int zone = 0;
-        cl_float3 point;
-        Color modelColor;
-        modelColor = ISpaceCalculator::GetModelColor();
-        for(int i = 0; i < count; ++i)
+        _bufferStream.writeRawData((char*)space.GetZoneBuffer(), sizeof(int)*count);
+        if(_useView->isChecked())
         {
-            point = space.GetPointCoords(batchStart+i);
-            zone = space.GetZone(i);
-            if(zone == _currentZone)
-                _sceneView->AddVoxelObject(point.x, point.y, point.z,
-                                           modelColor.red, modelColor.green,
-                                           modelColor.blue, modelColor.alpha);
+            int zone = 0;
+            cl_float3 point;
+            Color modelColor;
+            modelColor = ISpaceCalculator::GetModelColor();
+            for(int i = 0; i < count; ++i)
+            {
+                point = space.GetPointCoords(batchStart+i);
+                zone = space.GetZone(i);
+                if(zone == _currentZone)
+                    _sceneView->AddVoxelObject(point.x, point.y, point.z,
+                                               modelColor.red, modelColor.green,
+                                               modelColor.blue, modelColor.alpha);
+            }
+            _sceneView->Flush();
         }
     }
     else
     {
-        double value = 0;
-        cl_float3 point;
-        for(int i = 0; i < count; ++i)
+        _bufferStream.writeRawData((char*)space.GetMimageBuffer(), sizeof(MimageData)*count);
+        if(_useView->isChecked())
         {
-            point = space.GetPointCoords(batchStart+i);
-            if(_currentImage == 0)
-                value = space.GetMimage(i).Cx;
-            else if(_currentImage == 1)
-                value = space.GetMimage(i).Cy;
-            else if(_currentImage == 2)
-                value = space.GetMimage(i).Cz;
-            else if(_currentImage == 3)
-                value = space.GetMimage(i).Cw;
-            else if(_currentImage == 4)
-                value = space.GetMimage(i).Ct;
+            double value = 0;
+            cl_float3 point;
+            for(int i = 0; i < count; ++i)
+            {
+                point = space.GetPointCoords(batchStart+i);
+                if(_currentImage == 0)
+                    value = space.GetMimage(i).Cx;
+                else if(_currentImage == 1)
+                    value = space.GetMimage(i).Cy;
+                else if(_currentImage == 2)
+                    value = space.GetMimage(i).Cz;
+                else if(_currentImage == 3)
+                    value = space.GetMimage(i).Cw;
+                else if(_currentImage == 4)
+                    value = space.GetMimage(i).Ct;
 
-            Color color = _activeCalculator->GetMImageColor(value);
-            _sceneView->AddVoxelObject(point.x, point.y, point.z,
-                                       color.red, color.green,
-                                       color.blue, color.alpha);
+                Color color = _activeCalculator->GetMImageColor(value);
+                _sceneView->AddVoxelObject(point.x, point.y, point.z,
+                                           color.red, color.green,
+                                           color.blue, color.alpha);
+            }
+            _sceneView->Flush();
         }
     }
-    _sceneView->Flush();
     int percent = 100.f*(batchStart+count)/space.GetSpaceSize();
     _progressBar->setValue(percent);
     if(percent == 100 && _timer.isValid())
     {
         qDebug()<<"Compute at "<<QString::number(_timer.restart()/1000.f)<<" sec";
-        if(_fileBuffer.isOpen())
-            _fileBuffer.close();
+        _bufferStream.device()->seek(0);
+        _bufferStream.writeRawData((char*)&space.metadata, sizeof(SpaceManager::ModelMetadata));
+        _fileBuffer.close();
     }
 }
 

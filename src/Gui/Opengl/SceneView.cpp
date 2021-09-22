@@ -7,8 +7,13 @@ SceneView::SceneView(ShaderMode shaderMode, QWidget *parent):
     QGLWidget(QGLFormat(QGL::SampleBuffers), parent),
     _shaderMode(shaderMode),
     linesObject(nullptr),
+    m_pointShader(nullptr),
     voxelObject(nullptr)
 {
+    m_mouseState.pressed[Qt::RightButton] = false;
+    m_mouseState.pressed[Qt::LeftButton] = false;
+    m_mouseState.pressed[Qt::MiddleButton] = false;
+
     m_gridShader = new ShaderProgram(":/shaders/grid.vert", ":/shaders/grid.frag");
     m_gridShader->AddUniform("worldToView");
     m_gridShader->AddUniform("gridColor");
@@ -21,8 +26,16 @@ SceneView::SceneView(ShaderMode shaderMode, QWidget *parent):
         m_voxelShader = new ShaderProgram(":/shaders/point.vert",
                                           ":/shaders/point.frag");
     else
+    {
         m_voxelShader = new ShaderProgram(":/shaders/line.vert",
-                                          ":/shaders/line.frag");
+                                          ":/shaders/line.frag",
+                                          ":/shaders/line.geom");
+        m_pointShader = new ShaderProgram(":/shaders/linesPoint.vert",
+                                          ":/shaders/linesPoint.frag");
+        m_pointShader->AddUniform("worldToView");
+        m_pointShader->AddUniform("voxSize");
+        m_pointShader->AddUniform("useAlpha");
+    }
     m_voxelShader->AddUniform("worldToView");
     m_voxelShader->AddUniform("voxSize");
     m_voxelShader->AddUniform("useAlpha");
@@ -39,6 +52,8 @@ SceneView::~SceneView()
     ClearObjects();
 
     delete m_voxelShader;
+    if(m_pointShader)
+        delete m_pointShader;
     delete m_gridShader;
     delete gridObject;
     delete wcsObject;
@@ -56,10 +71,11 @@ void SceneView::AddVoxelObject(float x, float y, float z,
 }
 
 void SceneView::AddLineObject(float x, float y, float z,
+                              float x1, float y1, float z1,
                               float r, float g, float b, float a)
 {
     if(linesObject)
-        linesObject->AddData(x, y, z, r, g, b, a);
+        linesObject->AddData(x, y, z, x1, y1, z1, r, g, b, a);
 }
 
 void SceneView::Flush()
@@ -86,7 +102,7 @@ void SceneView::ClearObjects(bool soft)
         if(voxelObject)
             voxelObject->Recreate(m_voxelShader->GetRawProgram());
         else if(linesObject)
-            linesObject->Recreate(m_voxelShader->GetRawProgram());
+            linesObject->Recreate(m_voxelShader->GetRawProgram(), m_pointShader->GetRawProgram());
     }
 }
 
@@ -95,7 +111,7 @@ void SceneView::CreateVoxelObject(int count)
     if(voxelObject)
         voxelObject->Create(count, m_voxelShader->GetRawProgram());
     else if(linesObject)
-        linesObject->Create(count, m_voxelShader->GetRawProgram());
+        linesObject->Create(count, m_voxelShader->GetRawProgram(), m_pointShader->GetRawProgram());
 }
 
 void SceneView::UseAlphaColor(bool use)
@@ -121,6 +137,9 @@ void SceneView::initializeGL()
 
     if(!m_voxelShader->Create())
         qDebug()<<"voxel shader error";
+    if(m_pointShader)
+        if(!m_pointShader->Create())
+            qDebug()<<"point shader error";
     if(!m_gridShader->Create())
         qDebug()<<"grid shader error";
 
@@ -168,8 +187,17 @@ void SceneView::paintGL()
         m_voxelShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
         m_voxelShader->GetRawProgram()->setUniformValue("voxSize", voxSize.x,
                                                         voxSize.y, voxSize.z);
-        linesObject->Render();
+        linesObject->RenderLines();
         m_voxelShader->Release();
+        if(m_pointShader)
+        {
+            m_pointShader->Bind();
+            m_pointShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
+            m_pointShader->GetRawProgram()->setUniformValue("voxSize", voxSize.x,
+                                                            voxSize.y, voxSize.z);
+            linesObject->RenderPoints();
+            m_pointShader->Release();
+        }
     }
 
     m_gridShader->Bind();
@@ -180,19 +208,13 @@ void SceneView::paintGL()
 
 void SceneView::mousePressEvent(QMouseEvent *event)
 {
-    if(event->button() == Qt::LeftButton)
-    {
-        m_mouseState.pos = event->pos();
-        m_mouseState.pressed = true;
-    }
+    m_mouseState.pos = event->pos();
+    m_mouseState.pressed[event->button()] = true;
 }
 
 void SceneView::mouseReleaseEvent(QMouseEvent *event)
 {
-    if(event->button() == Qt::LeftButton)
-    {
-        m_mouseState.pressed = false;
-    }
+    m_mouseState.pressed[event->button()] = false;
 }
 
 void SceneView::keyPressEvent(QKeyEvent *event)
@@ -221,12 +243,18 @@ void SceneView::UpdateMvpMatrix()
 
 void SceneView::mouseMoveEvent(QMouseEvent *event)
 {
-    if(m_mouseState.pressed)
+    if(m_mouseState.pressed[Qt::MiddleButton])
     {
         m_camera.xAngle += (m_mouseState.pos.y() - event->pos().y())*0.5;
         m_camera.zAngle += (event->pos().x() - m_mouseState.pos.x())*0.5;
         m_mouseState.pos = {event->pos().x(), event->pos().y()};
         UpdateMvpMatrix();
+    }
+    else if(m_mouseState.pressed[Qt::RightButton])
+    {
+//        m_camera.pos.setY(m_camera.pos.y() + (m_mouseState.pos.y() - event->pos().y())*0.5);
+//        m_camera.pos.setX(m_camera.pos.x() + (event->pos().x() - m_mouseState.pos.x())*0.5);
+//        UpdateMvpMatrix();
     }
 }
 

@@ -61,6 +61,7 @@ private slots:
 private:
     SceneView* _sceneView;
     CodeEditor* _codeEditor;
+    int _oldTabId;
 
     QMap<CalculatorName, QThread*> _calculators;
     ISpaceCalculator* _activeCalculator;

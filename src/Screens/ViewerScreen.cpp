@@ -34,14 +34,14 @@ ViewerScreen::ViewerScreen(QWidget *parent):
 
     _lowMimageLimiter->setRange(-1.0, 1.0);
     _lowMimageLimiter->setValue(-1.0);
-    _lowMimageLimiter->setSingleStep(1);
+    _lowMimageLimiter->setSingleStep(0.05);
     _lowMimageLimiter->setVisible(false);
     connect(_lowMimageLimiter, SIGNAL(valueChanged(double)),
             this, SLOT(LowMimageLimiterChanged(double)));
 
     _highMimageLimiter->setRange(-1.0, 1.0);
     _highMimageLimiter->setValue(1.0);
-    _highMimageLimiter->setSingleStep(1);
+    _highMimageLimiter->setSingleStep(0.05);
     _highMimageLimiter->setVisible(false);
 
     connect(_highMimageLimiter, SIGNAL(valueChanged(double)),
@@ -123,21 +123,21 @@ void ViewerScreen::OpenMimage(const QString &filePath)
                              space.metadata.commonData.pointSizeX *
                              space.metadata.commonData.spaceUnitsX);
     _xSpaceLimiter->setValue(space.metadata.commonData.startPointX +
-                             space.metadata.commonData.startPointX);
+                             space.metadata.commonData.pointSizeX);
 
     _ySpaceLimiter->setRange(space.metadata.commonData.startPointY +
                              space.metadata.commonData.pointSizeY,
                              space.metadata.commonData.pointSizeY *
                              space.metadata.commonData.spaceUnitsY);
     _ySpaceLimiter->setValue(space.metadata.commonData.startPointY +
-                             space.metadata.commonData.startPointY);
+                             space.metadata.commonData.pointSizeY);
 
     _zSpaceLimiter->setRange(space.metadata.commonData.startPointZ +
                              space.metadata.commonData.pointSizeZ,
                              space.metadata.commonData.pointSizeZ *
                              space.metadata.commonData.spaceUnitsZ);
     _zSpaceLimiter->setValue(space.metadata.commonData.startPointZ +
-                             space.metadata.commonData.startPointZ);
+                             space.metadata.commonData.pointSizeZ);
 
     connect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
             this, SLOT(XSpaceLimiterChanged(double)));
@@ -167,7 +167,6 @@ void ViewerScreen::OpenModel(const QString &filePath)
     QDataStream stream(&file);
 
     stream.readRawData((char*)&space.metadata, sizeof(SpaceManager::ModelMetadata));
-
     space.InitFromMetadata();
 
     space.ActivateBuffer(SpaceManager::BufferType::ZoneBuffer);
@@ -194,9 +193,7 @@ void ViewerScreen::OpenModel(const QString &filePath)
             if(_shaderMode == SceneView::ShaderMode::Lines)
             {
                 _view->AddLineObject(point.x, point.y, point.z,
-                                     color.red, color.green,
-                                     color.blue, color.alpha);
-                _view->AddLineObject(point.x+voxSize, point.y+voxSize, point.z+voxSize,
+                                     1, 1, 1,
                                      color.red, color.green,
                                      color.blue, color.alpha);
             }
@@ -214,21 +211,21 @@ void ViewerScreen::OpenModel(const QString &filePath)
                              space.metadata.commonData.pointSizeX *
                              space.metadata.commonData.spaceUnitsX);
     _xSpaceLimiter->setValue(space.metadata.commonData.startPointX +
-                             space.metadata.commonData.startPointX);
+                             space.metadata.commonData.pointSizeX);
 
     _ySpaceLimiter->setRange(space.metadata.commonData.startPointY +
                              space.metadata.commonData.pointSizeY,
                              space.metadata.commonData.pointSizeY *
                              space.metadata.commonData.spaceUnitsY);
     _ySpaceLimiter->setValue(space.metadata.commonData.startPointY +
-                             space.metadata.commonData.startPointY);
+                             space.metadata.commonData.pointSizeY);
 
     _zSpaceLimiter->setRange(space.metadata.commonData.startPointZ +
                              space.metadata.commonData.pointSizeZ,
                              space.metadata.commonData.pointSizeZ *
                              space.metadata.commonData.spaceUnitsZ);
     _zSpaceLimiter->setValue(space.metadata.commonData.startPointZ +
-                             space.metadata.commonData.startPointZ);
+                             space.metadata.commonData.pointSizeZ);
     connect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
             this, SLOT(XSpaceLimiterChanged(double)));
     connect(_ySpaceLimiter, SIGNAL(valueChanged(double)),
@@ -239,13 +236,13 @@ void ViewerScreen::OpenModel(const QString &filePath)
 
 void ViewerScreen::LowMimageLimiterChanged(double value)
 {
-    _highMimageLimiter->setMinimum(value+1);
+    _highMimageLimiter->setMinimum(value+0.05);
     UpdateMimageView();
 }
 
 void ViewerScreen::HighMimageLimiterChanged(double value)
 {
-    _lowMimageLimiter->setMaximum(value-1);
+    _lowMimageLimiter->setMaximum(value-0.05);
     UpdateMimageView();
 }
 
@@ -300,11 +297,7 @@ void ViewerScreen::UpdateMimageView()
                 if(_shaderMode == SceneView::ShaderMode::Lines)
                 {
                     _view->AddLineObject(point.x, point.y, point.z,
-                                         color.red, color.green,
-                                         color.blue, color.alpha);
-                    _view->AddLineObject(point.x + mValue.Cx * voxSize*2,
-                                         point.y + mValue.Cy * voxSize*2,
-                                         point.z - mValue.Cz * voxSize*2,
+                                         mValue.Cx, mValue.Cy, -mValue.Cz,
                                          color.red, color.green,
                                          color.blue, color.alpha);
                 }
@@ -338,9 +331,7 @@ void ViewerScreen::UpdateZoneView()
             if(_shaderMode == SceneView::ShaderMode::Lines)
             {
                 _view->AddLineObject(point.x, point.y, point.z,
-                                     color.red, color.green,
-                                     color.blue, color.alpha);
-                _view->AddLineObject(point.x+voxSize, point.y+voxSize, point.z+voxSize,
+                                     1, 1, 1,
                                      color.red, color.green,
                                      color.blue, color.alpha);
             }
