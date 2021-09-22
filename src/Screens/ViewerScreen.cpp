@@ -302,9 +302,9 @@ void ViewerScreen::UpdateMimageView()
                     _view->AddLineObject(point.x, point.y, point.z,
                                          color.red, color.green,
                                          color.blue, color.alpha);
-                    _view->AddLineObject(point.x + mValue.Cx * voxSize,
-                                         point.y - mValue.Cy * voxSize,
-                                         point.z - mValue.Cz * voxSize,
+                    _view->AddLineObject(point.x + mValue.Cx * voxSize*2,
+                                         point.y + mValue.Cy * voxSize*2,
+                                         point.z - mValue.Cz * voxSize*2,
                                          color.red, color.green,
                                          color.blue, color.alpha);
                 }
