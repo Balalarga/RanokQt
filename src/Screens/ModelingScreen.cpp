@@ -1,7 +1,5 @@
 #include "ModelingScreen.h"
 
-#include "Gui/StyleLoader.h"
-
 #include "Space/SpaceManager.h"
 #include "Space/Calculators/CommonCalculator.h"
 #include "Space/Calculators/OpenclCalculator.h"

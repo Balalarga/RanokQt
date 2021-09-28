@@ -31,5 +31,8 @@
         <file>shaders/point.vert</file>
         <file>shaders/linesPoint.frag</file>
         <file>shaders/linesPoint.vert</file>
+        <file>shaders/Test/default.frag</file>
+        <file>shaders/Test/default.vert</file>
+        <file>shaders/Test/raymarching.frag</file>
     </qresource>
 </RCC>
