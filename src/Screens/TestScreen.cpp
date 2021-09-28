@@ -297,8 +297,9 @@ void main()
 )";
 
     result << shaderBegin;
-    result << _program->GetOpenclCode();
+    result << _program->GetShaderCode();
     result << shaderEnd;
 
     _sceneView->ShaderFromSource(QString::fromStdString(result.str()));
+    _sceneView->updateGL();
 }
