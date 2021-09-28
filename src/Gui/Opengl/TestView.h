@@ -20,6 +20,8 @@ public:
     explicit TestView(QWidget *parent = nullptr);
     ~TestView();
 
+    void ShaderFromSource(const QString &source);
+
 protected:
     void initializeGL() override;
     void resizeGL(int width, int height) override;

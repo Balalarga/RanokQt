@@ -23,6 +23,30 @@ TestView::~TestView()
     vbo.destroy();
 }
 
+void TestView::ShaderFromSource(const QString &source)
+{
+    const QString tempShaderName = ".tempFragShaderFile";
+    QFile fragFile(tempShaderName);
+    fragFile.open(QIODevice::WriteOnly);
+    QTextStream stream(&fragFile);
+    stream << source;
+    fragFile.close();
+    delete m_voxelShader;
+    m_voxelShader = new ShaderProgram(":/shaders/Test/default.vert",
+                                      tempShaderName);
+    m_voxelShader->AddUniform("worldToView");
+    m_voxelShader->AddUniform("resolution");
+
+    if(!m_voxelShader->Create())
+    {
+        qDebug()<<"voxel shader error";
+        return;
+    }
+
+    m_voxelShader->GetRawProgram()->enableAttributeArray(0);
+    m_voxelShader->GetRawProgram()->setAttributeBuffer(0, GL_FLOAT, 0, 2);
+}
+
 void TestView::initializeGL()
 {
     glClearColor(backColor.x(), backColor.y(), backColor.z(), backColor.w());
@@ -30,6 +54,8 @@ void TestView::initializeGL()
     if(!m_voxelShader->Create())
         qDebug()<<"voxel shader error";
 
+    m_voxelShader->GetRawProgram()->enableAttributeArray(0);
+    m_voxelShader->GetRawProgram()->setAttributeBuffer(0, GL_FLOAT, 0, 2);
     CreateVao();
 }
 
@@ -99,8 +125,6 @@ void TestView::CreateVao()
     vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
     vbo.bind();
     vbo.allocate(data.data(), sizeof(float)*data.size());
-    m_voxelShader->GetRawProgram()->enableAttributeArray(0);
-    m_voxelShader->GetRawProgram()->setAttributeBuffer(0, GL_FLOAT, 0, 2);
 
     vao.release();
     vbo.release();
