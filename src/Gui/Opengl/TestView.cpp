@@ -27,7 +27,11 @@ void TestView::ShaderFromSource(const QString &source)
 {
     const QString tempShaderName = ".tempFragShaderFile";
     QFile fragFile(tempShaderName);
-    fragFile.open(QIODevice::WriteOnly);
+    if(!fragFile.open(QIODevice::WriteOnly))
+    {
+        qDebug()<<"Shader write error";
+        return;
+    }
     QTextStream stream(&fragFile);
     stream << source;
     fragFile.close();

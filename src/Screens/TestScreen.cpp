@@ -296,10 +296,14 @@ void main()
 
 )";
 
+    std::string code = _program->GetShaderCode();
+
     result << shaderBegin;
-    result << _program->GetShaderCode();
+    result << code;
     result << shaderEnd;
 
-    _sceneView->ShaderFromSource(QString::fromStdString(result.str()));
+    auto res = QString::fromStdString(result.str());
+    res = res.replace("fabs(", "abs(");
+    _sceneView->ShaderFromSource(res);
     _sceneView->updateGL();
 }
