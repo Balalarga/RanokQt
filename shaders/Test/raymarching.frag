@@ -1,9 +1,11 @@
+
 #version 330
 
 out vec4 color;
 
 uniform vec2 resolution;
-
+uniform vec3 cameraPosition;
+uniform vec2 cameraRotation;
 
 // ray marching
 const int max_iterations = 512;
@@ -23,54 +25,15 @@ float __ror(float a, float b)
 {
     return a + b + sqrt(pow(a, 2) + pow(b, 2));
 }
-float __resultFunc(float x0, float y0, float z0)
+
+float __resultFunc(float x, float y, float z)
 {
-    const float e = 2.71828;
-    const float pi = 3.14159;
-    float x =(x0);
-    float y =(y0);
-    float z =(z0);
-    float s =((((16.000000)-(pow((x), (2.000000))))-(pow((y), (2.000000))))-(pow((z), (2.000000))));
-    float a =((3.000000)-(abs((x))));
-    float b =((3.000000)-(abs((y))));
-    float c =((3.000000)-(abs((z))));
-    float k =(__rand((__rand((a), (b))), (c)));
-    float sh =(__rand((s), (k)));
-    float z13 =(pow(((z)-(1.300000)), (2.000000)));
-    float z13p =(pow(((z)+(1.300000)), (2.000000)));
-    float y13 =(pow(((y)-(1.300000)), (2.000000)));
-    float y13p =(pow(((y)+(1.300000)), (2.000000)));
-    float z3p =(pow(((z)+(3.000000)), (2.000000)));
-    float z3 =(pow(((z)-(3.000000)), (2.000000)));
-    float x3 =(pow(((x)+(3.000000)), (2.000000)));
-    float x13 =(pow(((x)-(1.300000)), (2.000000)));
-    float y3 =(pow(((y)+(3.000000)), (2.000000)));
-    float x13p =(pow(((x)+(1.300000)), (2.000000)));
-    float t11 =((((0.300000)-(pow(((x)-(3.000000)), (2.000000))))-(pow((y), (2.000000))))-(pow((z), (2.000000))));
-    float t21 =((((0.300000)-(x13))-(pow(((y)-(3.000000)), (2.000000))))-(z13));
-    float t22 =((((0.300000)-(x13p))-(pow(((y)-(3.000000)), (2.000000))))-(z13p));
-    float t31 =((((0.300000)-(x13))-(y13))-(z3));
-    float t32 =((((0.300000)-(pow((x), (2.000000))))-(pow((y), (2.000000))))-(z3));
-    float t33 =((((0.300000)-(x13p))-(y13p))-(z3));
-    float t41 =((((0.300000)-(x13))-(y13))-(z3p));
-    float t42 =((((0.300000)-(x13p))-(y13))-(z3p));
-    float t43 =((((0.300000)-(x13))-(y13p))-(z3p));
-    float t44 =((((0.300000)-(x13p))-(y13p))-(z3p));
-    float t51 =((((0.300000)-(pow((x), (2.000000))))-(y3))-(pow((z), (2.000000))));
-    float t52 =((((0.300000)-(x13))-(y3))-(z13));
-    float t53 =((((0.300000)-(x13))-(y3))-(z13p));
-    float t54 =((((0.300000)-(x13p))-(y3))-(z13));
-    float t55 =((((0.300000)-(x13p))-(y3))-(z13p));
-    float t61 =((((0.300000)-(x3))-(y13))-(z13));
-    float t62 =((((0.300000)-(x3))-(pow((y), (2.000000))))-(z13));
-    float t63 =((((0.300000)-(x3))-(y13p))-(z13));
-    float t64 =((((0.300000)-(x3))-(y13))-(z13p));
-    float t65 =((((0.300000)-(x3))-(pow((y), (2.000000))))-(z13p));
-    float t66 =((((0.300000)-(x3))-(y13p))-(z13p));
-    float w =(__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((__rand((sh),(-(t11)))), (-(t21)))), (-(t22)))), (-(t31)))), (-(t32)))), (-(t33)))), (-(t41)))), (-(t42)))), (-(t43)))), (-(t44)))), (-(t51)))),
-                                                                                             (-(t52)))), (-(t53)))), (-(t54)))), (-(t55)))), (-(t61)))), (-(t62)))), (-(t63)))), (-(t64)))), (-(t65)))), (-(t66))));
-    return (w);
+const float e = 2.71828;
+const float pi = 3.14159;
+float w =((((1.000000)-((x)*(x)))-((y)*(y)))-((z)*(z)));
+return (w);
 }
+
 
 // get distance in the world
 float dist_field( vec3 p ) {
@@ -227,10 +190,10 @@ void main()
     vec3 dir = ray_dir( 45.0, resolution, gl_FragCoord.xy );
 
     // default ray origin
-    vec3 eye = vec3( 0.0, 0.0, 8.5 );
+    vec3 eye = cameraPosition;
 
     // rotate camera
-    mat3 rot = rotationXY( ( vec2(0, 0) - resolution * 0.5 ).yx * vec2( 0.01, -0.01 ) );
+    mat3 rot = rotationXY( cameraRotation );
     dir = rot * dir;
     eye = rot * eye;
 

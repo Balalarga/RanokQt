@@ -14,6 +14,8 @@ TestView::TestView(QWidget *parent):
                                       ":/shaders/Test/raymarching.frag");
     m_voxelShader->AddUniform("worldToView");
     m_voxelShader->AddUniform("resolution");
+    m_voxelShader->AddUniform("cameraPosition");
+    m_voxelShader->AddUniform("cameraRotation");
 }
 
 TestView::~TestView()
@@ -40,6 +42,8 @@ void TestView::ShaderFromSource(const QString &source)
                                       tempShaderName);
     m_voxelShader->AddUniform("worldToView");
     m_voxelShader->AddUniform("resolution");
+    m_voxelShader->AddUniform("cameraPosition");
+    m_voxelShader->AddUniform("cameraRotation");
 
     if(!m_voxelShader->Create())
     {
@@ -47,8 +51,26 @@ void TestView::ShaderFromSource(const QString &source)
         return;
     }
 
+    vao.destroy();
+    vbo.destroy();
+    if(!vao.isCreated())
+        vao.create();
+    vao.bind();
+    QVector<float> data{
+        -1.f, -1.f,
+        -1.f, 1.f,
+        1.f, 1.f,
+        1.f, -1.f,
+    };
+
+    vbo.create();
+    vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    vbo.bind();
+    vbo.allocate(data.data(), sizeof(float)*data.size());
     m_voxelShader->GetRawProgram()->enableAttributeArray(0);
     m_voxelShader->GetRawProgram()->setAttributeBuffer(0, GL_FLOAT, 0, 2);
+    vao.release();
+    vbo.release();
 }
 
 void TestView::initializeGL()
@@ -58,9 +80,24 @@ void TestView::initializeGL()
     if(!m_voxelShader->Create())
         qDebug()<<"voxel shader error";
 
+    if(!vao.isCreated())
+        vao.create();
+    vao.bind();
+    QVector<float> data{
+        -1.f, -1.f,
+        -1.f, 1.f,
+        1.f, 1.f,
+        1.f, -1.f,
+    };
+
+    vbo.create();
+    vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    vbo.bind();
+    vbo.allocate(data.data(), sizeof(float)*data.size());
     m_voxelShader->GetRawProgram()->enableAttributeArray(0);
     m_voxelShader->GetRawProgram()->setAttributeBuffer(0, GL_FLOAT, 0, 2);
-    CreateVao();
+    vao.release();
+    vbo.release();
 }
 
 void TestView::resizeGL(int width, int height)
@@ -77,12 +114,15 @@ void TestView::paintGL()
     glClear(GL_COLOR_BUFFER_BIT);
 
     glClearColor(backColor.x(), backColor.y(), backColor.z(), backColor.w());
-
-    QVector2D resolution(width(), height());
+    constexpr float s = 3.141592/180.f;
+    QVector2D cameraRotation(m_camera.xAngle*s, -m_camera.zAngle*s);
+    QVector3D cameraPos(0, 0, -m_camera.zoom);
 
     m_voxelShader->Bind();
     m_voxelShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
-    m_voxelShader->GetRawProgram()->setUniformValue("resolution", resolution);
+    m_voxelShader->GetRawProgram()->setUniformValue("resolution", size());
+    m_voxelShader->GetRawProgram()->setUniformValue("cameraPosition", cameraPos);
+    m_voxelShader->GetRawProgram()->setUniformValue("cameraRotation", cameraRotation);
     vao.bind();
     glDrawArrays(GL_QUADS, 0, 4);
     vao.release();
@@ -139,6 +179,7 @@ void TestView::mouseMoveEvent(QMouseEvent *event)
 {
     if(m_mouseState.pressed[Qt::LeftButton])
     {
+        qDebug()<<"Mouse moved";
         m_camera.xAngle += (m_mouseState.pos.y() - event->pos().y())*0.5;
         m_camera.zAngle += (event->pos().x() - m_mouseState.pos.x())*0.5;
         m_mouseState.pos = {event->pos().x(), event->pos().y()};
@@ -162,4 +203,5 @@ void TestView::wheelEvent(QWheelEvent *event)
     else if(event->angleDelta().y() < 0)
         m_camera.zoom -= dz;
     UpdateMvpMatrix();
+    qDebug()<<m_camera.zoom;
 }

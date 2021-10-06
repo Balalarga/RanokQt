@@ -87,19 +87,18 @@ void TestScreen::Compute()
         delete _program;
     _program = _parser.GetProgram();
     stringstream result;
-    const std::string shaderBegin = R"(
-#version 330
-
+    const std::string shaderBegin = R"(#version 330
 out vec4 color;
 
 uniform vec2 resolution;
-
+uniform vec3 cameraPosition;
+uniform vec2 cameraRotation;
 
 // ray marching
-const int max_iterations = 512;
+const int max_iterations = 2048;
 const float stop_threshold = 0.001;
 const float grad_step = 0.02;
-const float clip_far = 100.0;
+const float clip_far = 1000.0;
 
 // math
 const float PI = 3.14159265359;
@@ -209,7 +208,7 @@ bool ray_marching( vec3 o, vec3 dir, inout float depth, inout vec3 n ) {
     float t = 0.0;
     float d = 10000.0;
     float dt = 0.0;
-    for ( int i = 0; i < 128; i++ ) {
+    for ( int i = 0; i < max_iterations; i++ ) {
         vec3 v = o + dir * t;
         d = dist_field( v );
         if ( d < 0.001 ) {
@@ -272,10 +271,11 @@ void main()
     vec3 dir = ray_dir( 45.0, resolution, gl_FragCoord.xy );
 
     // default ray origin
-    vec3 eye = vec3( 0.0, 0.0, 8.5 );
+    vec3 eye = cameraPosition;
+    //vec3 eye = vec3(0, 0, 5);
 
     // rotate camera
-    mat3 rot = rotationXY( ( vec2(0, 0) - resolution * 0.5 ).yx * vec2( 0.01, -0.01 ) );
+    mat3 rot = rotationXY( cameraRotation );
     dir = rot * dir;
     eye = rot * eye;
 
