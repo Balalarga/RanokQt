@@ -243,7 +243,7 @@ void SceneView::UpdateMvpMatrix()
 
 void SceneView::mouseMoveEvent(QMouseEvent *event)
 {
-    if(m_mouseState.pressed[Qt::MiddleButton])
+    if(m_mouseState.pressed[Qt::LeftButton])
     {
         m_camera.xAngle += (m_mouseState.pos.y() - event->pos().y())*0.5;
         m_camera.zAngle += (event->pos().x() - m_mouseState.pos.x())*0.5;

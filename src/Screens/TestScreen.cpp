@@ -91,13 +91,13 @@ void TestScreen::Compute()
 out vec4 color;
 
 uniform vec2 resolution;
+uniform float grad_step;
 uniform vec3 cameraPosition;
 uniform vec2 cameraRotation;
 
 // ray marching
 const int max_iterations = 2048;
 const float stop_threshold = 0.001;
-const float grad_step = 0.02;
 const float clip_far = 1000.0;
 
 // math
@@ -123,9 +123,9 @@ float dist_field( vec3 p ) {
 
 // get gradient in the world
 vec3 gradient( vec3 pos ) {
-    const vec3 dx = vec3( grad_step, 0.0, 0.0 );
-    const vec3 dy = vec3( 0.0, grad_step, 0.0 );
-    const vec3 dz = vec3( 0.0, 0.0, grad_step );
+    vec3 dx = vec3( grad_step, 0.0, 0.0 );
+    vec3 dy = vec3( 0.0, grad_step, 0.0 );
+    vec3 dz = vec3( 0.0, 0.0, grad_step );
     return normalize (
                 vec3(
                     dist_field( pos + dx ) - dist_field( pos - dx ),

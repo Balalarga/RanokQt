@@ -14,6 +14,7 @@ TestView::TestView(QWidget *parent):
                                       ":/shaders/Test/raymarching.frag");
     m_voxelShader->AddUniform("worldToView");
     m_voxelShader->AddUniform("resolution");
+    m_voxelShader->AddUniform("grad_step");
     m_voxelShader->AddUniform("cameraPosition");
     m_voxelShader->AddUniform("cameraRotation");
 }
@@ -42,6 +43,7 @@ void TestView::ShaderFromSource(const QString &source)
                                       tempShaderName);
     m_voxelShader->AddUniform("worldToView");
     m_voxelShader->AddUniform("resolution");
+    m_voxelShader->AddUniform("grad_step");
     m_voxelShader->AddUniform("cameraPosition");
     m_voxelShader->AddUniform("cameraRotation");
 
@@ -120,6 +122,7 @@ void TestView::paintGL()
 
     m_voxelShader->Bind();
     m_voxelShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
+    m_voxelShader->GetRawProgram()->setUniformValue("grad_step", 0.02f);
     m_voxelShader->GetRawProgram()->setUniformValue("resolution", size());
     m_voxelShader->GetRawProgram()->setUniformValue("cameraPosition", cameraPos);
     m_voxelShader->GetRawProgram()->setUniformValue("cameraRotation", cameraRotation);
@@ -179,7 +182,6 @@ void TestView::mouseMoveEvent(QMouseEvent *event)
 {
     if(m_mouseState.pressed[Qt::LeftButton])
     {
-        qDebug()<<"Mouse moved";
         m_camera.xAngle += (m_mouseState.pos.y() - event->pos().y())*0.5;
         m_camera.zAngle += (event->pos().x() - m_mouseState.pos.x())*0.5;
         m_mouseState.pos = {event->pos().x(), event->pos().y()};
@@ -203,5 +205,4 @@ void TestView::wheelEvent(QWheelEvent *event)
     else if(event->angleDelta().y() < 0)
         m_camera.zoom -= dz;
     UpdateMvpMatrix();
-    qDebug()<<m_camera.zoom;
 }
