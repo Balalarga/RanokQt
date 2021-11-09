@@ -8,6 +8,8 @@
 #include <QVector>
 #include <QVector4D>
 #include <QMap>
+#include <QOpenGLFramebufferObject>
+
 
 #include "ShaderProgram.h"
 #include "VoxelObject.h"
@@ -44,6 +46,12 @@ private:
     ShaderProgram* m_voxelShader;
     QOpenGLVertexArrayObject vao;
     QOpenGLBuffer vbo;
+
+
+    ShaderProgram* textureShader;
+    QOpenGLVertexArrayObject textureVao;
+    QOpenGLBuffer textureVbo;
+    QOpenGLFramebufferObject* fbo;
 
     QVector4D backColor{0.1f, 0.15f, 0.3f, 0.5f};
     struct Camera
