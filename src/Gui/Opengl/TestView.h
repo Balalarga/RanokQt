@@ -19,7 +19,7 @@ class TestView : public QGLWidget
     Q_OBJECT
 public:
 
-    explicit TestView(QWidget *parent = nullptr);
+    explicit TestView(QWidget *parent = nullptr, QSize renderSize = QSize(800, 600));
     ~TestView();
 
     void ShaderFromSource(const QString &source);
@@ -36,22 +36,24 @@ protected:
 
     void UpdateMvpMatrix();
 
-    void CreateVao();
-
 private:
+    QSize renderSize;
+
     QMatrix4x4 viewMatrix;
     QMatrix4x4 projMatrix;
     QMatrix4x4 mvpMatrix;
 
-    ShaderProgram* m_voxelShader;
-    QOpenGLVertexArrayObject vao;
-    QOpenGLBuffer vbo;
+
+    ShaderProgram* voxelShader;
+    QOpenGLVertexArrayObject screenVao;
+    QOpenGLBuffer screenVbo;
 
 
+    QOpenGLFramebufferObject* fbo;
     ShaderProgram* textureShader;
     QOpenGLVertexArrayObject textureVao;
     QOpenGLBuffer textureVbo;
-    QOpenGLFramebufferObject* fbo;
+
 
     QVector4D backColor{0.1f, 0.15f, 0.3f, 0.5f};
     struct Camera

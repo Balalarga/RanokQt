@@ -1,10 +1,8 @@
 #include "ShaderProgram.h"
 
 
-ShaderProgram::ShaderProgram(const QString &vertexShaderFilePath, const QString & fragmentShaderFilePath, const QString &geometryShaderFilePath):
-    m_vertexShaderFilePath(vertexShaderFilePath),
-    m_fragmentShaderFilePath(fragmentShaderFilePath),
-    m_geometryShaderFilePath(geometryShaderFilePath),
+ShaderProgram::ShaderProgram(const ShadersList &list):
+    shadersList(list),
     m_program(nullptr)
 {
 
@@ -15,19 +13,18 @@ ShaderProgram::~ShaderProgram()
     Destroy();
 }
 
-
 bool ShaderProgram::Create() {
     m_program = new QOpenGLShaderProgram();
 
     // read the shader programs from the resource
-    if (!m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, m_vertexShaderFilePath))
+    if (!m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, shadersList.vertexShader))
         return false;
 
-    if (!m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, m_fragmentShaderFilePath))
+    if (!m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, shadersList.fragmentShader))
         return false;
 
-    if(!m_geometryShaderFilePath.isEmpty() &&
-            !m_program->addShaderFromSourceFile(QOpenGLShader::Geometry, m_geometryShaderFilePath))
+    if(!shadersList.geometryShader.isEmpty() &&
+            !m_program->addShaderFromSourceFile(QOpenGLShader::Geometry, shadersList.geometryShader))
         return false;
 
     if (!m_program->link())
@@ -64,7 +61,7 @@ void ShaderProgram::AddUniform(QString name)
     m_uniformNames.push_back(name);
 }
 
-QOpenGLShaderProgram *ShaderProgram::GetRawProgram()
+QOpenGLShaderProgram *ShaderProgram::GetProgram()
 {
     return m_program;
 }

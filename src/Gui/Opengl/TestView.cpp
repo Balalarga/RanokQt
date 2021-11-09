@@ -3,32 +3,33 @@
 
 #include <QMouseEvent>
 
-TestView::TestView(QWidget *parent):
-    QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
+TestView::TestView(QWidget *parent, QSize renderSize):
+    QGLWidget(QGLFormat(QGL::SampleBuffers), parent),
+    renderSize(renderSize)
 {
     m_mouseState.pressed[Qt::RightButton] = false;
     m_mouseState.pressed[Qt::LeftButton] = false;
     m_mouseState.pressed[Qt::MiddleButton] = false;
 
-    m_voxelShader = new ShaderProgram(":/shaders/Test/default.vert",
-                                      ":/shaders/Test/raymarching.frag");
-    m_voxelShader->AddUniform("worldToView");
-    m_voxelShader->AddUniform("resolution");
-    m_voxelShader->AddUniform("grad_step");
-    m_voxelShader->AddUniform("cameraPosition");
-    m_voxelShader->AddUniform("cameraRotation");
+    voxelShader = new ShaderProgram({":/shaders/Test/default.vert",
+                                      ":/shaders/Test/raymarching.frag"});
+    voxelShader->AddUniform("worldToView");
+    voxelShader->AddUniform("resolution");
+    voxelShader->AddUniform("grad_step");
+    voxelShader->AddUniform("cameraPosition");
+    voxelShader->AddUniform("cameraRotation");
 
 
-    textureShader = new ShaderProgram(":/shaders/texture.vert",
-                                      ":/shaders/texture.frag");
+    textureShader = new ShaderProgram({":/shaders/texture.vert",
+                                      ":/shaders/texture.frag"});
 }
 
 TestView::~TestView()
 {
-    delete m_voxelShader;
+    delete voxelShader;
     delete fbo;
-    vao.destroy();
-    vbo.destroy();
+    screenVao.destroy();
+    screenVbo.destroy();
 }
 
 void TestView::ShaderFromSource(const QString &source)
@@ -43,26 +44,26 @@ void TestView::ShaderFromSource(const QString &source)
     QTextStream stream(&fragFile);
     stream << source;
     fragFile.close();
-    delete m_voxelShader;
-    m_voxelShader = new ShaderProgram(":/shaders/Test/default.vert",
-                                      tempShaderName);
-    m_voxelShader->AddUniform("worldToView");
-    m_voxelShader->AddUniform("resolution");
-    m_voxelShader->AddUniform("grad_step");
-    m_voxelShader->AddUniform("cameraPosition");
-    m_voxelShader->AddUniform("cameraRotation");
+    delete voxelShader;
+    voxelShader = new ShaderProgram({":/shaders/Test/default.vert",
+                                      tempShaderName});
+    voxelShader->AddUniform("worldToView");
+    voxelShader->AddUniform("resolution");
+    voxelShader->AddUniform("grad_step");
+    voxelShader->AddUniform("cameraPosition");
+    voxelShader->AddUniform("cameraRotation");
 
-    if(!m_voxelShader->Create())
+    if(!voxelShader->Create())
     {
         qDebug()<<"voxel shader error";
         return;
     }
 
-    vao.destroy();
-    vbo.destroy();
-    if(!vao.isCreated())
-        vao.create();
-    vao.bind();
+    screenVao.destroy();
+    screenVbo.destroy();
+    if(!screenVao.isCreated())
+        screenVao.create();
+    screenVao.bind();
 
     QVector<float> data{
         -1.f, -1.f,
@@ -71,23 +72,25 @@ void TestView::ShaderFromSource(const QString &source)
         1.f, -1.f,
     };
 
-    vbo.create();
-    vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbo.bind();
-    vbo.allocate(data.data(), sizeof(float)*data.size());
-    m_voxelShader->GetRawProgram()->enableAttributeArray(0);
-    m_voxelShader->GetRawProgram()->setAttributeBuffer(0, GL_FLOAT, 0, 2);
-    vao.release();
-    vbo.release();
+    screenVbo.create();
+    screenVbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    screenVbo.bind();
+    screenVbo.allocate(data.data(), sizeof(float)*data.size());
+    voxelShader->GetProgram()->enableAttributeArray(0);
+    voxelShader->GetProgram()->setAttributeBuffer(0, GL_FLOAT, 0, 2);
+    screenVao.release();
+    screenVbo.release();
 }
 
 void TestView::initializeGL()
 {
+    glEnable(GL_TEXTURE_2D);
+
     QVector<float> data{
-        -1.f, -1.f,
-        -1.f, 1.f,
-        1.f, 1.f,
-        1.f, -1.f,
+        -.5f, -.5f,
+        -.5f, .5f,
+        .5f, .5f,
+        .5f, -.5f,
     };
 
     QVector<float> textureData{
@@ -99,41 +102,40 @@ void TestView::initializeGL()
 
     glClearColor(backColor.x(), backColor.y(), backColor.z(), backColor.w());
 
-    if(!m_voxelShader->Create())
+    if(!voxelShader->Create())
         qDebug()<<"voxel shader error";
 
     if(!textureShader->Create())
         qDebug()<<"Texture shader error";
-    textureVao.create();
+    if(!textureVao.isCreated())
+        textureVao.create();
     textureVao.bind();
 
     textureVbo.create();
     textureVbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
     textureVbo.bind();
     textureVbo.allocate(textureData.data(), sizeof(float)*textureData.size());
-    textureShader->GetRawProgram()->enableAttributeArray(0);
-    textureShader->GetRawProgram()->setAttributeBuffer(0, GL_FLOAT, 0, 2, 4*sizeof(float));
-    textureShader->GetRawProgram()->enableAttributeArray(1);
-    textureShader->GetRawProgram()->setAttributeBuffer(1, GL_FLOAT, 2*sizeof(float), 2, 4*sizeof(float));
+    textureShader->GetProgram()->enableAttributeArray(0);
+    textureShader->GetProgram()->setAttributeBuffer(0, GL_FLOAT, 0, 2, 4*sizeof(float));
+    textureShader->GetProgram()->enableAttributeArray(1);
+    textureShader->GetProgram()->setAttributeBuffer(1, GL_FLOAT, 2*sizeof(float), 2, 4*sizeof(float));
     textureVao.release();
     textureVbo.release();
 
-    if(!vao.isCreated())
-        vao.create();
-    vao.bind();
+    if(!screenVao.isCreated())
+        screenVao.create();
+    screenVao.bind();
 
-    vbo.create();
-    vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbo.bind();
-    vbo.allocate(data.data(), sizeof(float)*data.size());
-    m_voxelShader->GetRawProgram()->enableAttributeArray(0);
-    m_voxelShader->GetRawProgram()->setAttributeBuffer(0, GL_FLOAT, 0, 2);
-    vao.release();
-    vbo.release();
+    screenVbo.create();
+    screenVbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    screenVbo.bind();
+    screenVbo.allocate(data.data(), sizeof(float)*data.size());
+    voxelShader->GetProgram()->enableAttributeArray(0);
+    voxelShader->GetProgram()->setAttributeBuffer(0, GL_FLOAT, 0, 2);
+    screenVao.release();
+    screenVbo.release();
 
-    fbo = new QOpenGLFramebufferObject(QSize(1280, 720));
-
-    glEnable(GL_TEXTURE_2D);
+    fbo = new QOpenGLFramebufferObject(renderSize);
 }
 
 void TestView::resizeGL(int width, int height)
@@ -155,22 +157,22 @@ void TestView::paintGL()
     QVector2D cameraRotation(m_camera.xAngle*s, -m_camera.zAngle*s);
     QVector3D cameraPos(0, 0, -m_camera.zoom);
 
-    m_voxelShader->Bind();
-    m_voxelShader->GetRawProgram()->setUniformValue("worldToView", mvpMatrix);
-    m_voxelShader->GetRawProgram()->setUniformValue("grad_step", 0.02f);
-    m_voxelShader->GetRawProgram()->setUniformValue("resolution", size());
-    m_voxelShader->GetRawProgram()->setUniformValue("cameraPosition", cameraPos);
-    m_voxelShader->GetRawProgram()->setUniformValue("cameraRotation", cameraRotation);
-    vao.bind();
+    voxelShader->Bind();
+    voxelShader->GetProgram()->setUniformValue("worldToView", mvpMatrix);
+    voxelShader->GetProgram()->setUniformValue("grad_step", 0.02f);
+    voxelShader->GetProgram()->setUniformValue("resolution", size());
+    voxelShader->GetProgram()->setUniformValue("cameraPosition", cameraPos);
+    voxelShader->GetProgram()->setUniformValue("cameraRotation", cameraRotation);
+    screenVao.bind();
     glDrawArrays(GL_QUADS, 0, 4);
-    vao.release();    
-    m_voxelShader->Release();
+    screenVao.release();
+    voxelShader->Release();
 
     fbo->release();
 
     textureShader->Bind();
-    glBindTexture(GL_TEXTURE_2D, fbo->texture());
     textureVao.bind();
+    glBindTexture(GL_TEXTURE_2D, fbo->takeTexture());
     glDrawArrays(GL_QUADS, 0, 4);
     textureVao.release();
     textureShader->Release();
@@ -199,28 +201,6 @@ void TestView::UpdateMvpMatrix()
     updateGL();
 }
 
-void TestView::CreateVao()
-{
-    if(!vao.isCreated())
-        vao.create();
-    vao.bind();
-    QVector<float> data{
-        -1.f, -1.f,
-        -1.f, 1.f,
-        1.f, 1.f,
-        1.f, -1.f,
-    };
-
-    vbo.create();
-    vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbo.bind();
-    vbo.allocate(data.data(), sizeof(float)*data.size());
-
-    vao.release();
-    vbo.release();
-
-}
-
 void TestView::mouseMoveEvent(QMouseEvent *event)
 {
     if(m_mouseState.pressed[Qt::LeftButton])
@@ -240,7 +220,7 @@ void TestView::mouseMoveEvent(QMouseEvent *event)
 
 void TestView::wheelEvent(QWheelEvent *event)
 {
-    double dz = 3;
+    double dz = 1;
     if(_shiftPressed)
         dz = 0.5;
     if(event->angleDelta().y() > 0 && m_camera.zoom < -dz)

@@ -5,29 +5,34 @@
 #include <QStringList>
 #include <QOpenGLShaderProgram>
 
-class ShaderProgram
+struct ShadersList
+{
+    QString vertexShader = "";
+    QString fragmentShader = "";
+    QString geometryShader = "";
+};
+
+
+class ShaderProgram: public QObject
 {
 public:
-    ShaderProgram(const QString &vertexShaderFilePath,
-                  const QString & fragmentShaderFilePath,
-                  const QString & geometryShaderFilePath = "");
+    ShaderProgram(const ShadersList& list);
     ~ShaderProgram();
+
     bool Create();
     void Destroy();
     void Bind();
     void Release();
 
     void AddUniform(QString name);
-    QOpenGLShaderProgram* GetRawProgram();
+    QOpenGLShaderProgram* GetProgram();
 
     QStringList m_uniformNames;
     QList<int> m_uniformIDs;
 
 private:
     QOpenGLShaderProgram *m_program;
-    QString m_vertexShaderFilePath;
-    QString m_fragmentShaderFilePath;
-    QString m_geometryShaderFilePath;
+    ShadersList shadersList;
 };
 
 #endif // SHADERPROGRAM_H
