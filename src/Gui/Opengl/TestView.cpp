@@ -12,16 +12,16 @@ TestView::TestView(QWidget *parent, QSize renderSize):
     m_mouseState.pressed[Qt::MiddleButton] = false;
 
     voxelShader = new ShaderProgram({":/shaders/Test/default.vert",
-                                      ":/shaders/Test/raymarching.frag"});
-    voxelShader->AddUniform("worldToView");
-    voxelShader->AddUniform("resolution");
-    voxelShader->AddUniform("grad_step");
-    voxelShader->AddUniform("cameraPosition");
-    voxelShader->AddUniform("cameraRotation");
+                                     ":/shaders/Test/raymarching.frag"});
+    voxelShader->uniforms << "worldToView"
+                          << "resolution"
+                          << "grad_step"
+                          << "cameraPosition"
+                          << "cameraRotation";
 
 
     textureShader = new ShaderProgram({":/shaders/texture.vert",
-                                      ":/shaders/texture.frag"});
+                                       ":/shaders/texture.frag"});
 }
 
 TestView::~TestView()
@@ -46,12 +46,12 @@ void TestView::ShaderFromSource(const QString &source)
     fragFile.close();
     delete voxelShader;
     voxelShader = new ShaderProgram({":/shaders/Test/default.vert",
-                                      tempShaderName});
-    voxelShader->AddUniform("worldToView");
-    voxelShader->AddUniform("resolution");
-    voxelShader->AddUniform("grad_step");
-    voxelShader->AddUniform("cameraPosition");
-    voxelShader->AddUniform("cameraRotation");
+                                     tempShaderName});
+    voxelShader->uniforms << "worldToView"
+                          << "resolution"
+                          << "grad_step"
+                          << "cameraPosition"
+                          << "cameraRotation";
 
     if(!voxelShader->Create())
     {
@@ -212,9 +212,9 @@ void TestView::mouseMoveEvent(QMouseEvent *event)
     }
     else if(m_mouseState.pressed[Qt::RightButton])
     {
-//        m_camera.pos.setY(m_camera.pos.y() + (m_mouseState.pos.y() - event->pos().y())*0.5);
-//        m_camera.pos.setX(m_camera.pos.x() + (event->pos().x() - m_mouseState.pos.x())*0.5);
-//        UpdateMvpMatrix();
+        //        m_camera.pos.setY(m_camera.pos.y() + (m_mouseState.pos.y() - event->pos().y())*0.5);
+        //        m_camera.pos.setX(m_camera.pos.x() + (event->pos().x() - m_mouseState.pos.x())*0.5);
+        //        UpdateMvpMatrix();
     }
 }
 

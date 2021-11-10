@@ -16,23 +16,24 @@ struct ShadersList
 class ShaderProgram: public QObject
 {
 public:
-    ShaderProgram(const ShadersList& list);
+    ShaderProgram(const ShadersList& list, QObject* parent = nullptr);
     ~ShaderProgram();
 
     bool Create();
-    void Destroy();
+
     void Bind();
     void Release();
 
-    void AddUniform(QString name);
+    QStringList uniforms;
+
     QOpenGLShaderProgram* GetProgram();
 
-    QStringList m_uniformNames;
-    QList<int> m_uniformIDs;
 
 private:
-    QOpenGLShaderProgram *m_program;
-    ShadersList shadersList;
+    QOpenGLShaderProgram* _program;
+    ShadersList _shadersList;
+
+    QList<int> _uniformIDs;
 };
 
 #endif // SHADERPROGRAM_H

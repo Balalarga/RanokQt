@@ -1,67 +1,59 @@
 #include "ShaderProgram.h"
 
 
-ShaderProgram::ShaderProgram(const ShadersList &list):
-    shadersList(list),
-    m_program(nullptr)
+ShaderProgram::ShaderProgram(const ShadersList &list, QObject *parent):
+    QObject(parent),
+    _shadersList(list),
+    _program(nullptr)
 {
 
 }
 
 ShaderProgram::~ShaderProgram()
 {
-    Destroy();
+    Release();
+    if(_program)
+        delete _program;
+    _program = nullptr;
 }
 
 bool ShaderProgram::Create() {
-    m_program = new QOpenGLShaderProgram();
+    _program = new QOpenGLShaderProgram();
 
     // read the shader programs from the resource
-    if (!m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, shadersList.vertexShader))
+    if (!_program->addShaderFromSourceFile(QOpenGLShader::Vertex, _shadersList.vertexShader))
         return false;
 
-    if (!m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, shadersList.fragmentShader))
+    if (!_program->addShaderFromSourceFile(QOpenGLShader::Fragment, _shadersList.fragmentShader))
         return false;
 
-    if(!shadersList.geometryShader.isEmpty() &&
-            !m_program->addShaderFromSourceFile(QOpenGLShader::Geometry, shadersList.geometryShader))
+    if(!_shadersList.geometryShader.isEmpty() &&
+            !_program->addShaderFromSourceFile(QOpenGLShader::Geometry, _shadersList.geometryShader))
         return false;
 
-    if (!m_program->link())
+    if (!_program->link())
         return false;
 
-    m_uniformIDs.clear();
-    for (const QString& uniformName : qAsConst(m_uniformNames))
-        m_uniformIDs.append( m_program->uniformLocation(uniformName));
+    _uniformIDs.clear();
+    for (const QString& uniformName : qAsConst(uniforms))
+        _uniformIDs.append(_program->uniformLocation(uniformName));
 
     return true;
 }
 
-void ShaderProgram::Destroy()
-{
-    if(m_program)
-        delete m_program;
-    m_program = nullptr;
-}
-
 void ShaderProgram::Bind()
 {
-    if(m_program)
-        m_program->bind();
+    if(_program)
+        _program->bind();
 }
 
 void ShaderProgram::Release()
 {
-    if(m_program)
-        m_program->release();
-}
-
-void ShaderProgram::AddUniform(QString name)
-{
-    m_uniformNames.push_back(name);
+    if(_program)
+        _program->release();
 }
 
 QOpenGLShaderProgram *ShaderProgram::GetProgram()
 {
-    return m_program;
+    return _program;
 }
