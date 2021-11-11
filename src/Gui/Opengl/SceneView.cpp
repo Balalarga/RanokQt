@@ -11,22 +11,13 @@ SceneView::SceneView(QWidget *parent):
     m_mouseState.pressed[Qt::LeftButton] = false;
     m_mouseState.pressed[Qt::MiddleButton] = false;
 
-    m_voxelShader = new ShaderProgram({
-                                          ":/shaders/voxel.vert",
-                                          ":/shaders/voxel.frag",
-                                          ":/shaders/voxel.geom"
-                                      });
-    m_voxelShader->uniforms << "worldToView"
-                            << "voxSize"
-                            << "useAlpha";
     gridObject = new GridObject(this);
     wcsObject = new WcsObject(this);
-    voxelObject = new VoxelObject;//(this);
+    voxelObject = new VoxelObject(this);
 }
 
 SceneView::~SceneView()
 {
-    delete m_voxelShader;
     delete gridObject;
     delete wcsObject;
     delete voxelObject;
@@ -35,8 +26,7 @@ SceneView::~SceneView()
 void SceneView::AddVoxelObject(float x, float y, float z,
                                float r, float g, float b, float a)
 {
-    if(voxelObject)
-        voxelObject->AddData(x, y, z, r, g, b, a);
+    voxelObject->AddVoxel(x, y, z, r, g, b, a);
 }
 
 void SceneView::Flush()
@@ -54,13 +44,13 @@ void SceneView::ClearObjects(bool soft)
     }
     else
     {
-        voxelObject->Recreate(m_voxelShader->GetProgram());
+        voxelObject->Clear();
     }
 }
 
 void SceneView::CreateVoxelObject(int count)
 {
-    voxelObject->Create(count, m_voxelShader->GetProgram());
+    voxelObject->FullCreate(count);
 }
 
 void SceneView::UseAlphaColor(bool use)
@@ -69,9 +59,9 @@ void SceneView::UseAlphaColor(bool use)
         glDisable(GL_DEPTH_TEST);
     else
         glEnable(GL_DEPTH_TEST);
-    m_voxelShader->Bind();
-    m_voxelShader->SetUniformValue("useAlpha", use);
-    m_voxelShader->Release();
+    voxelObject->BindShader();
+    voxelObject->GetShaderProgram()->SetUniformValue("useAlpha", use);
+    voxelObject->ReleaseShader();
 }
 
 void SceneView::initializeGL()
@@ -83,9 +73,6 @@ void SceneView::initializeGL()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    if(!m_voxelShader->Create())
-        qDebug()<<"voxel shader error";
 
     gridObject->Create();
     wcsObject->Create();
@@ -116,12 +103,15 @@ void SceneView::paintGL()
     gridObject->Render();
     gridObject->ReleaseShader();
 
-    m_voxelShader->Bind();
-    m_voxelShader->SetUniformValue("worldToView", mvpMatrix);
-    m_voxelShader->SetUniformValue("voxSize", QVector3D(voxSize.x,
-                                                 voxSize.y, voxSize.z));
-    voxelObject->Render();
-    m_voxelShader->Release();
+    if(voxelObject->IsCreated())
+    {
+        voxelObject->BindShader();
+        voxelObject->GetShaderProgram()->SetUniformValue("worldToView", mvpMatrix);
+        voxelObject->GetShaderProgram()->SetUniformValue("voxSize", QVector3D(voxSize.x,
+                                                     voxSize.y, voxSize.z));
+        voxelObject->Render();
+        voxelObject->ReleaseShader();
+    }
 
     wcsObject->BindShader();
     wcsObject->GetShaderProgram()->SetUniformValue("worldToView", mvpMatrix);

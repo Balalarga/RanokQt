@@ -11,7 +11,7 @@ OpenglDrawableObject::OpenglDrawableObject(ShaderProgram* shaderProgram, const V
 
 OpenglDrawableObject::~OpenglDrawableObject()
 {
-    Destroy();
+    OpenglDrawableObject::Destroy();
 }
 
 void OpenglDrawableObject::Create(const QVector<float>& vertices)
@@ -43,11 +43,25 @@ void OpenglDrawableObject::Create(const QVector<float>& vertices)
 
 void OpenglDrawableObject::Destroy()
 {
-    _vao.release();
-    _vbo.release();
+    if(_vao.isCreated())
+    {
+        _vao.release();
+        _vbo.release();
 
-    _vao.destroy();
-    _vbo.destroy();
+        _vao.destroy();
+        _vbo.destroy();
+    }
+}
+
+void OpenglDrawableObject::Clear()
+{
+    Destroy();
+    Create(_verticesCount);
+}
+
+bool OpenglDrawableObject::IsCreated() const
+{
+    return _vao.isCreated();
 }
 
 void OpenglDrawableObject::Create(unsigned verticesCount)
@@ -95,12 +109,14 @@ void OpenglDrawableObject::SetPrimitive(unsigned primitive)
 
 void OpenglDrawableObject::BindShader()
 {
-    _shaderProgram->Bind();
+    if(_shaderProgram->GetProgram()->isLinked())
+        _shaderProgram->Bind();
 }
 
 void OpenglDrawableObject::ReleaseShader()
 {
-    _shaderProgram->Release();
+    if(_shaderProgram->GetProgram()->isLinked())
+        _shaderProgram->Release();
 }
 
 ShaderProgram* OpenglDrawableObject::GetShaderProgram()
@@ -110,11 +126,14 @@ ShaderProgram* OpenglDrawableObject::GetShaderProgram()
 
 void OpenglDrawableObject::Render()
 {
-    _vao.bind();
+    if(_vao.isCreated())
+    {
+        _vao.bind();
 
-    glDrawArrays(_primitive, 0, _verticesCount);
+        glDrawArrays(_primitive, 0, _verticesCount);
 
-    _vao.release();
+        _vao.release();
+    }
 }
 
 unsigned OpenglDrawableObject::GetLayoutSize() const

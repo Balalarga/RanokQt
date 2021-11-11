@@ -20,8 +20,10 @@ public:
 
     virtual void Create(unsigned verticesCount);
     virtual void Create(const QVector<float>& vertices);
+    virtual void Destroy();
+    virtual void Clear();
 
-    void Destroy();
+    bool IsCreated() const;
 
     void AddData(const QVector<float>& vertices);
     void SetPrimitive(unsigned primitive);

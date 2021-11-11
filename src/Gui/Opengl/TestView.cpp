@@ -18,8 +18,6 @@ TestView::TestView(QWidget *parent, QSize renderSize):
                           << "grad_step"
                           << "cameraPosition"
                           << "cameraRotation";
-
-
     textureShader = new ShaderProgram({":/shaders/texture.vert",
                                        ":/shaders/texture.frag"});
 }
@@ -27,7 +25,9 @@ TestView::TestView(QWidget *parent, QSize renderSize):
 TestView::~TestView()
 {
     delete voxelShader;
-    delete fbo;
+    if(fbo)
+        delete fbo;
+
     screenVao.destroy();
     screenVbo.destroy();
 }
