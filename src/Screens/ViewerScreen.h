@@ -38,7 +38,6 @@ private slots:
 
 private:
     Mode _mode;
-    SceneView::ShaderMode _shaderMode;
 
     SceneView* _view;
     QDoubleSpinBox* _lowMimageLimiter;

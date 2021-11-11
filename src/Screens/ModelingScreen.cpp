@@ -14,7 +14,7 @@
 
 ModelingScreen::ModelingScreen(QWidget *parent)
     : ClearableWidget(parent),
-      _sceneView(new SceneView(SceneView::ShaderMode::Voxels, this)),
+      _sceneView(new SceneView(this)),
       _codeEditor(new CodeEditor(this)),
       _program(nullptr),
       _imageModeButton(new ToggleButton(8, 10, this)),

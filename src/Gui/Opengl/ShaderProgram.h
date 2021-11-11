@@ -24,6 +24,12 @@ public:
     void Bind();
     void Release();
 
+    template<class T>
+    void SetUniformValue(const char *name, const T& value)
+    {
+        _program->setUniformValue(name, value);
+    }
+
     QStringList uniforms;
 
     QOpenGLShaderProgram* GetProgram();

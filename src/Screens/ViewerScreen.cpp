@@ -11,8 +11,7 @@
 
 ViewerScreen::ViewerScreen(QWidget *parent):
     ClearableWidget(parent),
-    _shaderMode(SceneView::ShaderMode::Lines),
-    _view(new SceneView(_shaderMode, this)),
+    _view(new SceneView(this)),
     _lowMimageLimiter(new QDoubleSpinBox(this)),
     _highMimageLimiter(new QDoubleSpinBox(this)),
     _xSpaceLimiter(new QDoubleSpinBox(this)),
@@ -190,17 +189,9 @@ void ViewerScreen::OpenModel(const QString &filePath)
             ++zeroCounter;
             point = space.GetPointCoords(i);
 
-            if(_shaderMode == SceneView::ShaderMode::Lines)
-            {
-                _view->AddLineObject(point.x, point.y, point.z,
-                                     1, 1, 1,
-                                     color.red, color.green,
-                                     color.blue, color.alpha);
-            }
-            else
-                _view->AddVoxelObject(point.x, point.y, point.z,
-                                      color.red, color.green,
-                                      color.blue, color.alpha);
+            _view->AddVoxelObject(point.x, point.y, point.z,
+                                  color.red, color.green,
+                                  color.blue, color.alpha);
         }
     }
     _view->Flush();
@@ -294,17 +285,10 @@ void ViewerScreen::UpdateMimageView()
                     point.z >= _zSpaceLimiter->value())
             {
                 color = ISpaceCalculator::GetMImageColor(limitValue);
-                if(_shaderMode == SceneView::ShaderMode::Lines)
-                {
-                    _view->AddLineObject(point.x, point.y, point.z,
-                                         mValue.Cx, mValue.Cy, -mValue.Cz,
-                                         color.red, color.green,
-                                         color.blue, color.alpha);
-                }
-                else
-                    _view->AddVoxelObject(point.x, point.y, point.z,
-                                          color.red, color.green,
-                                          color.blue, color.alpha);
+
+                _view->AddVoxelObject(point.x, point.y, point.z,
+                                      color.red, color.green,
+                                      color.blue, color.alpha);
             }
         }
     }
@@ -328,17 +312,9 @@ void ViewerScreen::UpdateZoneView()
                 point.y >= _ySpaceLimiter->value() &&
                 point.z >= _zSpaceLimiter->value())
         {
-            if(_shaderMode == SceneView::ShaderMode::Lines)
-            {
-                _view->AddLineObject(point.x, point.y, point.z,
-                                     1, 1, 1,
-                                     color.red, color.green,
-                                     color.blue, color.alpha);
-            }
-            else
-                _view->AddVoxelObject(point.x, point.y, point.z,
-                                      color.red, color.green,
-                                      color.blue, color.alpha);
+            _view->AddVoxelObject(point.x, point.y, point.z,
+                                  color.red, color.green,
+                                  color.blue, color.alpha);
         }
     }
     _view->Flush();

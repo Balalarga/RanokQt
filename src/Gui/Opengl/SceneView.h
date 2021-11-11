@@ -20,20 +20,11 @@ class SceneView : public QGLWidget
 {
     Q_OBJECT
 public:
-    enum class ShaderMode
-    {
-        Voxels, Points, Lines
-    };
-
-
-    explicit SceneView(ShaderMode shaderMode = ShaderMode::Points,
-                       QWidget *parent = nullptr);
+    explicit SceneView(QWidget *parent = nullptr);
     ~SceneView();
 
 public slots:
     void AddVoxelObject(float x, float y, float z,
-                   float r, float g, float b, float a);
-    void AddLineObject(float x, float y, float z, float x1, float y1, float z1,
                    float r, float g, float b, float a);
     void Flush();
     void ClearObjects(bool soft = false);
@@ -56,16 +47,13 @@ protected:
     void UpdateMvpMatrix();
 
 private:
-    ShaderMode _shaderMode;
-    ShaderProgram* m_pointShader;
     ShaderProgram* m_voxelShader;
     QMatrix4x4 viewMatrix;
     QMatrix4x4 projMatrix;
     QMatrix4x4 mvpMatrix;
 
-    GridObject* gridObject;
     VoxelObject* voxelObject;
-    LinesObject* linesObject;
+    GridObject* gridObject;
     WcsObject* wcsObject;
 
     QVector4D backColor{0.1f, 0.15f, 0.3f, 0.5f};
