@@ -77,7 +77,7 @@ void OpenglDrawableObject::Create(unsigned verticesCount)
     _vbo.allocate(nullptr, verticesCount*_vaoLayout.GetStride()*sizeof(float));
 
     auto& layout = _vaoLayout.GetLayoutItems();
-    auto* shader = _shaderProgram->GetProgram();
+    auto shader = _shaderProgram->GetProgram();
 
     int offset = 0;
     for(int i = 0; i < layout.size(); ++i)

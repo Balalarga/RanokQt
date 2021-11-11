@@ -13,6 +13,9 @@ VoxelObject::VoxelObject(QObject *parent):
     OpenglDrawableObject(&voxelShader, voxelLayout, parent)
 {
     SetPrimitive(GL_POINTS);
+    voxelShader.uniforms << "worldToView"
+                         << "voxSize"
+                         << "useAlpha";
 }
 
 void VoxelObject::FullCreate(unsigned count)
