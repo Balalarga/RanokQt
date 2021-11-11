@@ -6,30 +6,24 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 
-class GridObject
+#include "OpenglDrawableObject.h"
+
+class GridObject: public OpenglDrawableObject
 {
 public:
-    GridObject() = default;
-    ~GridObject();
-    void Create(QOpenGLShaderProgram* shader);
-    void Destroy();
-    void Render();
+    GridObject(QObject *parent = nullptr);
 
     void SetMainColor(const QColor& color);
+    void Create();
 
 protected:
     void UpdateVbo();
 
 private:
-    QColor mainColor;
-    QOpenGLShaderProgram* shader;
-
-    QOpenGLVertexArrayObject vao;
-    QOpenGLBuffer vbo;
-    int bufferSize;
-
     unsigned linesCount = 1001;
     float lineWidth = 5000;
+
+    QColor mainColor;
 };
 
 #endif // MESHOBJECT_H

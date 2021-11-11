@@ -14,10 +14,6 @@ SceneView::SceneView(ShaderMode shaderMode, QWidget *parent):
     m_mouseState.pressed[Qt::LeftButton] = false;
     m_mouseState.pressed[Qt::MiddleButton] = false;
 
-    m_gridShader = new ShaderProgram({":/shaders/grid.vert", ":/shaders/grid.frag"});
-    m_gridShader->uniforms << "worldToView"
-                           << "gridColor"
-                           << "backColor";
     if(_shaderMode == ShaderMode::Voxels)
         m_voxelShader = new ShaderProgram({
                                               ":/shaders/voxel.vert",
@@ -62,7 +58,6 @@ SceneView::~SceneView()
     delete m_voxelShader;
     if(m_pointShader)
         delete m_pointShader;
-    delete m_gridShader;
     delete gridObject;
     delete wcsObject;
     if(voxelObject)
@@ -148,11 +143,9 @@ void SceneView::initializeGL()
     if(m_pointShader)
         if(!m_pointShader->Create())
             qDebug()<<"point shader error";
-    if(!m_gridShader->Create())
-        qDebug()<<"grid shader error";
 
-    gridObject->Create(m_gridShader->GetProgram());
-    wcsObject->Create(m_gridShader->GetProgram());
+    gridObject->Create();
+    wcsObject->Create();
 }
 
 void SceneView::resizeGL(int width, int height)
@@ -174,11 +167,11 @@ void SceneView::paintGL()
 
     glClearColor(backColor.x(), backColor.y(), backColor.z(), backColor.w());
 
-    m_gridShader->Bind();
-    m_gridShader->GetProgram()->setUniformValue("worldToView", mvpMatrix);
-    m_gridShader->GetProgram()->setUniformValue("backColor", backColor);
+    gridObject->BindShader();
+    gridObject->GetShaderProgram()->GetProgram()->setUniformValue("worldToView", mvpMatrix);
+    gridObject->GetShaderProgram()->GetProgram()->setUniformValue("backColor", backColor);
     gridObject->Render();
-    m_gridShader->Release();
+    gridObject->ReleaseShader();
 
     if(voxelObject && voxelObject->IsCreated())
     {
@@ -208,10 +201,11 @@ void SceneView::paintGL()
         }
     }
 
-    m_gridShader->Bind();
+    wcsObject->BindShader();
+    wcsObject->GetShaderProgram()->GetProgram()->setUniformValue("worldToView", mvpMatrix);
+    wcsObject->GetShaderProgram()->GetProgram()->setUniformValue("backColor", backColor);
     wcsObject->Render();
-    m_gridShader->Release();
-
+    wcsObject->ReleaseShader();
 }
 
 void SceneView::mousePressEvent(QMouseEvent *event)

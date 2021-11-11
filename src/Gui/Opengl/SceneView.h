@@ -59,7 +59,6 @@ private:
     ShaderMode _shaderMode;
     ShaderProgram* m_pointShader;
     ShaderProgram* m_voxelShader;
-    ShaderProgram* m_gridShader;
     QMatrix4x4 viewMatrix;
     QMatrix4x4 projMatrix;
     QMatrix4x4 mvpMatrix;

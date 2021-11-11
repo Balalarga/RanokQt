@@ -7,14 +7,47 @@
 
 struct VaoLayoutItem
 {
+    VaoLayoutItem():
+        count(0),
+        type(0),
+        size(0)
+    {}
+    VaoLayoutItem(unsigned count, unsigned type):
+        count(count),
+        type(type),
+        size(count * GetTypeSize(type))
+    {}
     unsigned count;
     unsigned type;
     unsigned size;
+
+    static unsigned GetTypeSize(unsigned type)
+    {
+        switch(type)
+        {
+        case GL_FLOAT:
+            return sizeof(float);
+        case GL_INT:
+            return sizeof(int);
+        case GL_UNSIGNED_INT:
+            return sizeof(unsigned);
+        }
+        assert(false);
+        return 0;
+    }
 };
 
 class VaoLayout
 {
 public:
+    VaoLayout() = default;
+    VaoLayout(const QVector<VaoLayoutItem>& items):
+        _layoutItems(items)
+    {
+        for(auto& i: items)
+            _stride += i.size;
+    }
+
     void Add(unsigned count, unsigned type)
     {
         unsigned size = 0;
@@ -33,8 +66,8 @@ public:
             qDebug()<<"VaoLayout error: Unsupported data type";
         }
 
-        _stride += size;
-        _layoutItems.append({count, type, size});
+        _stride += count * size;
+        _layoutItems.append(VaoLayoutItem(count, type));
     }
 
     inline const QVector<VaoLayoutItem>& GetLayoutItems() const
