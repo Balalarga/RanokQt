@@ -11,7 +11,8 @@
 class GridObject: public OpenglDrawableObject
 {
 public:
-    GridObject(QObject *parent = nullptr);
+    GridObject(ShaderProgram *shaderProgram, const VaoLayout& vaoLayout, QObject *parent = nullptr);
+    ~GridObject();
 
     void SetMainColor(const QColor& color);
     void Create();

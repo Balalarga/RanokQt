@@ -7,9 +7,18 @@
 
 struct ShadersList
 {
-    QString vertexShader = "";
-    QString fragmentShader = "";
-    QString geometryShader = "";
+    ShadersList(const QString& vertexShader,
+                const QString& fragmentShader,
+                const QString& geometryShader = ""):
+        vertexShader(vertexShader),
+        fragmentShader(fragmentShader),
+        geometryShader(geometryShader)
+    {
+    }
+
+    QString vertexShader;
+    QString fragmentShader;
+    QString geometryShader;
 };
 
 

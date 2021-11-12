@@ -11,7 +11,6 @@ ShaderProgram::ShaderProgram(const ShadersList &list, QObject *parent):
 
 ShaderProgram::~ShaderProgram()
 {
-    Release();
     if(_program)
         delete _program;
     _program = nullptr;

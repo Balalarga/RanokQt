@@ -1,22 +1,15 @@
 #include "GridObject.h"
 
-static const VaoLayout gridLayout = VaoLayout({
-                                           VaoLayoutItem(3, GL_FLOAT),
-                                           VaoLayoutItem(4, GL_FLOAT),
-                                       });
-static ShaderProgram gridShader({":/shaders/grid.vert", ":/shaders/grid.frag"});
-
-
-GridObject::GridObject(QObject *parent):
-    OpenglDrawableObject(&gridShader, gridLayout, parent)
+GridObject::GridObject(ShaderProgram *shaderProgram, const VaoLayout& vaoLayout, QObject *parent):
+    OpenglDrawableObject(shaderProgram, vaoLayout, parent)
 {
     mainColor = QColor(255*0.5f, 255*0.5f,  255*0.7f, 255*0.5f);
 
     SetPrimitive(GL_LINES);
+}
 
-    gridShader.uniforms << "worldToView"
-                        << "gridColor"
-                        << "backColor";
+GridObject::~GridObject()
+{
 }
 
 void GridObject::SetMainColor(const QColor &color)
@@ -67,6 +60,5 @@ void GridObject::Create()
         buffer.push_back(mainColor.alphaF());
     }
 
-    gridShader.Create();
     OpenglDrawableObject::Create(buffer);
 }

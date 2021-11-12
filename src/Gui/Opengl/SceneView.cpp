@@ -3,6 +3,8 @@
 #include "Space/SpaceManager.h"
 #include <QMouseEvent>
 
+#include "ShaderFactory.h"
+
 SceneView::SceneView(QWidget *parent):
     QGLWidget(QGLFormat(QGL::SampleBuffers), parent),
     voxelObject(nullptr)
@@ -11,9 +13,21 @@ SceneView::SceneView(QWidget *parent):
     m_mouseState.pressed[Qt::LeftButton] = false;
     m_mouseState.pressed[Qt::MiddleButton] = false;
 
-    gridObject = new GridObject(this);
-    wcsObject = new WcsObject(this);
-    voxelObject = new VoxelObject(this);
+
+    ShadersList gridShadersList(":/shaders/grid.vert", ":/shaders/grid.frag");
+    QStringList gridUniforms({"worldToView", "gridColor", "backColor"});
+    ShaderProgram* gridShader = ShaderFactory::Get().Add("gridShader", gridShadersList, gridUniforms);
+    VaoLayout gridLayout({VaoLayoutItem(3, GL_FLOAT),
+                          VaoLayoutItem(4, GL_FLOAT)});
+    gridObject = new GridObject(gridShader, gridLayout, this);
+    wcsObject = new WcsObject(gridShader, gridLayout, this);
+
+
+    ShadersList voxelShadersList(":/shaders/voxel.vert", ":/shaders/voxel.frag", ":/shaders/voxel.geom");
+    VaoLayout voxelLayout = VaoLayout({VaoLayoutItem(3, GL_FLOAT), VaoLayoutItem(4, GL_FLOAT)});
+    QStringList voxelUniforms({"worldToView", "voxSize", "useAlpha"});
+    ShaderProgram* voxelShader = ShaderFactory::Get().Add("voxelShader", voxelShadersList, voxelUniforms);
+    voxelObject = new VoxelObject(voxelShader, voxelLayout, this);
 }
 
 SceneView::~SceneView()
@@ -50,7 +64,7 @@ void SceneView::ClearObjects(bool soft)
 
 void SceneView::CreateVoxelObject(int count)
 {
-    voxelObject->FullCreate(count);
+    voxelObject->Create(count);
 }
 
 void SceneView::UseAlphaColor(bool use)
@@ -73,9 +87,11 @@ void SceneView::initializeGL()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    ShaderFactory::Get().CreateAll();
 
     gridObject->Create();
     wcsObject->Create();
+
 }
 
 void SceneView::resizeGL(int width, int height)
@@ -108,7 +124,7 @@ void SceneView::paintGL()
         voxelObject->BindShader();
         voxelObject->GetShaderProgram()->SetUniformValue("worldToView", mvpMatrix);
         voxelObject->GetShaderProgram()->SetUniformValue("voxSize", QVector3D(voxSize.x,
-                                                     voxSize.y, voxSize.z));
+                                                                              voxSize.y, voxSize.z));
         voxelObject->Render();
         voxelObject->ReleaseShader();
     }

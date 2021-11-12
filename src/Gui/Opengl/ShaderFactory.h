@@ -11,9 +11,11 @@ class ShaderFactory
 {
 public:
     static ShaderFactory& Get();
-    ShaderProgram* AddAndLoad(const QString& tag, const ShadersList& shaders, const QStringList& uniforms);
+    ShaderProgram* Add(const QString& tag, const ShadersList& shaders, const QStringList& uniforms);
     ShaderProgram* Add(const QString& tag, const ShadersList& shaders);
-    ShaderProgram* Load(const QString& tag, const QStringList& uniforms);
+
+    bool CreateAll();
+
     ShaderProgram* Get(const QString& tag);
 
 

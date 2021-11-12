@@ -1,25 +1,17 @@
 #include "WcsObject.h"
 
-
-static const VaoLayout wcsLayout = VaoLayout({
-                                           VaoLayoutItem(3, GL_FLOAT),
-                                           VaoLayoutItem(4, GL_FLOAT),
-                                       });
-static ShaderProgram wcsShader({":/shaders/grid.vert", ":/shaders/grid.frag"});
-
-
-WcsObject::WcsObject(QObject *parent):
-    OpenglDrawableObject(&wcsShader, wcsLayout, parent)
+WcsObject::WcsObject(ShaderProgram *shaderProgram, const VaoLayout& vaoLayout, QObject *parent):
+    OpenglDrawableObject(shaderProgram, vaoLayout, parent)
 {
     colors.push_back(QColor(255,   0,   0));
     colors.push_back(QColor(  0, 255,   0));
     colors.push_back(QColor(  0,   0, 255));
 
     SetPrimitive(GL_LINES);
+}
 
-    wcsShader.uniforms << "worldToView"
-                       << "gridColor"
-                       << "backColor";
+WcsObject::~WcsObject()
+{
 }
 
 void WcsObject::Create()
@@ -73,7 +65,6 @@ void WcsObject::Create()
     buffer.push_back(colors[2].blueF());
     buffer.push_back(colors[2].alphaF());
 
-    wcsShader.Create();
     OpenglDrawableObject::Create(buffer);
 }
 

@@ -11,9 +11,9 @@
 class VoxelObject: public OpenglDrawableObject
 {
 public:
-    VoxelObject(QObject* parent = nullptr);
+    VoxelObject(ShaderProgram *shaderProgram, const VaoLayout& vaoLayout, QObject *parent = nullptr);
+    ~VoxelObject();
 
-    void FullCreate(unsigned count);
     void Destroy() override;
 
     void AddVoxel(float x, float y, float z,

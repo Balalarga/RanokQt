@@ -16,6 +16,8 @@ OpenglDrawableObject::~OpenglDrawableObject()
 
 void OpenglDrawableObject::Create(const QVector<float>& vertices)
 {
+    _shaderProgram->Create();
+
     _verticesCount = vertices.size()*sizeof(float)/_vaoLayout.GetStride();
     _verticesFilling = _verticesCount;
     _vao.create();
@@ -45,9 +47,6 @@ void OpenglDrawableObject::Destroy()
 {
     if(_vao.isCreated())
     {
-        _vao.release();
-        _vbo.release();
-
         _vao.destroy();
         _vbo.destroy();
     }
@@ -109,14 +108,12 @@ void OpenglDrawableObject::SetPrimitive(unsigned primitive)
 
 void OpenglDrawableObject::BindShader()
 {
-    if(_shaderProgram->GetProgram()->isLinked())
-        _shaderProgram->Bind();
+    _shaderProgram->Bind();
 }
 
 void OpenglDrawableObject::ReleaseShader()
 {
-    if(_shaderProgram->GetProgram()->isLinked())
-        _shaderProgram->Release();
+    _shaderProgram->Release();
 }
 
 ShaderProgram* OpenglDrawableObject::GetShaderProgram()

@@ -5,7 +5,8 @@
 
 TestView::TestView(QWidget *parent, QSize renderSize):
     QGLWidget(QGLFormat(QGL::SampleBuffers), parent),
-    renderSize(renderSize)
+    renderSize(renderSize),
+    fbo(nullptr)
 {
     m_mouseState.pressed[Qt::RightButton] = false;
     m_mouseState.pressed[Qt::LeftButton] = false;

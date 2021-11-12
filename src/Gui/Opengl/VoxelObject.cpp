@@ -1,27 +1,13 @@
 #include "VoxelObject.h"
 
-static const VaoLayout voxelLayout = VaoLayout({
-                                           VaoLayoutItem(3, GL_FLOAT),
-                                           VaoLayoutItem(4, GL_FLOAT),
-                                       });
-static ShaderProgram voxelShader({":/shaders/voxel.vert",
-                                  ":/shaders/voxel.frag",
-                                  ":/shaders/voxel.geom"});
-
-
-VoxelObject::VoxelObject(QObject *parent):
-    OpenglDrawableObject(&voxelShader, voxelLayout, parent)
+VoxelObject::VoxelObject(ShaderProgram *shaderProgram, const VaoLayout& vaoLayout, QObject *parent):
+    OpenglDrawableObject(shaderProgram, vaoLayout, parent)
 {
     SetPrimitive(GL_POINTS);
-    voxelShader.uniforms << "worldToView"
-                         << "voxSize"
-                         << "useAlpha";
 }
 
-void VoxelObject::FullCreate(unsigned count)
+VoxelObject::~VoxelObject()
 {
-    voxelShader.Create();
-    OpenglDrawableObject::Create(count);
 }
 
 void VoxelObject::AddVoxel(float x, float y, float z, float r, float g, float b, float a)
