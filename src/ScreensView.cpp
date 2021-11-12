@@ -23,5 +23,6 @@ ScreensView::ScreensView(QWidget *parent):
 void ScreensView::TabChanged(int id)
 {
     for(int i = 0; i < count(); ++i)
-        _tabs[i]->Cleanup();
+        if(i != id)
+            _tabs[i]->Cleanup();
 }

@@ -29,6 +29,7 @@ public:
     ~ShaderProgram();
 
     bool Create();
+    bool IsCreated();
 
     void Bind();
     void Release();

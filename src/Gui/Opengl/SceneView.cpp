@@ -171,6 +171,16 @@ void SceneView::UpdateMvpMatrix()
     updateGL();
 }
 
+void SceneView::showEvent(QShowEvent *event)
+{
+    makeCurrent();
+}
+
+void SceneView::hideEvent(QHideEvent *event)
+{
+    doneCurrent();
+}
+
 void SceneView::mouseMoveEvent(QMouseEvent *event)
 {
     if(m_mouseState.pressed[Qt::LeftButton])

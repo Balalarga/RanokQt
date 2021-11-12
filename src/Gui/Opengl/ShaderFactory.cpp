@@ -10,7 +10,10 @@ ShaderFactory &ShaderFactory::Get()
 ShaderProgram *ShaderFactory::Add(const QString &tag, const ShadersList &shaders, const QStringList &uniforms)
 {
     if(auto shader = Get(tag))
+    {
+        qDebug()<<"Shader "<<tag<<" already created";
         return shader;
+    }
 
     auto shaderProgram = new ShaderProgram(shaders);
     shaderProgram->uniforms = std::move(uniforms);
@@ -23,7 +26,10 @@ ShaderProgram *ShaderFactory::Add(const QString &tag, const ShadersList &shaders
 ShaderProgram *ShaderFactory::Add(const QString &tag, const ShadersList &shaders)
 {
     if(auto shader = Get(tag))
+    {
+        qDebug()<<"Shader "<<tag<<" already created";
         return shader;
+    }
 
     auto shaderProgram = new ShaderProgram(shaders);
 
@@ -38,7 +44,7 @@ bool ShaderFactory::CreateAll()
     auto shaderNames = _shaderStorage.keys();
     for(auto& name: shaderNames)
     {
-        if(!_shaderStorage[name]->Create())
+        if(!_shaderStorage[name]->IsCreated() && !_shaderStorage[name]->Create())
         {
             status++;
             qDebug()<<"Shader "<< name <<" creating error";

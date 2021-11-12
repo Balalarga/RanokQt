@@ -40,6 +40,11 @@ bool ShaderProgram::Create() {
     return true;
 }
 
+bool ShaderProgram::IsCreated()
+{
+    return _program;
+}
+
 void ShaderProgram::Bind()
 {
     if(_program)
