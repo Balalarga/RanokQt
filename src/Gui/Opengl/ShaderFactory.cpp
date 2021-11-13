@@ -9,31 +9,37 @@ ShaderFactory &ShaderFactory::Get()
 
 ShaderProgram *ShaderFactory::Add(const QString &tag, const ShadersList &shaders, const QStringList &uniforms)
 {
+    QString name = tag;
     if(auto shader = Get(tag))
     {
         qDebug()<<"Shader "<<tag<<" already created";
-        return shader;
+        while(Get(name))
+            name = tag + QString::number(1+rand()%100);
+        qDebug()<<"Name changed to: "<<name;
     }
 
     auto shaderProgram = new ShaderProgram(shaders);
     shaderProgram->uniforms = std::move(uniforms);
 
-    _shaderStorage[tag] = shaderProgram;
+    _shaderStorage[name] = shaderProgram;
 
     return shaderProgram;
 }
 
 ShaderProgram *ShaderFactory::Add(const QString &tag, const ShadersList &shaders)
 {
+    QString name = tag;
     if(auto shader = Get(tag))
     {
         qDebug()<<"Shader "<<tag<<" already created";
-        return shader;
+        while(Get(name))
+            name = tag + QString::number(1+rand()%100);
+        qDebug()<<"Name changed to: "<<name;
     }
 
     auto shaderProgram = new ShaderProgram(shaders);
 
-    _shaderStorage[tag] = shaderProgram;
+    _shaderStorage[name] = shaderProgram;
 
     return shaderProgram;
 }

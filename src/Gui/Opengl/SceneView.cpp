@@ -13,7 +13,6 @@ SceneView::SceneView(QWidget *parent):
     m_mouseState.pressed[Qt::LeftButton] = false;
     m_mouseState.pressed[Qt::MiddleButton] = false;
 
-
     ShadersList gridShadersList(":/shaders/grid.vert", ":/shaders/grid.frag");
     QStringList gridUniforms({"worldToView", "gridColor", "backColor"});
     ShaderProgram* gridShader = ShaderFactory::Get().Add("gridShader", gridShadersList, gridUniforms);
