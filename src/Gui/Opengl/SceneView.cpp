@@ -3,10 +3,8 @@
 #include "Space/SpaceManager.h"
 #include <QMouseEvent>
 
-#include "ShaderFactory.h"
-
 SceneView::SceneView(QWidget *parent):
-    QGLWidget(QGLFormat(QGL::SampleBuffers), parent),
+    OpenglWidget(parent),
     voxelObject(nullptr)
 {
     m_mouseState.pressed[Qt::RightButton] = false;
@@ -15,25 +13,25 @@ SceneView::SceneView(QWidget *parent):
 
     ShadersList gridShadersList(":/shaders/grid.vert", ":/shaders/grid.frag");
     QStringList gridUniforms({"worldToView", "gridColor", "backColor"});
-    ShaderProgram* gridShader = ShaderFactory::Get().Add("gridShader", gridShadersList, gridUniforms);
+    ShaderProgram* gridShader = GetShaderManager().Add("gridShader",
+                                                       gridShadersList,
+                                                       gridUniforms);
     VaoLayout gridLayout({VaoLayoutItem(3, GL_FLOAT),
                           VaoLayoutItem(4, GL_FLOAT)});
     gridObject = new GridObject(gridShader, gridLayout, this);
     wcsObject = new WcsObject(gridShader, gridLayout, this);
 
 
-    ShadersList voxelShadersList(":/shaders/voxel.vert", ":/shaders/voxel.frag", ":/shaders/voxel.geom");
-    VaoLayout voxelLayout = VaoLayout({VaoLayoutItem(3, GL_FLOAT), VaoLayoutItem(4, GL_FLOAT)});
+    ShadersList voxelShadersList(":/shaders/voxel.vert",
+                                 ":/shaders/voxel.frag",
+                                 ":/shaders/voxel.geom");
+    VaoLayout voxelLayout = VaoLayout({VaoLayoutItem(3, GL_FLOAT),
+                                       VaoLayoutItem(4, GL_FLOAT)});
     QStringList voxelUniforms({"worldToView", "voxSize", "useAlpha"});
-    ShaderProgram* voxelShader = ShaderFactory::Get().Add("voxelShader", voxelShadersList, voxelUniforms);
+    ShaderProgram* voxelShader = GetShaderManager().Add("voxelShader",
+                                                        voxelShadersList,
+                                                        voxelUniforms);
     voxelObject = new VoxelObject(voxelShader, voxelLayout, this);
-}
-
-SceneView::~SceneView()
-{
-    delete gridObject;
-    delete wcsObject;
-    delete voxelObject;
 }
 
 void SceneView::AddVoxelObject(float x, float y, float z,
@@ -72,6 +70,7 @@ void SceneView::UseAlphaColor(bool use)
         glDisable(GL_DEPTH_TEST);
     else
         glEnable(GL_DEPTH_TEST);
+
     voxelObject->BindShader();
     voxelObject->GetShaderProgram()->SetUniformValue("useAlpha", use);
     voxelObject->ReleaseShader();
@@ -79,23 +78,20 @@ void SceneView::UseAlphaColor(bool use)
 
 void SceneView::initializeGL()
 {
-    glClearColor(backColor.x(), backColor.y(), backColor.z(), backColor.w());
+    OpenglWidget::initializeGL();
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    ShaderFactory::Get().CreateAll();
+    GetShaderManager().CreateAll();
 
     gridObject->Create();
     wcsObject->Create();
-
 }
 
 void SceneView::resizeGL(int width, int height)
 {
-    glViewport(0, 0, width, height);
+    OpenglWidget::resizeGL(width, height);
 
     projMatrix.setToIdentity();
     projMatrix.perspective(45, width/(float)height, 0.1, 10000);
@@ -104,17 +100,15 @@ void SceneView::resizeGL(int width, int height)
 
 void SceneView::paintGL()
 {
+    OpenglWidget::paintGL();
+
     cl_float3 voxSize = {0.2, 0.2, 0.2};
     if(SpaceManager::Self().WasInited())
         voxSize = SpaceManager::Self().GetPointSize();
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glClearColor(backColor.x(), backColor.y(), backColor.z(), backColor.w());
-
     gridObject->BindShader();
     gridObject->GetShaderProgram()->SetUniformValue("worldToView", mvpMatrix);
-    gridObject->GetShaderProgram()->SetUniformValue("backColor", backColor);
+    gridObject->GetShaderProgram()->SetUniformValue("backColor", GetClearColor());
     gridObject->Render();
     gridObject->ReleaseShader();
 
@@ -123,16 +117,31 @@ void SceneView::paintGL()
         voxelObject->BindShader();
         voxelObject->GetShaderProgram()->SetUniformValue("worldToView", mvpMatrix);
         voxelObject->GetShaderProgram()->SetUniformValue("voxSize", QVector3D(voxSize.x,
-                                                                              voxSize.y, voxSize.z));
+                                                                              voxSize.y,
+                                                                              voxSize.z));
         voxelObject->Render();
         voxelObject->ReleaseShader();
     }
 
     wcsObject->BindShader();
     wcsObject->GetShaderProgram()->SetUniformValue("worldToView", mvpMatrix);
-    wcsObject->GetShaderProgram()->SetUniformValue("backColor", backColor);
+    wcsObject->GetShaderProgram()->SetUniformValue("backColor", GetClearColor());
     wcsObject->Render();
     wcsObject->ReleaseShader();
+}
+
+void SceneView::UpdateMvpMatrix()
+{
+    viewMatrix.setToIdentity();
+    viewMatrix.lookAt({0.0f, 0.0f, m_camera.zoom},
+                      {0.0f, 0.0f, 0.0f},
+                      {0.0f, 1.0f, 0.0f});
+    viewMatrix.rotate(m_camera.xAngle-90, 1, 0, 0);
+    viewMatrix.rotate(m_camera.zAngle, 0, 0, 1);
+
+    mvpMatrix = projMatrix * viewMatrix;
+
+    updateGL();
 }
 
 void SceneView::mousePressEvent(QMouseEvent *event)
@@ -146,40 +155,6 @@ void SceneView::mouseReleaseEvent(QMouseEvent *event)
     m_mouseState.pressed[event->button()] = false;
 }
 
-void SceneView::keyPressEvent(QKeyEvent *event)
-{
-    if(event->key() == Qt::Key_Shift)
-        _shiftPressed = true;
-}
-
-void SceneView::keyReleaseEvent(QKeyEvent *event)
-{
-    if(event->key() == Qt::Key_Shift)
-        _shiftPressed = false;
-}
-
-void SceneView::UpdateMvpMatrix()
-{
-    viewMatrix.setToIdentity();
-    viewMatrix.lookAt({0.0f, 0.0f, m_camera.zoom},
-                      {0.0f, 0.0f, 0.0f},
-                      {0.0f, 1.0f, 0.0f});
-    viewMatrix.rotate(m_camera.xAngle-90, 1, 0, 0);
-    viewMatrix.rotate(m_camera.zAngle, 0, 0, 1);
-    mvpMatrix = projMatrix * viewMatrix;
-    updateGL();
-}
-
-void SceneView::showEvent(QShowEvent *event)
-{
-    makeCurrent();
-}
-
-void SceneView::hideEvent(QHideEvent *event)
-{
-    doneCurrent();
-}
-
 void SceneView::mouseMoveEvent(QMouseEvent *event)
 {
     if(m_mouseState.pressed[Qt::LeftButton])
@@ -187,6 +162,7 @@ void SceneView::mouseMoveEvent(QMouseEvent *event)
         m_camera.xAngle += (m_mouseState.pos.y() - event->pos().y())*0.5;
         m_camera.zAngle += (event->pos().x() - m_mouseState.pos.x())*0.5;
         m_mouseState.pos = {event->pos().x(), event->pos().y()};
+
         UpdateMvpMatrix();
     }
     else if(m_mouseState.pressed[Qt::RightButton])
@@ -199,12 +175,12 @@ void SceneView::mouseMoveEvent(QMouseEvent *event)
 
 void SceneView::wheelEvent(QWheelEvent *event)
 {
-    double dz = 3;
-    if(_shiftPressed)
-        dz = 0.5;
+    constexpr double dz = 3;
+
     if(event->angleDelta().y() > 0 && m_camera.zoom < -dz)
         m_camera.zoom += dz;
     else if(event->angleDelta().y() < 0)
         m_camera.zoom -= dz;
+
     UpdateMvpMatrix();
 }

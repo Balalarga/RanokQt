@@ -25,24 +25,25 @@ struct ShadersList
 class ShaderProgram: public QObject
 {
 public:
+    QStringList uniforms;
+
     ShaderProgram(const ShadersList& list, QObject* parent = nullptr);
     ~ShaderProgram();
 
     bool Create();
+    bool Recreate(const ShadersList& list);
     bool IsCreated();
 
     void Bind();
     void Release();
+
+    QOpenGLShaderProgram* GetProgram();
 
     template<class T>
     void SetUniformValue(const char *name, const T& value)
     {
         _program->setUniformValue(name, value);
     }
-
-    QStringList uniforms;
-
-    QOpenGLShaderProgram* GetProgram();
 
 
 private:

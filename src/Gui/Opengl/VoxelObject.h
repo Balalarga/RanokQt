@@ -6,7 +6,7 @@
 #include <QOpenGLVertexArrayObject>
 #include <QVector>
 
-#include "OpenglDrawableObject.h"
+#include "Base/OpenglDrawableObject.h"
 
 class VoxelObject: public OpenglDrawableObject
 {

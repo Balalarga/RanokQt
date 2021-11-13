@@ -13,21 +13,24 @@ ShaderProgram::~ShaderProgram()
 {
     if(_program)
         delete _program;
-    _program = nullptr;
 }
 
-bool ShaderProgram::Create() {
+bool ShaderProgram::Create()
+{
     _program = new QOpenGLShaderProgram();
 
     // read the shader programs from the resource
-    if (!_program->addShaderFromSourceFile(QOpenGLShader::Vertex, _shadersList.vertexShader))
+    if (!_program->addShaderFromSourceFile(QOpenGLShader::Vertex,
+                                           _shadersList.vertexShader))
         return false;
 
-    if (!_program->addShaderFromSourceFile(QOpenGLShader::Fragment, _shadersList.fragmentShader))
+    if (!_program->addShaderFromSourceFile(QOpenGLShader::Fragment,
+                                           _shadersList.fragmentShader))
         return false;
 
     if(!_shadersList.geometryShader.isEmpty() &&
-            !_program->addShaderFromSourceFile(QOpenGLShader::Geometry, _shadersList.geometryShader))
+            !_program->addShaderFromSourceFile(QOpenGLShader::Geometry,
+                                               _shadersList.geometryShader))
         return false;
 
     if (!_program->link())
@@ -43,6 +46,25 @@ bool ShaderProgram::Create() {
 bool ShaderProgram::IsCreated()
 {
     return _program;
+}
+
+bool ShaderProgram::Recreate(const ShadersList &list)
+{
+    if(_program)
+        delete _program;
+
+
+    if(!list.vertexShader.isEmpty())
+        _shadersList.vertexShader = list.vertexShader;
+
+    if(!list.fragmentShader.isEmpty())
+        _shadersList.fragmentShader = list.fragmentShader;
+
+    if(!list.geometryShader.isEmpty())
+        _shadersList.geometryShader = list.geometryShader;
+
+
+    return Create();
 }
 
 void ShaderProgram::Bind()

@@ -7,10 +7,12 @@
 #include "ShaderProgram.h"
 
 
-class ShaderFactory
+class ShaderManager: public QObject
 {
 public:
-    static ShaderFactory& Get();
+    ShaderManager(QObject* parent = nullptr);
+    ~ShaderManager();
+
     ShaderProgram* Add(const QString& tag, const ShadersList& shaders, const QStringList& uniforms);
     ShaderProgram* Add(const QString& tag, const ShadersList& shaders);
 
@@ -18,11 +20,7 @@ public:
 
     ShaderProgram* Get(const QString& tag);
 
-
 private:
-    ShaderFactory() = default;
-    ~ShaderFactory();
-
     QMap<QString, ShaderProgram*> _shaderStorage;
 };
 

@@ -7,7 +7,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 
-#include "OpenglDrawableObject.h"
+#include "Base/OpenglDrawableObject.h"
 
 class WcsObject: public OpenglDrawableObject
 {
@@ -19,8 +19,10 @@ public:
 
     void SetColors(const QVector<QColor>& colors);
 
+
 protected:
     void UpdateVbo();
+
 
 private:
     QVector<QColor> colors;

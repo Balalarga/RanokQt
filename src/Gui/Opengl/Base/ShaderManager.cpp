@@ -1,21 +1,23 @@
-#include "ShaderFactory.h"
+#include "ShaderManager.h"
 
-
-ShaderFactory &ShaderFactory::Get()
+ShaderManager::ShaderManager(QObject *parent):
+    QObject(parent)
 {
-    static ShaderFactory self;
-    return self;
 }
 
-ShaderProgram *ShaderFactory::Add(const QString &tag, const ShadersList &shaders, const QStringList &uniforms)
+ShaderManager::~ShaderManager()
+{
+    for(auto& s: _shaderStorage)
+        delete s;
+}
+
+ShaderProgram *ShaderManager::Add(const QString &tag, const ShadersList &shaders, const QStringList &uniforms)
 {
     QString name = tag;
     if(auto shader = Get(tag))
     {
         qDebug()<<"Shader "<<tag<<" already created";
-        while(Get(name))
-            name = tag + QString::number(1+rand()%100);
-        qDebug()<<"Name changed to: "<<name;
+        return shader;
     }
 
     auto shaderProgram = new ShaderProgram(shaders);
@@ -26,15 +28,13 @@ ShaderProgram *ShaderFactory::Add(const QString &tag, const ShadersList &shaders
     return shaderProgram;
 }
 
-ShaderProgram *ShaderFactory::Add(const QString &tag, const ShadersList &shaders)
+ShaderProgram *ShaderManager::Add(const QString &tag, const ShadersList &shaders)
 {
     QString name = tag;
     if(auto shader = Get(tag))
     {
         qDebug()<<"Shader "<<tag<<" already created";
-        while(Get(name))
-            name = tag + QString::number(1+rand()%100);
-        qDebug()<<"Name changed to: "<<name;
+        return shader;
     }
 
     auto shaderProgram = new ShaderProgram(shaders);
@@ -44,7 +44,7 @@ ShaderProgram *ShaderFactory::Add(const QString &tag, const ShadersList &shaders
     return shaderProgram;
 }
 
-bool ShaderFactory::CreateAll()
+bool ShaderManager::CreateAll()
 {
     int status = 0;
     auto shaderNames = _shaderStorage.keys();
@@ -59,17 +59,11 @@ bool ShaderFactory::CreateAll()
     return status == 0;
 }
 
-ShaderProgram *ShaderFactory::Get(const QString &tag)
+ShaderProgram *ShaderManager::Get(const QString &tag)
 {
     auto it = _shaderStorage.find(tag);
     if(it != _shaderStorage.end())
         return *it;
 
     return nullptr;
-}
-
-ShaderFactory::~ShaderFactory()
-{
-    for(auto& s: _shaderStorage)
-        delete s;
 }

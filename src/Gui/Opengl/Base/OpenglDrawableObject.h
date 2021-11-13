@@ -15,7 +15,9 @@ class OpenglDrawableObject : public QObject
 {
     Q_OBJECT
 public:
-    explicit OpenglDrawableObject(ShaderProgram *shaderProgram, const VaoLayout& vaoLayout, QObject *parent = nullptr);
+    explicit OpenglDrawableObject(ShaderProgram *shaderProgram,
+                                  const VaoLayout& vaoLayout,
+                                  QObject *parent = nullptr);
     virtual ~OpenglDrawableObject();
 
     virtual void Create(unsigned verticesCount);
