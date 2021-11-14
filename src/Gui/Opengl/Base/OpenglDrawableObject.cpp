@@ -63,6 +63,20 @@ bool OpenglDrawableObject::IsCreated() const
     return _vao.isCreated();
 }
 
+void OpenglDrawableObject::AddData(const QVector<float> &vertices)
+{
+    const float _fillingSize = _verticesFilling * _vaoLayout.GetStride();
+    const float _maxSize = _verticesCount * _vaoLayout.GetStride();
+    const float _writeSize = vertices.size() * sizeof(float);
+    if(_fillingSize + _writeSize <= _maxSize)
+    {
+        _vbo.bind();
+        _vbo.write(_fillingSize, vertices.data(), _writeSize);
+        _vbo.release();
+        _verticesFilling += vertices.size() / _vaoLayout.GetWidth();
+    }
+}
+
 void OpenglDrawableObject::Create(unsigned verticesCount)
 {
     _verticesCount = verticesCount;
@@ -73,7 +87,7 @@ void OpenglDrawableObject::Create(unsigned verticesCount)
     _vbo.create();
     _vbo.bind();
     _vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-    _vbo.allocate(nullptr, verticesCount*_vaoLayout.GetStride()*sizeof(float));
+    _vbo.allocate(verticesCount * _vaoLayout.GetStride());
 
     auto& layout = _vaoLayout.GetLayoutItems();
     auto shader = _shaderProgram->GetProgram();
@@ -88,17 +102,6 @@ void OpenglDrawableObject::Create(unsigned verticesCount)
 
     _vao.release();
     _vbo.release();
-}
-
-void OpenglDrawableObject::AddData(const QVector<float>& vertices)
-{
-    if(_verticesFilling + vertices.size() <= _verticesCount)
-    {
-        _vbo.bind();
-        _vbo.write(_verticesFilling * _vaoLayout.GetStride(), vertices.data(), vertices.size()*sizeof(float));
-        _vbo.release();
-        _verticesFilling += vertices.size();
-    }
 }
 
 void OpenglDrawableObject::SetPrimitive(unsigned primitive)
@@ -127,7 +130,7 @@ void OpenglDrawableObject::Render()
     {
         _vao.bind();
 
-        glDrawArrays(_primitive, 0, _verticesCount);
+        glDrawArrays(_primitive, 0, _verticesFilling);
 
         _vao.release();
     }
@@ -140,10 +143,10 @@ unsigned OpenglDrawableObject::GetLayoutSize() const
 
 unsigned OpenglDrawableObject::GetFillingSize() const
 {
-    return _verticesFilling;
+    return _verticesFilling * _vaoLayout.GetStride();
 }
 
 unsigned OpenglDrawableObject::GetSize() const
 {
-    return _verticesCount;
+    return _verticesCount * _vaoLayout.GetStride();
 }

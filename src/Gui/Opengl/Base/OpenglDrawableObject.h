@@ -28,6 +28,7 @@ public:
     bool IsCreated() const;
 
     void AddData(const QVector<float>& vertices);
+
     void SetPrimitive(unsigned primitive);
     void BindShader();
     void ReleaseShader();

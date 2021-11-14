@@ -23,7 +23,7 @@
 #include "Gui/CodeEditor/CodeEditor.h"
 
 #include "Language/Parser.h"
-#include "QSpaceCalculatorWrapper.h"
+#include "SpaceCalculatorThread.h"
 
 #include "ClearableWidget.h"
 
@@ -90,10 +90,6 @@ private:
     QProgressBar* _progressBar;
 
     QElapsedTimer _timer;
-
-    QCheckBox* _useView;
-    QString _filenameBuffer;
-    QFile _fileBuffer;
 };
 
 #endif // MODELINGSCREEN_H

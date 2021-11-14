@@ -31,7 +31,6 @@ void VoxelObject::Flush()
 
 void VoxelObject::Destroy()
 {
-    bufferFill = 0;
     buffer.clear();
     OpenglDrawableObject::Destroy();
 }

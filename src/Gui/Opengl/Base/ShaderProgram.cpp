@@ -69,14 +69,12 @@ bool ShaderProgram::Recreate(const ShadersList &list)
 
 void ShaderProgram::Bind()
 {
-    if(_program)
-        _program->bind();
+    _program->bind();
 }
 
 void ShaderProgram::Release()
 {
-    if(_program)
-        _program->release();
+    _program->release();
 }
 
 QOpenGLShaderProgram *ShaderProgram::GetProgram()

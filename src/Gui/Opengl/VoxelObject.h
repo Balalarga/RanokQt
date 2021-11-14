@@ -22,7 +22,6 @@ public:
 
 private:
     QVector<float> buffer;
-    int bufferFill = 0;
     int flushCount = 4096;
 };
 

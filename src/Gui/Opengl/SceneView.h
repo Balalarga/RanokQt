@@ -21,7 +21,7 @@ public slots:
     void Flush();
     void ClearObjects(bool soft = false);
     void CreateVoxelObject(int count);
-    void UseAlphaColor(bool use);
+    void SetModelCube(const QVector3D& start, QVector3D& end);
 
 
 protected:

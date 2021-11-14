@@ -78,12 +78,10 @@ void ViewerScreen::OpenFile()
 
     if(filePath.endsWith(".mbin"))
     {
-        _view->UseAlphaColor(true);
         OpenModel(filePath);
     }
     else if(filePath.endsWith(".ibin"))
     {
-        _view->UseAlphaColor(false);
         OpenMimage(filePath);
     }
 }

@@ -15,16 +15,23 @@ public:
     ~GridObject();
 
     void SetMainColor(const QColor& color);
+    void SetLinesSpace(const QVector2D& start, const QVector2D& end);
+    void SetLinesStep(float step);
+
     void Create();
+    void Recreate();
+
 
 protected:
     void UpdateVbo();
 
-private:
-    unsigned linesCount = 1001;
-    float lineWidth = 5000;
 
-    QColor mainColor;
+private:
+    QColor _mainColor;
+
+    QVector4D _linesSpace;
+    float _linesStep;
+
 };
 
 #endif // MESHOBJECT_H

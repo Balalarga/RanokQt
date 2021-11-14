@@ -23,7 +23,7 @@
 #include "Gui/CodeEditor/CodeEditor.h"
 
 #include "Language/Parser.h"
-#include "QSpaceCalculatorWrapper.h"
+#include "SpaceCalculatorThread.h"
 
 #include "ClearableWidget.h"
 

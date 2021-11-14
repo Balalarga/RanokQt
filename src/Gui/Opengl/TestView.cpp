@@ -71,8 +71,6 @@ void TestView::initializeGL()
 {
     OpenglWidget::initializeGL();
 
-    glEnable(GL_TEXTURE_2D);
-
     _screenRect->Create(_screenData);
     _textureRect->Create(_textureData);
 

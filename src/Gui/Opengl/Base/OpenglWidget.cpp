@@ -23,6 +23,11 @@ void OpenglWidget::SetClearColor(const QVector4D &color)
 
 void OpenglWidget::initializeGL()
 {
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    glEnable(GL_PROGRAM_POINT_SIZE);
+    glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

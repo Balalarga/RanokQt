@@ -22,9 +22,8 @@ SceneView::SceneView(QWidget *parent):
     wcsObject = new WcsObject(gridShader, gridLayout, this);
 
 
-    ShadersList voxelShadersList(":/shaders/voxel.vert",
-                                 ":/shaders/voxel.frag",
-                                 ":/shaders/voxel.geom");
+    ShadersList voxelShadersList(":/shaders/point.vert",
+                                 ":/shaders/point.frag");
     VaoLayout voxelLayout = VaoLayout({VaoLayoutItem(3, GL_FLOAT),
                                        VaoLayoutItem(4, GL_FLOAT)});
     QStringList voxelUniforms({"worldToView", "voxSize", "useAlpha"});
@@ -64,24 +63,14 @@ void SceneView::CreateVoxelObject(int count)
     voxelObject->Create(count);
 }
 
-void SceneView::UseAlphaColor(bool use)
+void SceneView::SetModelCube(const QVector3D &start, QVector3D &end)
 {
-    if(use)
-        glDisable(GL_DEPTH_TEST);
-    else
-        glEnable(GL_DEPTH_TEST);
-
-    voxelObject->BindShader();
-    voxelObject->GetShaderProgram()->SetUniformValue("useAlpha", use);
-    voxelObject->ReleaseShader();
+    gridObject->SetLinesSpace(start.toVector2D(), end.toVector2D());
 }
 
 void SceneView::initializeGL()
 {
     OpenglWidget::initializeGL();
-
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
 
     GetShaderManager().CreateAll();
 
