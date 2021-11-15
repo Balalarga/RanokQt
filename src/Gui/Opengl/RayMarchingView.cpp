@@ -7,14 +7,14 @@ RayMarchingView::RayMarchingView(QWidget *parent, QSize renderSize):
     OpenglWidget(parent),
     renderSize(renderSize),
     fbo(nullptr),
-    _screenData({-.5f, -.5f,
-                 -.5f,  .5f,
-                  .5f,  .5f,
-                  .5f, -.5f}),
-    _textureData({-1.f, -1.f, 0.f, 0.f,
-                  -1.f,  1.f, 0.f, 1.f,
-                   1.f,  1.f, 1.f, 1.f,
-                   1.f, -1.f, 1.f, 0.f})
+    _screenData({ 1.f,  1.f,
+                  1.f, -1.f,
+                 -1.f, -1.f,
+                 -1.f,  1.f}),
+    _textureData({ 1.f,  1.f, 1.f, 1.f,
+                   1.f, -1.f, 1.f, 0.f,
+                  -1.f, -1.f, 0.f, 0.f,
+                  -1.f,  1.f, 0.f, 1.f})
 {
     m_mouseState.pressed[Qt::RightButton] = false;
     m_mouseState.pressed[Qt::LeftButton] = false;
@@ -34,10 +34,8 @@ RayMarchingView::RayMarchingView(QWidget *parent, QSize renderSize):
 
     ShadersList textureShaderList(":/shaders/texture.vert",
                                  ":/shaders/texture.frag");
-    QStringList textureUniforms({});
     ShaderProgram* textureShader = GetShaderManager().Add("textureShader",
-                                                          textureShaderList,
-                                                          textureUniforms);
+                                                          textureShaderList);
     VaoLayout textureLayout({VaoLayoutItem(2, GL_FLOAT),
                              VaoLayoutItem(2, GL_FLOAT)});
     _textureRect = new OpenglDrawableObject(textureShader, textureLayout);
@@ -100,7 +98,7 @@ void RayMarchingView::paintGL()
     _screenRect->BindShader();
     _screenRect->GetShaderProgram()->SetUniformValue("worldToView", mvpMatrix);
     _screenRect->GetShaderProgram()->SetUniformValue("grad_step", 0.02f);
-    _screenRect->GetShaderProgram()->SetUniformValue("resolution", size());
+    _screenRect->GetShaderProgram()->SetUniformValue("resolution", renderSize);
     _screenRect->GetShaderProgram()->SetUniformValue("cameraPosition", cameraPos);
     _screenRect->GetShaderProgram()->SetUniformValue("cameraRotation", cameraRotation);
     _screenRect->Render();
