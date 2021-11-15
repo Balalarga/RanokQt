@@ -120,19 +120,13 @@ void RayMarchingScreen::RenderHeightChanged(int value)
 void RayMarchingScreen::keyPressEvent(QKeyEvent *event)
 {
     if(event->key() == Qt::Key_Shift)
-    {
-        qDebug()<<"Pressed";
         _sceneView->SetShiftState(true);
-    }
 }
 
 void RayMarchingScreen::keyReleaseEvent(QKeyEvent *event)
 {
     if(event->key() == Qt::Key_Shift)
-    {
-        qDebug()<<"Released";
         _sceneView->SetShiftState(false);
-    }
 }
 
 void RayMarchingScreen::OpenFile()

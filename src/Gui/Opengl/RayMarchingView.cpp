@@ -177,8 +177,10 @@ void RayMarchingView::mouseMoveEvent(QMouseEvent *event)
 void RayMarchingView::wheelEvent(QWheelEvent *event)
 {
     float dz = 1;
+
     if(_shiftButtonPressed)
         dz /= 10;
+
     if(event->angleDelta().y() > 0 && m_camera.zoom < -dz)
         m_camera.zoom += dz;
     else if(event->angleDelta().y() < 0)
