@@ -1,9 +1,9 @@
-#include "TestView.h"
+#include "RayMarchingView.h"
 #include <QVector2D>
 
 #include <QMouseEvent>
 
-TestView::TestView(QWidget *parent, QSize renderSize):
+RayMarchingView::RayMarchingView(QWidget *parent, QSize renderSize):
     OpenglWidget(parent),
     renderSize(renderSize),
     fbo(nullptr),
@@ -44,13 +44,13 @@ TestView::TestView(QWidget *parent, QSize renderSize):
     _textureRect->SetPrimitive(GL_QUADS);
 }
 
-TestView::~TestView()
+RayMarchingView::~RayMarchingView()
 {
     if(fbo)
         delete fbo;
 }
 
-void TestView::ShaderFromSource(const QString &source)
+void RayMarchingView::ShaderFromSource(const QString &source)
 {
     const QString tempShaderName = ".tempFragShaderFile";
     QFile fragFile(tempShaderName);
@@ -67,7 +67,7 @@ void TestView::ShaderFromSource(const QString &source)
         qDebug()<<"Screen shader error";
 }
 
-void TestView::initializeGL()
+void RayMarchingView::initializeGL()
 {
     OpenglWidget::initializeGL();
 
@@ -77,7 +77,7 @@ void TestView::initializeGL()
     fbo = new QOpenGLFramebufferObject(renderSize);
 }
 
-void TestView::resizeGL(int width, int height)
+void RayMarchingView::resizeGL(int width, int height)
 {
     OpenglWidget::resizeGL(width, height);
 
@@ -86,7 +86,7 @@ void TestView::resizeGL(int width, int height)
     UpdateMvpMatrix();
 }
 
-void TestView::paintGL()
+void RayMarchingView::paintGL()
 {
     OpenglWidget::paintGL();
 
@@ -116,18 +116,18 @@ void TestView::paintGL()
     _textureRect->ReleaseShader();
 }
 
-void TestView::mousePressEvent(QMouseEvent *event)
+void RayMarchingView::mousePressEvent(QMouseEvent *event)
 {
     m_mouseState.pos = event->pos();
     m_mouseState.pressed[event->button()] = true;
 }
 
-void TestView::mouseReleaseEvent(QMouseEvent *event)
+void RayMarchingView::mouseReleaseEvent(QMouseEvent *event)
 {
     m_mouseState.pressed[event->button()] = false;
 }
 
-void TestView::UpdateMvpMatrix()
+void RayMarchingView::UpdateMvpMatrix()
 {
     viewMatrix.setToIdentity();
     viewMatrix.lookAt({0.0f, 0.0f, m_camera.zoom},
@@ -141,7 +141,7 @@ void TestView::UpdateMvpMatrix()
     updateGL();
 }
 
-void TestView::mouseMoveEvent(QMouseEvent *event)
+void RayMarchingView::mouseMoveEvent(QMouseEvent *event)
 {
     if(m_mouseState.pressed[Qt::LeftButton])
     {
@@ -159,7 +159,7 @@ void TestView::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
-void TestView::wheelEvent(QWheelEvent *event)
+void RayMarchingView::wheelEvent(QWheelEvent *event)
 {
     double dz = 1;
 

@@ -1,5 +1,4 @@
-#include "TestScreen.h"
-
+#include "RayMarchingScreen.h"
 
 #include "Space/SpaceManager.h"
 #include "Space/Calculators/CommonCalculator.h"
@@ -14,9 +13,9 @@
 #include <sstream>
 using std::stringstream;
 
-TestScreen::TestScreen(QWidget *parent)
+RayMarchingScreen::RayMarchingScreen(QWidget *parent)
     : ClearableWidget(parent),
-      _sceneView(new TestView(this)),
+      _sceneView(new RayMarchingView(this)),
       _codeEditor(new CodeEditor(this)),
       _program(nullptr),
       _progressBar(new QProgressBar(_sceneView))
@@ -25,7 +24,7 @@ TestScreen::TestScreen(QWidget *parent)
 
     QToolBar* _toolBar(new QToolBar(this));
     _toolBar->addAction(QPixmap("assets/images/playIcon.svg"),
-                        "Run", this, &TestScreen::Compute);
+                        "Run", this, &RayMarchingScreen::Compute);
     toolVLayout->addWidget(_toolBar);
 
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
@@ -48,7 +47,7 @@ TestScreen::TestScreen(QWidget *parent)
 
     QAction* saveAction = new QAction;
     saveAction->setText("Открыть");
-    connect(saveAction, &QAction::triggered, this, &TestScreen::OpenFile);
+    connect(saveAction, &QAction::triggered, this, &RayMarchingScreen::OpenFile);
     fileMenu->addAction(saveAction);
 
     toolVLayout->setMenuBar(menuBar);
@@ -61,17 +60,17 @@ TestScreen::TestScreen(QWidget *parent)
     _oldTabId = _codeEditor->currentIndex();
 }
 
-TestScreen::~TestScreen()
+RayMarchingScreen::~RayMarchingScreen()
 {
 
 }
 
-void TestScreen::Cleanup()
+void RayMarchingScreen::Cleanup()
 {
 
 }
 
-void TestScreen::OpenFile()
+void RayMarchingScreen::OpenFile()
 {
     QString fileName = QFileDialog::getOpenFileName(this,
                                                     tr("Open program file"), "../",
@@ -80,7 +79,7 @@ void TestScreen::OpenFile()
         _codeEditor->AddFile(fileName);
 }
 
-void TestScreen::Compute()
+void RayMarchingScreen::Compute()
 {
     _parser.SetText(_codeEditor->GetActiveText().toStdString());
     if(_program)

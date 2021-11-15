@@ -6,7 +6,7 @@ ScreensView::ScreensView(QWidget *parent):
 {
     auto modelingScreen = new ModelingScreen(this);
     auto viewerScreen = new ViewerScreen(this);
-    auto testScreen = new TestScreen(this);
+    auto testScreen = new RayMarchingScreen(this);
     _tabs.push_back(modelingScreen);
     _tabs.push_back(viewerScreen);
     _tabs.push_back(testScreen);

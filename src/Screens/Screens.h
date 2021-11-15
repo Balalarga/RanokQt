@@ -3,6 +3,6 @@
 
 #include "ModelingScreen.h"
 #include "ViewerScreen.h"
-#include "TestScreen.h"
+#include "RayMarchingScreen.h"
 
 #endif // SCREENS_H

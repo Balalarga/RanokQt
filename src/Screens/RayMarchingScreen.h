@@ -1,5 +1,5 @@
-#ifndef TESTSCREEN_H
-#define TESTSCREEN_H
+#ifndef RAY_MARCHING_SCENE_H
+#define RAY_MARCHING_SCENE_H
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -19,7 +19,7 @@
 
 #include "Gui/ToggleButton.h"
 
-#include "Gui/Opengl/TestView.h"
+#include "Gui/Opengl/RayMarchingView.h"
 #include "Gui/CodeEditor/CodeEditor.h"
 
 #include "Language/Parser.h"
@@ -27,13 +27,13 @@
 
 #include "ClearableWidget.h"
 
-class TestScreen : public ClearableWidget
+class RayMarchingScreen : public ClearableWidget
 {
     Q_OBJECT
 
 public:
-    TestScreen(QWidget *parent = nullptr);
-    ~TestScreen();
+    RayMarchingScreen(QWidget *parent = nullptr);
+    ~RayMarchingScreen();
 
 
 public slots:
@@ -46,7 +46,7 @@ private slots:
 
 
 private:
-    TestView* _sceneView;
+    RayMarchingView* _sceneView;
     CodeEditor* _codeEditor;
     int _oldTabId;
 

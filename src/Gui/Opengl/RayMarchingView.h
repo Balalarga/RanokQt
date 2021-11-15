@@ -1,5 +1,5 @@
-#ifndef TESTVIEW_H
-#define TESTVIEW_H
+#ifndef RAY_MARCHING_VIEW_H
+#define RAY_MARCHING_VIEW_H
 
 #include <QOpenGLFramebufferObject>
 
@@ -7,12 +7,12 @@
 #include "Base/OpenglWidget.h"
 
 
-class TestView : public OpenglWidget
+class RayMarchingView : public OpenglWidget
 {
     Q_OBJECT
 public:
-    explicit TestView(QWidget *parent = nullptr, QSize renderSize = QSize(800, 600));
-    ~TestView();
+    explicit RayMarchingView(QWidget *parent = nullptr, QSize renderSize = QSize(800, 600));
+    ~RayMarchingView();
 
     void ShaderFromSource(const QString &source);
 
