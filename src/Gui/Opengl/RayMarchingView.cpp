@@ -1,6 +1,7 @@
 #include "RayMarchingView.h"
 #include <QVector2D>
 
+#include <QKeyEvent>
 #include <QMouseEvent>
 
 RayMarchingView::RayMarchingView(QWidget *parent, QSize renderSize):
@@ -74,6 +75,11 @@ void RayMarchingView::ShaderFromSource(const QString &source)
 
     if(!_screenRect->GetShaderProgram()->Recreate(ShadersList("", tempShaderName)))
         qDebug()<<"Screen shader error";
+}
+
+void RayMarchingView::SetShiftState(bool pressed)
+{
+    _shiftButtonPressed = pressed;
 }
 
 void RayMarchingView::initializeGL()
@@ -154,8 +160,8 @@ void RayMarchingView::mouseMoveEvent(QMouseEvent *event)
 {
     if(m_mouseState.pressed[Qt::LeftButton])
     {
-        m_camera.xAngle += (m_mouseState.pos.y() - event->pos().y())*0.5;
-        m_camera.zAngle += (event->pos().x() - m_mouseState.pos.x())*0.5;
+        m_camera.xAngle += (m_mouseState.pos.y() - event->pos().y())*0.15;
+        m_camera.zAngle += (event->pos().x() - m_mouseState.pos.x())*0.15;
         m_mouseState.pos = {event->pos().x(), event->pos().y()};
 
         UpdateMvpMatrix();
@@ -170,8 +176,9 @@ void RayMarchingView::mouseMoveEvent(QMouseEvent *event)
 
 void RayMarchingView::wheelEvent(QWheelEvent *event)
 {
-    double dz = 1;
-
+    float dz = 1;
+    if(_shiftButtonPressed)
+        dz /= 10;
     if(event->angleDelta().y() > 0 && m_camera.zoom < -dz)
         m_camera.zoom += dz;
     else if(event->angleDelta().y() < 0)

@@ -18,6 +18,7 @@ public:
 
     void ShaderFromSource(const QString &source);
 
+    void SetShiftState(bool pressed);
 
 protected:
     void initializeGL() override;
@@ -60,6 +61,7 @@ private:
         QPoint pos;
         QMap<Qt::MouseButton, bool> pressed;
     } m_mouseState;
+    bool _shiftButtonPressed = false;
 };
 
 #endif // TESTVIEW_H

@@ -91,6 +91,7 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
     _progressBar->setRange(0, 100);
     _progressBar->setValue(0);
 
+    _codeEditor->AddFile("../Core/Examples/NewFuncs/lopatka.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/sphere.txt");
     _oldTabId = _codeEditor->currentIndex();
@@ -114,6 +115,24 @@ void RayMarchingScreen::RenderWidthChanged(int value)
 void RayMarchingScreen::RenderHeightChanged(int value)
 {
     _sceneView->SetRenderSize({_widthSpin->value(), value});
+}
+
+void RayMarchingScreen::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::Key_Shift)
+    {
+        qDebug()<<"Pressed";
+        _sceneView->SetShiftState(true);
+    }
+}
+
+void RayMarchingScreen::keyReleaseEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::Key_Shift)
+    {
+        qDebug()<<"Released";
+        _sceneView->SetShiftState(false);
+    }
 }
 
 void RayMarchingScreen::OpenFile()

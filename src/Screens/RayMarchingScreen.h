@@ -22,7 +22,6 @@ public:
     RayMarchingScreen(QWidget *parent = nullptr);
     ~RayMarchingScreen();
 
-
 public slots:
     void Cleanup() override;
 
@@ -46,6 +45,11 @@ private:
     QProgressBar* _progressBar;
     QSpinBox* _heightSpin;
     QSpinBox* _widthSpin;
+
+    // QWidget interface
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
 };
 
 #endif // TESTSCREEN_H
