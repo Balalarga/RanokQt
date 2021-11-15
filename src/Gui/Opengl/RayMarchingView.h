@@ -14,6 +14,8 @@ public:
     explicit RayMarchingView(QWidget *parent = nullptr, QSize renderSize = QSize(800, 600));
     ~RayMarchingView();
 
+    void SetRenderSize(const QSize& renderSize);
+
     void ShaderFromSource(const QString &source);
 
 
@@ -37,7 +39,7 @@ private:
     const QVector<float> _screenData;
     const QVector<float> _textureData;
 
-    QSize renderSize;
+    QSize _renderSize;
 
     QMatrix4x4 viewMatrix;
     QMatrix4x4 projMatrix;

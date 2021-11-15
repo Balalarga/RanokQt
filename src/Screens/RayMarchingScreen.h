@@ -1,31 +1,18 @@
 #ifndef RAY_MARCHING_SCENE_H
 #define RAY_MARCHING_SCENE_H
 
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QToolBar>
-#include <QSplitter>
-#include <QPushButton>
-#include <QComboBox>
 #include <QSpinBox>
-#include <QLabel>
-#include <QMap>
-#include <QSlider>
-#include <QProgressBar>
-#include <QElapsedTimer>
-#include <QQueue>
-#include <QStringListModel>
-#include <QCheckBox>
 
 #include "Gui/ToggleButton.h"
-
 #include "Gui/Opengl/RayMarchingView.h"
 #include "Gui/CodeEditor/CodeEditor.h"
 
 #include "Language/Parser.h"
 #include "SpaceCalculatorThread.h"
-
 #include "ClearableWidget.h"
+
+class QProgressBar;
+
 
 class RayMarchingScreen : public ClearableWidget
 {
@@ -44,6 +31,9 @@ private slots:
     void OpenFile();
     void Compute();
 
+    void RenderWidthChanged(int value);
+    void RenderHeightChanged(int value);
+
 
 private:
     RayMarchingView* _sceneView;
@@ -54,6 +44,8 @@ private:
     Program* _program;
 
     QProgressBar* _progressBar;
+    QSpinBox* _heightSpin;
+    QSpinBox* _widthSpin;
 };
 
 #endif // TESTSCREEN_H

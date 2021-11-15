@@ -5,7 +5,7 @@
 
 RayMarchingView::RayMarchingView(QWidget *parent, QSize renderSize):
     OpenglWidget(parent),
-    renderSize(renderSize),
+    _renderSize(renderSize),
     fbo(nullptr),
     _screenData({ 1.f,  1.f,
                   1.f, -1.f,
@@ -48,6 +48,17 @@ RayMarchingView::~RayMarchingView()
         delete fbo;
 }
 
+void RayMarchingView::SetRenderSize(const QSize &renderSize)
+{
+    _renderSize = renderSize;
+    if(fbo)
+    {
+        delete fbo;
+        fbo = new QOpenGLFramebufferObject(_renderSize);
+    }
+    updateGL();
+}
+
 void RayMarchingView::ShaderFromSource(const QString &source)
 {
     const QString tempShaderName = ".tempFragShaderFile";
@@ -72,7 +83,7 @@ void RayMarchingView::initializeGL()
     _screenRect->Create(_screenData);
     _textureRect->Create(_textureData);
 
-    fbo = new QOpenGLFramebufferObject(renderSize);
+    fbo = new QOpenGLFramebufferObject(_renderSize);
 }
 
 void RayMarchingView::resizeGL(int width, int height)
@@ -98,7 +109,7 @@ void RayMarchingView::paintGL()
     _screenRect->BindShader();
     _screenRect->GetShaderProgram()->SetUniformValue("worldToView", mvpMatrix);
     _screenRect->GetShaderProgram()->SetUniformValue("grad_step", 0.02f);
-    _screenRect->GetShaderProgram()->SetUniformValue("resolution", renderSize);
+    _screenRect->GetShaderProgram()->SetUniformValue("resolution", _renderSize);
     _screenRect->GetShaderProgram()->SetUniformValue("cameraPosition", cameraPos);
     _screenRect->GetShaderProgram()->SetUniformValue("cameraRotation", cameraRotation);
     _screenRect->Render();

@@ -1,17 +1,23 @@
 #include "RayMarchingScreen.h"
 
-#include "Space/SpaceManager.h"
-#include "Space/Calculators/CommonCalculator.h"
-#include "Space/Calculators/OpenclCalculator.h"
+#include <fstream>
+#include <sstream>
+using std::stringstream;
 
 #include <QDebug>
 #include <QFileDialog>
 #include <QMenuBar>
-#include <QStringListModel>
-#include <QMessageBox>
-#include <fstream>
-#include <sstream>
-using std::stringstream;
+#include <QHBoxLayout>
+#include <QToolBar>
+#include <QSplitter>
+#include <QLabel>
+#include <QProgressBar>
+
+#include "Space/SpaceManager.h"
+#include "Space/Calculators/CommonCalculator.h"
+#include "Space/Calculators/OpenclCalculator.h"
+
+
 
 RayMarchingScreen::RayMarchingScreen(QWidget *parent)
     : ClearableWidget(parent),
@@ -31,6 +37,36 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
     QWidget* wrapWidget = new QWidget(this);
     QVBoxLayout* modeLayout = new QVBoxLayout(wrapWidget);
 
+
+    QHBoxLayout* widthLayout = new QHBoxLayout(this);
+    QLabel* widthLabel = new QLabel("Ширина", this);
+    widthLayout->addWidget(widthLabel);
+    _widthSpin = new QSpinBox(this);
+    _widthSpin->setRange(10, 1980);
+    _widthSpin->setValue(800);
+    _widthSpin->setSingleStep(50);
+    widthLayout->addWidget(_widthSpin);
+
+    QHBoxLayout* heightLayout = new QHBoxLayout(this);
+    QLabel* heightLabel = new QLabel("Высота", this);
+    heightLayout->addWidget(heightLabel);
+    _heightSpin = new QSpinBox(this);
+    _heightSpin->setRange(10, 1080);
+    _heightSpin->setValue(600);
+    _heightSpin->setSingleStep(50);
+    heightLayout->addWidget(_heightSpin);
+
+    connect(_widthSpin, SIGNAL(valueChanged(int)), this, SLOT(RenderWidthChanged(int)));
+    connect(_heightSpin, SIGNAL(valueChanged(int)), this, SLOT(RenderHeightChanged(int)));
+
+    QLabel* sizeLabel = new QLabel("Рендер", this);
+
+    QHBoxLayout* sizeLayout = new QHBoxLayout(this);
+    sizeLayout->addWidget(sizeLabel);
+    sizeLayout->addLayout(widthLayout);
+    sizeLayout->addLayout(heightLayout);
+
+    modeLayout->addLayout(sizeLayout);
     modeLayout->addWidget(_codeEditor);
 
     wrapWidget->setLayout(modeLayout);
@@ -68,6 +104,16 @@ RayMarchingScreen::~RayMarchingScreen()
 void RayMarchingScreen::Cleanup()
 {
 
+}
+
+void RayMarchingScreen::RenderWidthChanged(int value)
+{
+    _sceneView->SetRenderSize({value, _heightSpin->value()});
+}
+
+void RayMarchingScreen::RenderHeightChanged(int value)
+{
+    _sceneView->SetRenderSize({_widthSpin->value(), value});
 }
 
 void RayMarchingScreen::OpenFile()
