@@ -35,8 +35,8 @@ void OpenglDrawableObject::Create(const QVector<float>& vertices)
     for(int i = 0; i < layout.size(); ++i)
     {
         shader->enableAttributeArray(i);
-        shader->setAttributeBuffer(i, layout[0].type, offset, layout[0].count, _vaoLayout.GetStride());
-        offset += layout[0].size;
+        shader->setAttributeBuffer(i, layout[i].type, offset, layout[i].count, _vaoLayout.GetStride());
+        offset += layout[i].size;
     }
 
     _vao.release();
