@@ -1,28 +1,24 @@
-#ifndef SCENEVIEW_H
-#define SCENEVIEW_H
+#ifndef RAY_MARCHING_VIEW_H
+#define RAY_MARCHING_VIEW_H
 
+#include <QOpenGLFramebufferObject>
+
+#include "Base/OpenglDrawableObject.h"
 #include "Base/OpenglWidget.h"
-#include "GridObject.h"
-#include "VoxelObject.h"
-#include "LinesObject.h"
-#include "WcsObject.h"
 
 
-class SceneView : public OpenglWidget
+class RayMarchingView : public OpenglWidget
 {
     Q_OBJECT
 public:
-    explicit SceneView(QWidget *parent = nullptr);
+    explicit RayMarchingView(QWidget *parent = nullptr, QSize renderSize = QSize(800, 600));
+    ~RayMarchingView();
 
+    void SetRenderSize(const QSize& renderSize);
 
-public slots:
-    void AddVoxelObject(float x, float y, float z,
-                   float r, float g, float b, float a);
-    void Flush();
-    void ClearObjects(bool soft = false);
-    void CreateVoxelObject(int count);
-    void SetModelCube(const QVector3D& start, QVector3D& end);
+    void ShaderFromSource(const QString &source);
 
+    void SetShiftState(bool pressed);
 
 protected:
     void initializeGL() override;
@@ -38,13 +34,19 @@ protected:
 
 
 private:
+    OpenglDrawableObject* _screenRect;
+    OpenglDrawableObject* _textureRect;
+
+    const QVector<float> _screenData;
+    const QVector<float> _textureData;
+
+    QSize _renderSize;
+
     QMatrix4x4 viewMatrix;
     QMatrix4x4 projMatrix;
     QMatrix4x4 mvpMatrix;
 
-    VoxelObject* voxelObject;
-    GridObject* gridObject;
-    WcsObject* wcsObject;
+    QOpenGLFramebufferObject* fbo;
 
     struct Camera
     {
@@ -59,6 +61,7 @@ private:
         QPoint pos;
         QMap<Qt::MouseButton, bool> pressed;
     } m_mouseState;
+    bool _shiftButtonPressed = false;
 };
 
-#endif // SCENEVIEW_H
+#endif // TESTVIEW_H

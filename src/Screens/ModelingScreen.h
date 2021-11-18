@@ -15,6 +15,7 @@
 #include <QElapsedTimer>
 #include <QQueue>
 #include <QStringListModel>
+#include <QCheckBox>
 
 #include "Gui/ToggleButton.h"
 
@@ -22,7 +23,7 @@
 #include "Gui/CodeEditor/CodeEditor.h"
 
 #include "Language/Parser.h"
-#include "QSpaceCalculatorWrapper.h"
+#include "SpaceCalculatorThread.h"
 
 #include "ClearableWidget.h"
 
@@ -54,13 +55,13 @@ private slots:
     void ZoneChanged(QString name);
     void ComputeFinished(CalculatorMode mode, int batchStart, int end);
     bool IsCalculate();
-    void SaveData();
     void SetBatchSize(int value);
 
 
 private:
     SceneView* _sceneView;
     CodeEditor* _codeEditor;
+    int _oldTabId;
 
     QMap<CalculatorName, QThread*> _calculators;
     ISpaceCalculator* _activeCalculator;

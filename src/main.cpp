@@ -1,9 +1,6 @@
 #include <QApplication>
-#include <vector>
 #include <clocale>
-#include <fstream>
 #include "Space/Calculators/OpenclCalculator.h"
-#include "Space/Calculators/CommonCalculator.h"
 #include "AppWindow.h"
 
 using namespace std;

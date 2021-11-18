@@ -21,9 +21,21 @@
         <file>shaders/voxel.vert</file>
         <file>shaders/grid.frag</file>
         <file>shaders/grid.vert</file>
-        <file>assets/images/saveIcon.png</file>
         <file>assets/images/Code.svg</file>
         <file>assets/images/Cube1.svg</file>
         <file>assets/images/Cube2.svg</file>
+        <file>shaders/line.frag</file>
+        <file>shaders/line.geom</file>
+        <file>shaders/line.vert</file>
+        <file>shaders/point.frag</file>
+        <file>shaders/point.vert</file>
+        <file>shaders/linesPoint.frag</file>
+        <file>shaders/linesPoint.vert</file>
+        <file>shaders/Test/default.frag</file>
+        <file>shaders/Test/default.vert</file>
+        <file>shaders/Test/raymarching.frag</file>
+        <file>shaders/texture.vert</file>
+        <file>shaders/texture.frag</file>
+        <file>assets/images/buildIcon.jpg</file>
     </qresource>
 </RCC>

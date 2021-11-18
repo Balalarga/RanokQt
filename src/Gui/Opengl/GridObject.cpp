@@ -1,96 +1,89 @@
 #include "GridObject.h"
 
+GridObject::GridObject(ShaderProgram *shaderProgram, const VaoLayout& vaoLayout, QObject *parent):
+    OpenglDrawableObject(shaderProgram, vaoLayout, parent),
+    _linesStep(1.f),
+    _linesSpace(-10.f, -10.f, 10.f, 10.f)
+{
+    _mainColor = QColor(255*0.5f, 255*0.5f,  255*0.7f, 255*0.5f);
+
+    SetPrimitive(GL_LINES);
+}
 
 GridObject::~GridObject()
 {
-    Destroy();
-}
-
-void GridObject::Create(QOpenGLShaderProgram* shader)
-{
-    this->shader = shader;
-
-    mainColor = QColor(255*0.5f, 255*0.5f,  255*0.7f, 255*0.5f);
-    UpdateVbo();
-}
-
-void GridObject::Destroy()
-{
-    vao.destroy();
-    vbo.destroy();
-}
-
-void GridObject::Render()
-{
-    vao.bind();
-    glDrawArrays(GL_LINES, 0, bufferSize);
-    vao.release();
 }
 
 void GridObject::SetMainColor(const QColor &color)
 {
-    mainColor = color;
-    UpdateVbo();
+    _mainColor = color;
+    Recreate();
 }
 
-void GridObject::UpdateVbo()
+void GridObject::SetLinesSpace(const QVector2D &start, const QVector2D &end)
 {
-    if(vao.isCreated())
-        vao.destroy();
-    if(vbo.isCreated())
-        vbo.destroy();
+    _linesSpace.setX(start.x());
+    _linesSpace.setY(start.y());
+    _linesSpace.setZ(end.x());
+    _linesSpace.setW(end.y());
+    Recreate();
+}
 
-    QVector<float> gridVertexBufferData;
-    float x1 = -lineWidth*0.5;
-    float x2 = lineWidth*0.5;
-    for (int i = 0; i < lineWidth; ++i)
+void GridObject::SetLinesStep(float step)
+{
+    _linesStep = step;
+    Recreate();
+}
+
+void GridObject::Create()
+{
+    QVector<float> buffer;
+    unsigned xCount = static_cast<unsigned>((_linesSpace.z() - _linesSpace.x()) / _linesStep);
+    unsigned yCount = static_cast<unsigned>((_linesSpace.w() - _linesSpace.y()) / _linesStep);
+    for(int x = 0; x < xCount+1; ++x)
     {
-        float d = lineWidth/(linesCount-1)*i-lineWidth*0.5;
-        gridVertexBufferData.push_back(d);
-        gridVertexBufferData.push_back(x1);
-        gridVertexBufferData.push_back(0);
-        gridVertexBufferData.push_back(mainColor.redF());
-        gridVertexBufferData.push_back(mainColor.greenF());
-        gridVertexBufferData.push_back(mainColor.blueF());
-        gridVertexBufferData.push_back(mainColor.alphaF());
+        float xPos = _linesSpace.x() + _linesStep * x;
+        buffer.push_back(xPos);
+        buffer.push_back(_linesSpace.w());
+        buffer.push_back(0);
+        buffer.push_back(_mainColor.redF());
+        buffer.push_back(_mainColor.greenF());
+        buffer.push_back(_mainColor.blueF());
+        buffer.push_back(_mainColor.alphaF());
 
-        gridVertexBufferData.push_back(d);
-        gridVertexBufferData.push_back(x2);
-        gridVertexBufferData.push_back(0);
-        gridVertexBufferData.push_back(mainColor.redF());
-        gridVertexBufferData.push_back(mainColor.greenF());
-        gridVertexBufferData.push_back(mainColor.blueF());
-        gridVertexBufferData.push_back(mainColor.alphaF());
-
-        gridVertexBufferData.push_back(x1);
-        gridVertexBufferData.push_back(d);
-        gridVertexBufferData.push_back(0);
-        gridVertexBufferData.push_back(mainColor.redF());
-        gridVertexBufferData.push_back(mainColor.greenF());
-        gridVertexBufferData.push_back(mainColor.blueF());
-        gridVertexBufferData.push_back(mainColor.alphaF());
-
-        gridVertexBufferData.push_back(x2);
-        gridVertexBufferData.push_back(d);
-        gridVertexBufferData.push_back(0);
-        gridVertexBufferData.push_back(mainColor.redF());
-        gridVertexBufferData.push_back(mainColor.greenF());
-        gridVertexBufferData.push_back(mainColor.blueF());
-        gridVertexBufferData.push_back(mainColor.alphaF());
+        buffer.push_back(xPos);
+        buffer.push_back(_linesSpace.y());
+        buffer.push_back(0);
+        buffer.push_back(_mainColor.redF());
+        buffer.push_back(_mainColor.greenF());
+        buffer.push_back(_mainColor.blueF());
+        buffer.push_back(_mainColor.alphaF());
     }
-    bufferSize = gridVertexBufferData.size();
-    vao.create();
-    vao.bind();
+    for(int y = 0; y < yCount+1; ++y)
+    {
+        float yPos = _linesSpace.y() + _linesStep * y;
+        buffer.push_back(_linesSpace.z());
+        buffer.push_back(yPos);
+        buffer.push_back(0);
+        buffer.push_back(_mainColor.redF());
+        buffer.push_back(_mainColor.greenF());
+        buffer.push_back(_mainColor.blueF());
+        buffer.push_back(_mainColor.alphaF());
 
-    vbo.create();
-    vbo.bind();
-    vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbo.allocate(gridVertexBufferData.data(), bufferSize*sizeof(float));
-    shader->enableAttributeArray(0);
-    shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, 7*sizeof(float));
-    shader->enableAttributeArray(1);
-    shader->setAttributeBuffer(1, GL_FLOAT, 3*sizeof(float), 4, 7*sizeof(float));
+        buffer.push_back(_linesSpace.x());
+        buffer.push_back(yPos);
+        buffer.push_back(0);
+        buffer.push_back(_mainColor.redF());
+        buffer.push_back(_mainColor.greenF());
+        buffer.push_back(_mainColor.blueF());
+        buffer.push_back(_mainColor.alphaF());
+    }
 
-    vao.release();
-    vbo.release();
+    OpenglDrawableObject::Create(buffer);
+}
+
+void GridObject::Recreate()
+{
+    Destroy();
+    Create();
 }

@@ -1,7 +1,5 @@
 #include "ModelingScreen.h"
 
-#include "Gui/StyleLoader.h"
-
 #include "Space/SpaceManager.h"
 #include "Space/Calculators/CommonCalculator.h"
 #include "Space/Calculators/OpenclCalculator.h"
@@ -35,9 +33,7 @@ ModelingScreen::ModelingScreen(QWidget *parent)
 
     QToolBar* _toolBar(new QToolBar(this));
     _toolBar->addAction(QPixmap("assets/images/playIcon.svg"),
-                         "Run", this, &ModelingScreen::Compute);
-    _toolBar->addAction(QPixmap("assets/images/saveIcon.png"),
-                         "Save", this, &ModelingScreen::SaveData);
+                        "Run", this, &ModelingScreen::Compute);
     toolVLayout->addWidget(_toolBar);
 
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
@@ -53,7 +49,6 @@ ModelingScreen::ModelingScreen(QWidget *parent)
     batchLayout->addWidget(_batchLabel);
     batchLayout->addWidget(_batchSize);
     batchLayout->addWidget(_batchSizeView);
-
 
     modeLayout->addLayout(spinLayout);
     modeLayout->addLayout(batchLayout);
@@ -152,15 +147,23 @@ ModelingScreen::ModelingScreen(QWidget *parent)
     connect(openclCalculator , &OpenclCalculatorThread::Computed,
             this, &ModelingScreen::ComputeFinished, Qt::BlockingQueuedConnection);
 
-    StyleLoader::attach("../assets/styles/dark.qss");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/lopatka.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/Chainik.txt");
+    _codeEditor->AddFile("../Core/Examples/NewFuncs/sphere.txt");
+    _oldTabId = _codeEditor->currentIndex();
 
     connect(_imageType, &QComboBox::currentTextChanged, this, &ModelingScreen::ImageChanged);
     connect(_modelZone, &QComboBox::currentTextChanged, this, &ModelingScreen::ZoneChanged);
     connect(_imageModeButton, &QPushButton::clicked, this, &ModelingScreen::SwitchModelMode);
     connect(_computeDevice, &QPushButton::clicked, this, &ModelingScreen::SwitchComputeDevice);
+
+    ISpaceCalculator::SetMImageColorGradiend({Color::fromUint(255, 255, 0,   0),
+                                              Color::fromUint(0,   255, 162, 0),
+                                              Color::fromUint(0,   0,   255, 0),
+                                              Color::fromUint(255, 145, 0,   0),
+                                              Color::fromUint(214, 0,   255, 0)});
+    ISpaceCalculator::SetModelColor(Color::fromUint(255, 255, 255, 0));
 }
 
 ModelingScreen::~ModelingScreen()
@@ -174,52 +177,6 @@ void ModelingScreen::Cleanup()
 {
     _sceneView->ClearObjects();
 }
-
-void ModelingScreen::Compute()
-{
-    if(IsCalculate())
-    {
-        return;
-    }
-
-    QString source = _codeEditor->GetActiveText();
-    if(!source.isEmpty())
-    {
-        _progressBar->setValue(0);
-        _parser.SetText(source.toStdString());
-        if(_program)
-            delete _program;
-        _program = _parser.GetProgram();
-        _sceneView->ClearObjects();
-        auto args = _program->GetSymbolTable().GetAllArgs();
-        if(SpaceManager::ComputeSpaceSize(_spaceDepth->value()) !=
-                SpaceManager::Self().GetSpaceSize() ||
-                _prevArguments != args)
-        {
-            _prevArguments = args;
-            SpaceManager::Self().InitSpace(args[0]->limits, args[1]->limits,
-                    args[2]->limits, _spaceDepth->value());
-            if(_batchSizeView->value() != 0)
-                SpaceManager::Self().ResetBufferSize(pow(2, _batchSizeView->value()));
-            else
-                SpaceManager::Self().ResetBufferSize(0);
-        }
-        _sceneView->CreateVoxelObject(SpaceManager::Self().GetSpaceSize());
-
-        _activeCalculator = dynamic_cast<ISpaceCalculator*>(_computeDevice->isChecked() ?
-                    _calculators[CalculatorName::Opencl] :
-                _calculators[CalculatorName::Common]);
-
-        _activeCalculator->SetCalculatorMode(_imageModeButton->isChecked() ?
-                                          CalculatorMode::Mimage: CalculatorMode::Model);
-
-        _activeCalculator->SetProgram(_program);
-        _timer.start();
-        _calculators[_currentCalculatorName]->start();
-        qDebug()<<"Start";
-    }
-}
-
 
 void ModelingScreen::SwitchModelMode()
 {
@@ -301,6 +258,60 @@ void ModelingScreen::ZoneChanged(QString name)
     }
 }
 
+void ModelingScreen::Compute()
+{
+    if(IsCalculate())
+    {
+        return;
+    }
+
+    QString source = _codeEditor->GetActiveText();
+    if(!source.isEmpty())
+    {
+        _progressBar->setValue(0);
+        _parser.SetText(source.toStdString());
+        if(_program)
+            delete _program;
+        _program = _parser.GetProgram();
+        _sceneView->ClearObjects();
+        auto args = _program->GetSymbolTable().GetAllArgs();
+        SpaceManager& space = SpaceManager::Self();
+        if(SpaceManager::ComputeSpaceSize(_spaceDepth->value()) !=
+                space.GetSpaceSize() ||
+                _prevArguments != args)
+        {
+            _prevArguments = args;
+            space.InitSpace(args[0]->limits, args[1]->limits,
+                    args[2]->limits, _spaceDepth->value());
+            if(_batchSizeView->value() != 0)
+                space.ResetBufferSize(pow(2, _batchSizeView->value()));
+            else
+                space.ResetBufferSize(0);
+        }
+
+        QVector3D spaceStart(args[0]->limits.first,
+                args[1]->limits.first,
+                args[2]->limits.first);
+        QVector3D spaceEnd(args[0]->limits.second,
+                args[1]->limits.second,
+                args[2]->limits.second);
+        _sceneView->SetModelCube(spaceStart, spaceEnd);
+        _sceneView->CreateVoxelObject(space.GetSpaceSize());
+
+        _activeCalculator = dynamic_cast<ISpaceCalculator*>(_computeDevice->isChecked() ?
+                                                                _calculators[CalculatorName::Opencl] :
+                                                            _calculators[CalculatorName::Common]);
+
+        _activeCalculator->SetCalculatorMode(_imageModeButton->isChecked() ?
+                                                 CalculatorMode::Mimage: CalculatorMode::Model);
+
+        _activeCalculator->SetProgram(_program);
+        _timer.start();
+        _calculators[_currentCalculatorName]->start();
+        qDebug()<<"Start";
+    }
+}
+
 void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int count)
 {
     SpaceManager& space = SpaceManager::Self();
@@ -316,9 +327,9 @@ void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int co
             point = space.GetPointCoords(batchStart+i);
             zone = space.GetZone(i);
             if(zone == _currentZone)
-                _sceneView->AddObject(point.x, point.y, point.z,
-                                       modelColor.red, modelColor.green,
-                                       modelColor.blue, modelColor.alpha);
+                _sceneView->AddVoxelObject(point.x, point.y, point.z,
+                                           modelColor.red, modelColor.green,
+                                           modelColor.blue, modelColor.alpha);
         }
     }
     else
@@ -340,17 +351,18 @@ void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int co
                 value = space.GetMimage(i).Ct;
 
             Color color = _activeCalculator->GetMImageColor(value);
-            _sceneView->AddObject(point.x, point.y, point.z,
-                                   color.red, color.green,
-                                   color.blue, color.alpha);
+            _sceneView->AddVoxelObject(point.x, point.y, point.z,
+                                       color.red, color.green,
+                                       color.blue, color.alpha);
         }
     }
     _sceneView->Flush();
     int percent = 100.f*(batchStart+count)/space.GetSpaceSize();
     _progressBar->setValue(percent);
     if(percent == 100 && _timer.isValid())
-        QMessageBox::about(this, "Расчет окончен", "Время расчета = "+
-                                 QString::number(_timer.restart()/1000.f)+"s");
+    {
+        qDebug()<<"Compute at "<<QString::number(_timer.restart()/1000.f)<<" sec";
+    }
 }
 
 
@@ -362,37 +374,6 @@ bool ModelingScreen::IsCalculate()
             return true;
     }
     return false;
-}
-
-void ModelingScreen::SaveData()
-{
-    if(!SpaceManager::Self().WasInited())
-    {
-        QMessageBox::about(this, "Nothing to save",
-                                 "You must calculate model or mimage first");
-        return;
-    }
-    QString file = QFileDialog::getSaveFileName(this,"","","*.bin");
-
-    if(!file.endsWith(".bin"))
-        file += ".bin";
-
-    std::ofstream stream(file.toStdString());
-    if(!stream)
-    {
-        QMessageBox::about(this, "Couldn't open file",
-                                 "Error while openin file "+file);
-        return;
-    }
-
-    if(_activeCalculator->GetCalculatorMode() == CalculatorMode::Model)
-        SpaceManager::Self().SaveZoneRange(stream, 0);
-    else
-        SpaceManager::Self().SaveMimageRange(stream, 0);
-    stream.close();
-
-    QMessageBox::about(this, "Saved",
-                             "Data saved at "+file);
 }
 
 void ModelingScreen::SetBatchSize(int value)
