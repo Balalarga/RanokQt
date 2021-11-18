@@ -36,5 +36,6 @@
         <file>shaders/Test/raymarching.frag</file>
         <file>shaders/texture.vert</file>
         <file>shaders/texture.frag</file>
+        <file>assets/images/buildIcon.jpg</file>
     </qresource>
 </RCC>

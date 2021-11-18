@@ -2,6 +2,7 @@
 #define RAY_MARCHING_SCENE_H
 
 #include <QSpinBox>
+#include <fstream>
 
 #include "Gui/ToggleButton.h"
 #include "Gui/Opengl/RayMarchingView.h"
@@ -12,7 +13,6 @@
 #include "ClearableWidget.h"
 
 class QProgressBar;
-
 
 class RayMarchingScreen : public ClearableWidget
 {
@@ -28,10 +28,13 @@ public slots:
 
 private slots:
     void OpenFile();
-    void Compute();
+    void BuildMimage();
+    void UpdateScreen();
 
     void RenderWidthChanged(int value);
     void RenderHeightChanged(int value);
+
+    void BuildIteration(CalculatorMode mode, int batchStart, int count);
 
 
 private:
@@ -41,10 +44,13 @@ private:
 
     Parser _parser;
     Program* _program;
+    OpenclCalculatorThread* _openclCalculator;
 
     QProgressBar* _progressBar;
     QSpinBox* _heightSpin;
     QSpinBox* _widthSpin;
+
+    std::ofstream _resultFile;
 
     // QWidget interface
 protected:

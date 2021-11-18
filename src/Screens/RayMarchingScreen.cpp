@@ -4,6 +4,8 @@
 #include <sstream>
 using std::stringstream;
 
+
+#include <QtMath>
 #include <QDebug>
 #include <QFileDialog>
 #include <QMenuBar>
@@ -12,11 +14,14 @@ using std::stringstream;
 #include <QSplitter>
 #include <QLabel>
 #include <QProgressBar>
+#include <QMessageBox>
+
 
 #include "Space/SpaceManager.h"
 #include "Space/Calculators/CommonCalculator.h"
 #include "Space/Calculators/OpenclCalculator.h"
 
+#include "Gui/BuildSettingsDialog.h"
 
 
 RayMarchingScreen::RayMarchingScreen(QWidget *parent)
@@ -24,13 +29,17 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
       _sceneView(new RayMarchingView(this)),
       _codeEditor(new CodeEditor(this)),
       _program(nullptr),
-      _progressBar(new QProgressBar(_sceneView))
+      _progressBar(new QProgressBar(_sceneView)),
+      _openclCalculator(new OpenclCalculatorThread(this))
 {
     QVBoxLayout* toolVLayout = new QVBoxLayout(this);
 
     QToolBar* _toolBar(new QToolBar(this));
     _toolBar->addAction(QPixmap("assets/images/playIcon.svg"),
-                        "Run", this, &RayMarchingScreen::Compute);
+                        "Run", this, &RayMarchingScreen::UpdateScreen);
+    _toolBar->addSeparator();
+    _toolBar->addAction(QPixmap("assets/images/buildIcon.jpg"),
+                        "Build", this, &RayMarchingScreen::BuildMimage);
     toolVLayout->addWidget(_toolBar);
 
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
@@ -38,7 +47,7 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
     QVBoxLayout* modeLayout = new QVBoxLayout(wrapWidget);
 
 
-    QHBoxLayout* widthLayout = new QHBoxLayout(this);
+    QHBoxLayout* widthLayout = new QHBoxLayout();
     QLabel* widthLabel = new QLabel("Ширина", this);
     widthLayout->addWidget(widthLabel);
     _widthSpin = new QSpinBox(this);
@@ -47,7 +56,7 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
     _widthSpin->setSingleStep(50);
     widthLayout->addWidget(_widthSpin);
 
-    QHBoxLayout* heightLayout = new QHBoxLayout(this);
+    QHBoxLayout* heightLayout = new QHBoxLayout();
     QLabel* heightLabel = new QLabel("Высота", this);
     heightLayout->addWidget(heightLabel);
     _heightSpin = new QSpinBox(this);
@@ -61,7 +70,7 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
 
     QLabel* sizeLabel = new QLabel("Рендер", this);
 
-    QHBoxLayout* sizeLayout = new QHBoxLayout(this);
+    QHBoxLayout* sizeLayout = new QHBoxLayout();
     sizeLayout->addWidget(sizeLabel);
     sizeLayout->addLayout(widthLayout);
     sizeLayout->addLayout(heightLayout);
@@ -90,16 +99,23 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
 
     _progressBar->setRange(0, 100);
     _progressBar->setValue(0);
+    _progressBar->hide();
 
     _codeEditor->AddFile("../Core/Examples/NewFuncs/lopatka.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
     _codeEditor->AddFile("../Core/Examples/NewFuncs/sphere.txt");
     _oldTabId = _codeEditor->currentIndex();
+
+    qRegisterMetaType<CalculatorMode>("CalculatorMode");
+    connect(_openclCalculator , &OpenclCalculatorThread::Computed,
+            this, &RayMarchingScreen::BuildIteration);
 }
 
 RayMarchingScreen::~RayMarchingScreen()
 {
-
+    delete _openclCalculator;
+    if(_program)
+        delete _program;
 }
 
 void RayMarchingScreen::Cleanup()
@@ -115,6 +131,39 @@ void RayMarchingScreen::RenderWidthChanged(int value)
 void RayMarchingScreen::RenderHeightChanged(int value)
 {
     _sceneView->SetRenderSize({_widthSpin->value(), value});
+}
+
+void RayMarchingScreen::BuildIteration(CalculatorMode mode, int batchStart, int count)
+{
+    SpaceManager& space = SpaceManager::Self();
+    if(mode == CalculatorMode::Model)
+    {
+        for(int i = 0; i < count; ++i)
+        {
+            if(space.GetZone(i) == 0)
+                ++space.metadata.zeroCount;
+            else if(space.GetZone(i) == 1)
+                ++space.metadata.positiveCount;
+            else
+                ++space.metadata.negativeCount;
+        }
+        space.SaveZoneRange(_resultFile, count);
+    }
+    else
+        space.SaveMimageRange(_resultFile, count);
+
+    float percent = 100.f*(batchStart+count)/space.GetSpaceSize();
+    _progressBar->setValue(percent);
+    qDebug()<<"Written "<<percent<<"% points";
+    if(int(percent) == 100)
+    {
+        _progressBar->hide();
+
+        _resultFile.flush();
+        _resultFile.seekp(0);
+        _resultFile.write((char*)&SpaceManager::Self().metadata, sizeof(SpaceManager::ModelMetadata));
+        _resultFile.close();
+    }
 }
 
 void RayMarchingScreen::keyPressEvent(QKeyEvent *event)
@@ -138,7 +187,59 @@ void RayMarchingScreen::OpenFile()
         _codeEditor->AddFile(fileName);
 }
 
-void RayMarchingScreen::Compute()
+void RayMarchingScreen::BuildMimage()
+{
+    if(_openclCalculator->isRunning())
+    {
+        QMessageBox::information(this, "Ошибка", "Невозможно запустить еще один расчет до завершения прошлого");
+        return;
+    }
+
+    BuildSettingsDialog settingsDialog(this);
+    settingsDialog.setFileName(_codeEditor->GetActiveFile().remove(".txt"));
+    if(settingsDialog.exec() == QDialog::Rejected)
+        return;
+
+    _parser.SetText(_codeEditor->GetActiveText().toStdString());
+    if(_program)
+        delete _program;
+    _program = _parser.GetProgram();
+
+    QString resultPath = settingsDialog.fileName();
+    if(settingsDialog.computeMode() == "Модель")
+    {
+        _openclCalculator->SetCalculatorMode(CalculatorMode::Model);
+        resultPath += ".mbin";
+    }
+    else
+    {
+        _openclCalculator->SetCalculatorMode(CalculatorMode::Mimage);
+        resultPath += ".ibin";
+    }
+
+    _resultFile.open(resultPath.toStdString(), std::ios_base::binary);
+    if(!_resultFile)
+    {
+        qDebug()<<"Couldn't create or open file "<<resultPath;
+        return;
+    }
+
+    _openclCalculator->SetProgram(_program);
+
+    SpaceManager& space = SpaceManager::Self();
+    auto args = _program->GetSymbolTable().GetAllArgs();
+    space.InitSpace(args[0]->limits,
+                    args[1]->limits,
+                    args[2]->limits, settingsDialog.depth());
+    space.ResetBufferSize(1024*1024*settingsDialog.memorySize());
+
+    _resultFile.write((char*)&space.metadata, sizeof(SpaceManager::ModelMetadata));
+
+    _progressBar->show();
+    _openclCalculator->Run();
+}
+
+void RayMarchingScreen::UpdateScreen()
 {
     _parser.SetText(_codeEditor->GetActiveText().toStdString());
     if(_program)

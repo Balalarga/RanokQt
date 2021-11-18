@@ -14,6 +14,7 @@ public:
 
     void AddFile(const QString& sourceFile);
     QString GetActiveText();
+    QString GetActiveFile();
 
 protected:
     void keyEvent(QKeyEvent* e);

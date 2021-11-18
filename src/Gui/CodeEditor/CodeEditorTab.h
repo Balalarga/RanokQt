@@ -13,8 +13,8 @@ class CodeEditorTab : public QTextEdit
 public:
     CodeEditorTab(QWidget *parent = nullptr);
 
-    bool SetFile(const QString& filepath);
-
+    bool SetFile(const QString &filepath);
+    inline QString GetFileName() const {return m_name; }
 
 protected:
     void focusInEvent(QFocusEvent *e) override;
