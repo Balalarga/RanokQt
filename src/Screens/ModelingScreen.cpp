@@ -319,7 +319,7 @@ void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int co
     if(mode == CalculatorMode::Model)
     {
         int zone = 0;
-        cl_float3 point;
+        Vector3f point;
         Color modelColor;
         modelColor = ISpaceCalculator::GetModelColor();
         for(int i = 0; i < count; ++i)
@@ -335,7 +335,7 @@ void ModelingScreen::ComputeFinished(CalculatorMode mode, int batchStart, int co
     else
     {
         double value = 0;
-        cl_float3 point;
+        Vector3f point;
         for(int i = 0; i < count; ++i)
         {
             point = space.GetPointCoords(batchStart+i);

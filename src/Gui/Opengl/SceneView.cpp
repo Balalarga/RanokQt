@@ -91,7 +91,7 @@ void SceneView::paintGL()
 {
     OpenglWidget::paintGL();
 
-    cl_float3 voxSize = {0.2, 0.2, 0.2};
+    Vector3f voxSize = {0.2, 0.2, 0.2};
     if(SpaceManager::Self().WasInited())
         voxSize = SpaceManager::Self().GetPointSize();
 
