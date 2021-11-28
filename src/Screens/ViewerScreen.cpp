@@ -104,8 +104,10 @@ void ViewerScreen::OpenMimage(const QString &filePath)
     SpaceManager& space = SpaceManager::Self();
     QDataStream stream(&file);
 
-    stream.readRawData((char*)&space.metadata, sizeof(SpaceManager::ModelMetadata));
+    ModelMetadata metadata;
+    stream.readRawData((char*)&metadata, sizeof(ModelMetadata));
 
+    space.SetMetadata(metadata);
     space.InitFromMetadata();
     space.ActivateBuffer(SpaceManager::BufferType::MimageBuffer);
     stream.readRawData((char*)space.GetMimageBuffer(), sizeof(MimageData)*space.GetSpaceSize());
@@ -115,26 +117,26 @@ void ViewerScreen::OpenMimage(const QString &filePath)
 
     file.close();
 
-    _xSpaceLimiter->setRange(space.metadata.commonData.startPointX +
-                             space.metadata.commonData.pointSizeX,
-                             space.metadata.commonData.pointSizeX *
-                             space.metadata.commonData.spaceUnitsX);
-    _xSpaceLimiter->setValue(space.metadata.commonData.startPointX +
-                             space.metadata.commonData.pointSizeX);
+    _xSpaceLimiter->setRange(metadata.startPoint.x +
+                             metadata.pointSize.x,
+                             metadata.pointSize.x *
+                             metadata.spaceUnit.x);
+    _xSpaceLimiter->setValue(metadata.startPoint.x +
+                             metadata.pointSize.x);
 
-    _ySpaceLimiter->setRange(space.metadata.commonData.startPointY +
-                             space.metadata.commonData.pointSizeY,
-                             space.metadata.commonData.pointSizeY *
-                             space.metadata.commonData.spaceUnitsY);
-    _ySpaceLimiter->setValue(space.metadata.commonData.startPointY +
-                             space.metadata.commonData.pointSizeY);
+    _ySpaceLimiter->setRange(metadata.startPoint.y +
+                             metadata.pointSize.y,
+                             metadata.pointSize.y *
+                             metadata.spaceUnit.y);
+    _ySpaceLimiter->setValue(metadata.startPoint.y +
+                             metadata.pointSize.y);
 
-    _zSpaceLimiter->setRange(space.metadata.commonData.startPointZ +
-                             space.metadata.commonData.pointSizeZ,
-                             space.metadata.commonData.pointSizeZ *
-                             space.metadata.commonData.spaceUnitsZ);
-    _zSpaceLimiter->setValue(space.metadata.commonData.startPointZ +
-                             space.metadata.commonData.pointSizeZ);
+    _zSpaceLimiter->setRange(metadata.startPoint.z +
+                             metadata.pointSize.z,
+                             metadata.pointSize.z *
+                             metadata.spaceUnit.z);
+    _zSpaceLimiter->setValue(metadata.startPoint.z +
+                             metadata.pointSize.z);
 
     connect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
             this, SLOT(XSpaceLimiterChanged(double)));
@@ -163,24 +165,26 @@ void ViewerScreen::OpenModel(const QString &filePath)
     SpaceManager& space = SpaceManager::Self();
     QDataStream stream(&file);
 
-    stream.readRawData((char*)&space.metadata, sizeof(SpaceManager::ModelMetadata));
+    ModelMetadata metadata;
+    stream.readRawData((char*)&metadata, sizeof(ModelMetadata));
+    space.SetMetadata(metadata);
     space.InitFromMetadata();
 
     space.ActivateBuffer(SpaceManager::BufferType::ZoneBuffer);
-    space.ResetBufferSize(space.metadata.zeroCount);
+    space.ResetBufferSize(metadata.zeroCount);
 
     _view->ClearObjects();
-    _view->CreateVoxelObject(space.metadata.zeroCount);
+    _view->CreateVoxelObject(metadata.zeroCount);
 
-    float voxSize = space.metadata.commonData.pointSizeX;
-    cl_float3 point;
-    int value;
+    float voxSize = metadata.pointSize.x;
+    Vector3f point;
+    char value;
     Color color = ISpaceCalculator::GetModelColor();
     int spaceSize = space.GetSpaceSize();
     int zeroCounter = 0;
     for(int i = 0; i < spaceSize; ++i)
     {
-        stream.readRawData((char*)&value, sizeof(int));
+        stream.readRawData((char*)&value, sizeof(char));
         if(value == 0)
         {
             space.GetZoneBuffer()[zeroCounter] = i;
@@ -195,26 +199,26 @@ void ViewerScreen::OpenModel(const QString &filePath)
     _view->Flush();
     file.close();
 
-    _xSpaceLimiter->setRange(space.metadata.commonData.startPointX +
-                             space.metadata.commonData.pointSizeX,
-                             space.metadata.commonData.pointSizeX *
-                             space.metadata.commonData.spaceUnitsX);
-    _xSpaceLimiter->setValue(space.metadata.commonData.startPointX +
-                             space.metadata.commonData.pointSizeX);
+    _xSpaceLimiter->setRange(metadata.startPoint.x +
+                             metadata.pointSize.x,
+                             metadata.pointSize.x *
+                             metadata.spaceUnit.x);
+    _xSpaceLimiter->setValue(metadata.startPoint.x +
+                             metadata.pointSize.x);
 
-    _ySpaceLimiter->setRange(space.metadata.commonData.startPointY +
-                             space.metadata.commonData.pointSizeY,
-                             space.metadata.commonData.pointSizeY *
-                             space.metadata.commonData.spaceUnitsY);
-    _ySpaceLimiter->setValue(space.metadata.commonData.startPointY +
-                             space.metadata.commonData.pointSizeY);
+    _ySpaceLimiter->setRange(metadata.startPoint.y +
+                             metadata.pointSize.y,
+                             metadata.pointSize.y *
+                             metadata.spaceUnit.y);
+    _ySpaceLimiter->setValue(metadata.startPoint.y +
+                             metadata.pointSize.y);
 
-    _zSpaceLimiter->setRange(space.metadata.commonData.startPointZ +
-                             space.metadata.commonData.pointSizeZ,
-                             space.metadata.commonData.pointSizeZ *
-                             space.metadata.commonData.spaceUnitsZ);
-    _zSpaceLimiter->setValue(space.metadata.commonData.startPointZ +
-                             space.metadata.commonData.pointSizeZ);
+    _zSpaceLimiter->setRange(metadata.startPoint.z +
+                             metadata.pointSize.z,
+                             metadata.pointSize.z *
+                             metadata.spaceUnit.z);
+    _zSpaceLimiter->setValue(metadata.startPoint.z +
+                             metadata.pointSize.z);
     connect(_xSpaceLimiter, SIGNAL(valueChanged(double)),
             this, SLOT(XSpaceLimiterChanged(double)));
     connect(_ySpaceLimiter, SIGNAL(valueChanged(double)),
@@ -264,8 +268,8 @@ void ViewerScreen::UpdateMimageView()
 
     _view->ClearObjects(true);
     SpaceManager& space = SpaceManager::Self();
-    float voxSize = space.metadata.commonData.pointSizeX;
-    cl_float3 point;
+    float voxSize = space.GetMetadata().pointSize.x;
+    Vector3f point;
     Color color;
     int spaceSize = space.GetSpaceSize();
     MimageData mValue;
@@ -297,8 +301,8 @@ void ViewerScreen::UpdateZoneView()
 {
     _view->ClearObjects(true);
     SpaceManager& space = SpaceManager::Self();
-    float voxSize = space.metadata.commonData.pointSizeX;
-    cl_float3 point;
+    float voxSize = space.GetMetadata().pointSize.x;
+    Vector3f point;
     int rawId;
     Color color = ISpaceCalculator::GetModelColor();
     int bufferSize = space.GetBufferSize();

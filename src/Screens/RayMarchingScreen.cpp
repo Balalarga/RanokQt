@@ -141,11 +141,11 @@ void RayMarchingScreen::BuildIteration(CalculatorMode mode, int batchStart, int 
         for(int i = 0; i < count; ++i)
         {
             if(space.GetZone(i) == 0)
-                ++space.metadata.zeroCount;
+                ++_metadata.zeroCount;
             else if(space.GetZone(i) == 1)
-                ++space.metadata.positiveCount;
+                ++_metadata.positiveCount;
             else
-                ++space.metadata.negativeCount;
+                ++_metadata.negativeCount;
         }
         space.SaveZoneRange(_resultFile, count);
     }
@@ -161,7 +161,7 @@ void RayMarchingScreen::BuildIteration(CalculatorMode mode, int batchStart, int 
 
         _resultFile.flush();
         _resultFile.seekp(0);
-        _resultFile.write((char*)&SpaceManager::Self().metadata, sizeof(SpaceManager::ModelMetadata));
+        _resultFile.write((char*)&_metadata, sizeof(ModelMetadata));
         _resultFile.close();
     }
 }
@@ -232,8 +232,8 @@ void RayMarchingScreen::BuildMimage()
                     args[1]->limits,
                     args[2]->limits, settingsDialog.depth());
     space.ResetBufferSize(1024*1024*settingsDialog.memorySize());
-
-    _resultFile.write((char*)&space.metadata, sizeof(SpaceManager::ModelMetadata));
+    _metadata = space.GetMetadata();
+    _resultFile.write((char*)&_metadata, sizeof(ModelMetadata));
 
     _progressBar->show();
     _openclCalculator->Run();

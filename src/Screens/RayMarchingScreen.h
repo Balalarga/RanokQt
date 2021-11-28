@@ -45,6 +45,7 @@ private:
     Parser _parser;
     Program* _program;
     OpenclCalculatorThread* _openclCalculator;
+    ModelMetadata _metadata;
 
     QProgressBar* _progressBar;
     QSpinBox* _heightSpin;
