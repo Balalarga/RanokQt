@@ -10,9 +10,9 @@ ScreensView::ScreensView(QWidget *parent):
 //    _tabs.push_back(modelingScreen);
     _tabs.push_back(raymarchingScreen);
     _tabs.push_back(viewerScreen);
-    addTab(raymarchingScreen, QIcon("assets/images/Code.svg"), "");
+    addTab(raymarchingScreen, QIcon("assets/images/Code.svg"), "Моделирование");
 //    addTab(modelingScreen, QIcon("assets/images/Code.svg"), "");
-    addTab(viewerScreen, QIcon("assets/images/Cube1.svg"), "");
+    addTab(viewerScreen, QIcon("assets/images/Cube1.svg"), "Просмотр");
     setTabPosition(QTabWidget::West);
     setIconSize({30, 30});
     setTabsClosable(false);
