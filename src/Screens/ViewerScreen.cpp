@@ -273,7 +273,7 @@ void ViewerScreen::UpdateMimageView()
     for(int i = 0; i < spaceSize; ++i)
     {
         mValue = space.GetMimage(i);
-        limitValue = mValue.Cw;
+        limitValue = mValue.Cx;
         if(limitValue <= _highMimageLimiter->value() &&
                 limitValue >= _lowMimageLimiter->value())
         {
