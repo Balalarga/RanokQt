@@ -1,7 +1,15 @@
+#version 330
+
 //The raycasting code is somewhat based around a 2D raycasting toutorial found here:
 //http://lodev.org/cgtutor/raycasting.html
 
-const bool USE_BRANCHLESS_DDA = true;
+out vec4 color;
+
+uniform vec2 resolution;
+uniform vec3 cameraPosition;
+uniform vec2 cameraRotation;
+
+const bool USE_BRANCHLESS_DDA = false;
 const int MAX_RAY_STEPS = 64;
 
 float sdSphere(vec3 p, float d) { return length(p) - d; }
@@ -19,23 +27,14 @@ bool getVoxel(ivec3 c) {
     return d < 0.0;
 }
 
-vec2 rotate2d(vec2 v, float a) {
-    float sinA = sin(a);
-    float cosA = cos(a);
-    return v;
-}
-
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
+void main()
 {
-    vec2 screenPos = (fragCoord.xy / iResolution.xy) * 2.0 - 1.0;
+    vec2 screenPos = (gl_FragCoord.xy / resolution.xy) * 2.0 - 1.0;
     vec3 cameraDir = vec3(0.0, 0.0, 0.8);
     vec3 cameraPlaneU = vec3(1.0, 0.0, 0.0);
-    vec3 cameraPlaneV = vec3(0.0, 1.0, 0.0) * iResolution.y / iResolution.x;
+    vec3 cameraPlaneV = vec3(0.0, 1.0, 0.0) * resolution.y / resolution.x;
     vec3 rayDir = cameraDir + screenPos.x * cameraPlaneU + screenPos.y * cameraPlaneV;
     vec3 rayPos = vec3(0.0, 0.0, -12.0);
-
-    rayPos.xz = rotate2d(rayPos.xz, iTime);
-    rayDir.xz = rotate2d(rayDir.xz, iTime);
 
     ivec3 mapPos = ivec3(floor(rayPos + 0.));
 
@@ -93,16 +92,16 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         }
     }
 
-    vec3 color;
+    vec3 resColor;
     if (mask.x) {
-        color = vec3(0.5);
+        resColor = vec3(0.5);
     }
     if (mask.y) {
-        color = vec3(1.0);
+        resColor = vec3(1.0);
     }
     if (mask.z) {
-        color = vec3(0.75);
+        resColor = vec3(0.75);
     }
-    fragColor.rgb = color;
+    color = vec4(resColor, 1.0);
     //fragColor.rgb = vec3(0.1 * noiseDeriv);
 }

@@ -113,7 +113,7 @@ void RayMarchingView::paintGL()
     QVector3D cameraPos(0, 0, -m_camera.zoom);
 
     _screenRect->BindShader();
-    _screenRect->GetShaderProgram()->SetUniformValue("worldToView", mvpMatrix);
+//    _screenRect->GetShaderProgram()->SetUniformValue("worldToView", mvpMatrix);
     _screenRect->GetShaderProgram()->SetUniformValue("grad_step", 0.02f);
     _screenRect->GetShaderProgram()->SetUniformValue("resolution", _renderSize);
     _screenRect->GetShaderProgram()->SetUniformValue("cameraPosition", cameraPos);

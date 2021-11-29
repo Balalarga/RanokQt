@@ -28,10 +28,7 @@ float __ror(float a, float b)
 
 float __resultFunc(float x, float y, float z)
 {
-const float e = 2.71828;
-const float pi = 3.14159;
-float w =((((1.000000)-((x)*(x)))-((y)*(y)))-((z)*(z)));
-return (w);
+    return 1.000000 - (x * x) - (y * y) - (z * z);
 }
 
 

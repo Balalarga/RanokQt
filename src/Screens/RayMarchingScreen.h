@@ -36,6 +36,8 @@ private slots:
 
     void BuildIteration(CalculatorMode mode, int batchStart, int count);
 
+    void GetShaderCode(int id);
+
 
 private:
     RayMarchingView* _sceneView;
