@@ -23,7 +23,11 @@ void OpenglWidget::SetClearColor(const QVector4D &color)
 
 void OpenglWidget::initializeGL()
 {
-    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LEQUAL);
+    glDepthRange(0.0f, 1.0f);
+
     glDisable(GL_CULL_FACE);
 
     glEnable(GL_PROGRAM_POINT_SIZE);

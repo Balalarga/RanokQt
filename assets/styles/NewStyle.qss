@@ -12,12 +12,6 @@ QWidget
     border: 0px solid black;
 }
 
-QWidget::text::highlighted
-{
-    color: #32302f;
-    background-color: #fe8019;
-}
-
 QTabBar::tab
 {
     color: #b1b1b1;

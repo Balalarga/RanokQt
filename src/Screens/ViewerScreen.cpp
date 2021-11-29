@@ -4,13 +4,35 @@
 #include <QMenuBar>
 #include <QVBoxLayout>
 #include <QDataStream>
+#include <QStringListModel>
+#include <QRadioButton>
 
 #include "Space/SpaceManager.h"
 #include "Space/Calculators/ISpaceCalculator.h"
 
 
+double ViewerScreen::GetMimage(const MimageData& data)
+{
+    switch(_currentType)
+    {
+    case MimageType::Cx:
+        return data.Cx;
+    case MimageType::Cy:
+        return data.Cy;
+    case MimageType::Cz:
+        return data.Cz;
+    case MimageType::Cw:
+        return data.Cw;
+    case MimageType::Ct:
+        return data.Ct;
+    }
+    return data.Cx;
+}
+
+
 ViewerScreen::ViewerScreen(QWidget *parent):
     ClearableWidget(parent),
+    _currentType(MimageType::Cx),
     _view(new SceneView(this)),
     _lowMimageLimiter(new QDoubleSpinBox(this)),
     _highMimageLimiter(new QDoubleSpinBox(this)),
@@ -55,6 +77,26 @@ ViewerScreen::ViewerScreen(QWidget *parent):
     mimageLimitersLayout->addWidget(_lowMimageLimiter);
     mimageLimitersLayout->addWidget(_highMimageLimiter);
 
+    QRadioButton* cxButton = new QRadioButton("Cx");
+    QRadioButton* cyButton = new QRadioButton("Cy");
+    QRadioButton* czButton = new QRadioButton("Cz");
+    QRadioButton* cwButton = new QRadioButton("Cw");
+    QRadioButton* ctButton = new QRadioButton("Ct");
+    connect(cxButton, &QRadioButton::clicked, this, &ViewerScreen::RadioCx);
+    connect(cyButton, &QRadioButton::clicked, this, &ViewerScreen::RadioCy);
+    connect(czButton, &QRadioButton::clicked, this, &ViewerScreen::RadioCz);
+    connect(cwButton, &QRadioButton::clicked, this, &ViewerScreen::RadioCw);
+    connect(ctButton, &QRadioButton::clicked, this, &ViewerScreen::RadioCt);
+    cxButton->setChecked(true);
+
+    QHBoxLayout* radioLayout = new QHBoxLayout;
+    radioLayout->addWidget(cxButton);
+    radioLayout->addWidget(cyButton);
+    radioLayout->addWidget(czButton);
+    radioLayout->addWidget(cwButton);
+    radioLayout->addWidget(ctButton);
+
+    mainLayout->addLayout(radioLayout);
     mainLayout->addWidget(_xSpaceLimiter);
     mainLayout->addWidget(_ySpaceLimiter);
     mainLayout->addWidget(_zSpaceLimiter);
@@ -113,6 +155,15 @@ void ViewerScreen::OpenMimage(const QString &filePath)
     stream.readRawData((char*)space.GetMimageBuffer(), sizeof(MimageData)*space.GetSpaceSize());
 
     _view->ClearObjects();
+
+    QVector3D spaceStart(metadata.startPoint.x,
+                         metadata.startPoint.y,
+                         metadata.startPoint.z);
+    QVector3D spaceEnd(spaceStart + QVector3D(metadata.spaceUnit.x * metadata.pointSize.x,
+                                              metadata.spaceUnit.y * metadata.pointSize.y,
+                                              metadata.spaceUnit.z * metadata.pointSize.z));
+    _view->SetModelCube(spaceStart, spaceEnd);
+
     _view->CreateVoxelObject(space.GetSpaceSize());
 
     file.close();
@@ -174,6 +225,15 @@ void ViewerScreen::OpenModel(const QString &filePath)
     space.ResetBufferSize(metadata.zeroCount);
 
     _view->ClearObjects();
+
+    QVector3D spaceStart(metadata.startPoint.x,
+                         metadata.startPoint.y,
+                         metadata.startPoint.z);
+    QVector3D spaceEnd(spaceStart + QVector3D(metadata.spaceUnit.x * metadata.pointSize.x,
+                                              metadata.spaceUnit.y * metadata.pointSize.y,
+                                              metadata.spaceUnit.z * metadata.pointSize.z));
+    _view->SetModelCube(spaceStart, spaceEnd);
+
     _view->CreateVoxelObject(metadata.zeroCount);
 
     float voxSize = metadata.pointSize.x;
@@ -265,19 +325,16 @@ void ViewerScreen::ZSpaceLimiterChanged(double value)
 
 void ViewerScreen::UpdateMimageView()
 {
-
     _view->ClearObjects(true);
     SpaceManager& space = SpaceManager::Self();
     float voxSize = space.GetMetadata().pointSize.x;
     Vector3f point;
     Color color;
     int spaceSize = space.GetSpaceSize();
-    MimageData mValue;
     double limitValue;
     for(int i = 0; i < spaceSize; ++i)
     {
-        mValue = space.GetMimage(i);
-        limitValue = mValue.Cx;
+        limitValue = GetMimage(space.GetMimage(i));
         if(limitValue <= _highMimageLimiter->value() &&
                 limitValue >= _lowMimageLimiter->value())
         {
@@ -322,3 +379,52 @@ void ViewerScreen::UpdateZoneView()
     _view->Flush();
 }
 
+void ViewerScreen::RadioCx()
+{
+    if(_currentType == MimageType::Cx)
+        return;
+
+    _currentType = MimageType::Cx;
+    if(_mode == Mode::Mimage)
+        UpdateMimageView();
+}
+
+void ViewerScreen::RadioCy()
+{
+    if(_currentType == MimageType::Cy)
+        return;
+
+    _currentType = MimageType::Cy;
+    if(_mode == Mode::Mimage)
+        UpdateMimageView();
+}
+
+void ViewerScreen::RadioCz()
+{
+    if(_currentType == MimageType::Cz)
+        return;
+
+    _currentType = MimageType::Cz;
+    if(_mode == Mode::Mimage)
+        UpdateMimageView();
+}
+
+void ViewerScreen::RadioCw()
+{
+    if(_currentType == MimageType::Cw)
+        return;
+
+    _currentType = MimageType::Cw;
+    if(_mode == Mode::Mimage)
+        UpdateMimageView();
+}
+
+void ViewerScreen::RadioCt()
+{
+    if(_currentType == MimageType::Ct)
+        return;
+
+    _currentType = MimageType::Ct;
+    if(_mode == Mode::Mimage)
+        UpdateMimageView();
+}

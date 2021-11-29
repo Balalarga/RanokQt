@@ -4,7 +4,12 @@
 #include "ClearableWidget.h"
 #include "Gui/Opengl/SceneView.h"
 
+#include <QComboBox>
 #include <QDoubleSpinBox>
+
+
+class MimageData;
+
 
 class ViewerScreen : public ClearableWidget
 {
@@ -12,6 +17,11 @@ class ViewerScreen : public ClearableWidget
     enum class Mode
     {
         Mimage, Model
+    };
+
+    enum class MimageType
+    {
+        Cx, Cy, Cz, Cw, Ct
     };
 
 public:
@@ -36,8 +46,18 @@ private slots:
     void UpdateMimageView();
     void UpdateZoneView();
 
+    void RadioCx();
+    void RadioCy();
+    void RadioCz();
+    void RadioCw();
+    void RadioCt();
+
+    double GetMimage(const MimageData& data);
+
+
 private:
     Mode _mode;
+    MimageType _currentType;
 
     SceneView* _view;
     QDoubleSpinBox* _lowMimageLimiter;

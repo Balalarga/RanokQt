@@ -112,11 +112,13 @@ void SceneView::paintGL()
         voxelObject->ReleaseShader();
     }
 
+    glDisable(GL_DEPTH_TEST);
     wcsObject->BindShader();
     wcsObject->GetShaderProgram()->SetUniformValue("worldToView", mvpMatrix);
     wcsObject->GetShaderProgram()->SetUniformValue("backColor", GetClearColor());
     wcsObject->Render();
     wcsObject->ReleaseShader();
+    glEnable(GL_DEPTH_TEST);
 }
 
 void SceneView::UpdateMvpMatrix()
@@ -164,7 +166,7 @@ void SceneView::mouseMoveEvent(QMouseEvent *event)
 
 void SceneView::wheelEvent(QWheelEvent *event)
 {
-    constexpr double dz = 3;
+    constexpr double dz = 1;
 
     if(event->angleDelta().y() > 0 && m_camera.zoom < -dz)
         m_camera.zoom += dz;
