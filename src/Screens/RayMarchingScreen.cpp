@@ -541,6 +541,7 @@ void RayMarchingScreen::BuildMimage()
     }
 
     BuildSettingsDialog settingsDialog(this);
+    settingsDialog.resize(size()/2);
     settingsDialog.setFileName(_codeEditor->GetActiveFile().remove(".txt"));
     if(settingsDialog.exec() == QDialog::Rejected)
         return;

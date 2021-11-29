@@ -10,7 +10,7 @@ AppWindow::AppWindow(QWidget *parent):
     QMainWindow(parent),
     _screensContainer(new ScreensView(this))
 {
-    StyleLoader::attach("../assets/styles/ManjaroMix.qss");
+    StyleLoader::attach("../assets/styles/NewStyle.qss");
 
     setCentralWidget(_screensContainer);
 
@@ -26,11 +26,13 @@ bool AppWindow::eventFilter(QObject *obj, QEvent *event)
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
         if(QKeySequence("F6") == QKeySequence(keyEvent->key()))
         {
-            QString fileName = QFileDialog::getOpenFileName(this,
-                                                            tr("Stylesheet"), "../style",
-                                                            tr("Stylesheet(*.qss)"));
-            if(!fileName.isEmpty())
-                StyleLoader::attach(fileName);
+//            QString fileName = QFileDialog::getOpenFileName(this,
+//                                                            tr("Stylesheet"), "../style",
+//                                                            tr("Stylesheet(*.qss)"));
+//            if(!fileName.isEmpty())
+//                StyleLoader::attach(fileName);
+
+            StyleLoader::attach("../assets/styles/NewStyle.qss");
             return true;
         }
     }

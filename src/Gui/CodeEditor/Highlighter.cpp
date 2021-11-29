@@ -6,7 +6,7 @@ Highlighter::Highlighter(QTextDocument *parent)
 {
     HighlightingRule rule;
 
-    keywordFormat.setForeground(QColor::fromRgb(QRgb(0x458588)));
+    keywordFormat.setForeground(QColor::fromRgb(QRgb(0xcc241d)));
     keywordFormat.setFontWeight(QFont::Bold);
     QStringList keywordPatterns = {
         "const", "CONST", "CONSTANT", "constant",
@@ -16,11 +16,16 @@ Highlighter::Highlighter(QTextDocument *parent)
     };
 
     varFormat.setFontItalic(true);
-    varFormat.setForeground(QColor::fromRgb(QRgb(0xfe8019)));
+    varFormat.setForeground(QColor::fromRgb(QRgb(0xb1b1b1)));
     rule.pattern = QRegularExpression(QStringLiteral("[a-zA-Z_$][a-zA-Z_$0-9]*"));
     rule.format = varFormat;
     highlightingRules.append(rule);
 
+    varFormat.setFontItalic(true);
+    varFormat.setForeground(QColor::fromRgb(QRgb(0x458588)));
+    rule.pattern = QRegularExpression(QStringLiteral("\\b[0-9$]*"));
+    rule.format = varFormat;
+    highlightingRules.append(rule);
 
     for (const QString &pattern : keywordPatterns) {
         rule.pattern = QRegularExpression("\\b"+pattern+"\\b");
@@ -40,7 +45,7 @@ Highlighter::Highlighter(QTextDocument *parent)
     highlightingRules.append(rule);
 
     functionFormat.setFontItalic(true);
-    functionFormat.setForeground(QColor::fromRgb(QRgb(0x8ec07c)));
+    functionFormat.setForeground(QColor::fromRgb(QRgb(0xd65d0e)));
     for (auto& word: LangFunctions::functions) {
         rule.pattern = QRegularExpression("\\b("+QString::fromStdString(word.first).toUpper()+"|"
                                                 +QString::fromStdString(word.first).toLower()+")\\b");

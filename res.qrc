@@ -38,5 +38,6 @@
         <file>shaders/texture.frag</file>
         <file>assets/images/buildIcon.jpg</file>
         <file>shaders/Test/voxelRaymarching.frag</file>
+        <file>assets/styles/NewStyle.qss</file>
     </qresource>
 </RCC>

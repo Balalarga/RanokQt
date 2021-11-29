@@ -11,6 +11,11 @@ QMainWindow {
 QCalendar {
 	background-color: #151a1e;
 }
+
+QMessageBox {
+        background-color:#151a1e;
+}
+
 QTextEdit {
 	border-width: 1px;
 	border-style: solid;

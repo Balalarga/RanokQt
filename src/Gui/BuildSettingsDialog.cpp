@@ -23,7 +23,7 @@ BuildSettingsDialog::BuildSettingsDialog(QWidget *parent):
     _computeMode->addItem("Модель");
     _computeMode->addItem("М-образ");
     modeLayout->addRow(modeLabel, _computeMode);
-    mainLayout->addLayout(modeLayout);
+    mainLayout->addLayout(modeLayout, Qt::AlignTop);
 
     QHBoxLayout* dirLayout = new QHBoxLayout();
     QLabel* dirLabel = new QLabel("Сохранить в: ", this);
@@ -35,13 +35,13 @@ BuildSettingsDialog::BuildSettingsDialog(QWidget *parent):
     dirLayout->addWidget(dirLabel);
     dirLayout->addWidget(_dirView);
     dirLayout->addWidget(dirButton, 0, Qt::AlignRight);
-    mainLayout->addLayout(dirLayout);
+    mainLayout->addLayout(dirLayout, Qt::AlignTop);
 
     QFormLayout* fileLayout = new QFormLayout();
     QLabel* fileLabel = new QLabel("Имя файла", this);
     _fileName = new QLineEdit(this);
     fileLayout->addRow(fileLabel, _fileName);
-    mainLayout->addLayout(fileLayout);
+    mainLayout->addLayout(fileLayout, Qt::AlignTop);
 
     QFormLayout* depthLayout = new QFormLayout();
     QLabel* depthLabel = new QLabel("Глубина рекурсии", this);
@@ -49,14 +49,14 @@ BuildSettingsDialog::BuildSettingsDialog(QWidget *parent):
     _depth->setRange(1, 15);
     _depth->setValue(5);
     depthLayout->addRow(depthLabel, _depth);
-    mainLayout->addLayout(depthLayout);
+    mainLayout->addLayout(depthLayout, Qt::AlignTop);
 
     QFormLayout* memoryLayout = new QFormLayout();
     QLabel* memoryLabel = new QLabel("Используемая память(МБ)", this);
     _memorySize = new QSpinBox(this);
     _memorySize->setRange(128, 4096);
     memoryLayout->addRow(memoryLabel, _memorySize);
-    mainLayout->addLayout(memoryLayout);
+    mainLayout->addLayout(memoryLayout, Qt::AlignTop);
 
     QPushButton* okButton = new QPushButton("Готово", this);
     connect(okButton, &QPushButton::clicked, this, &QDialog::accept);
