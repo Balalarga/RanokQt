@@ -39,5 +39,6 @@
         <file>assets/images/buildIcon.jpg</file>
         <file>shaders/Test/voxelRaymarching.frag</file>
         <file>assets/styles/NewStyle.qss</file>
+        <file>shaders/Test/myRayMarching.frag</file>
     </qresource>
 </RCC>

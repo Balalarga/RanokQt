@@ -48,14 +48,10 @@ void SceneView::Flush()
 
 void SceneView::ClearObjects(bool soft)
 {
-    if(!soft)
-    {
-        voxelObject->Destroy();
-    }
-    else
-    {
+    if(soft)
         voxelObject->Clear();
-    }
+    else
+        voxelObject->Destroy();
 }
 
 void SceneView::CreateVoxelObject(int count)
