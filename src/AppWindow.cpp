@@ -10,7 +10,7 @@ AppWindow::AppWindow(QWidget *parent):
     QMainWindow(parent),
     _screensContainer(new ScreensView(this))
 {
-    StyleLoader::attach("../assets/styles/NewStyle.qss");
+    StyleLoader::attach("assets/styles/NewStyle.qss");
 
     setCentralWidget(_screensContainer);
 
@@ -32,7 +32,7 @@ bool AppWindow::eventFilter(QObject *obj, QEvent *event)
 //            if(!fileName.isEmpty())
 //                StyleLoader::attach(fileName);
 
-            StyleLoader::attach("../assets/styles/NewStyle.qss");
+            StyleLoader::attach("assets/styles/NewStyle.qss");
             return true;
         }
     }

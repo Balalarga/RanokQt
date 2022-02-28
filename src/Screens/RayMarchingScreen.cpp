@@ -36,10 +36,10 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
 
     QToolBar* _toolBar(new QToolBar(this));
     _toolBar->addAction(QPixmap("assets/images/playIcon.svg"),
-                        "Run", this, &RayMarchingScreen::UpdateScreen);
+                        "Показать", this, &RayMarchingScreen::UpdateScreen);
     _toolBar->addSeparator();
     _toolBar->addAction(QPixmap("assets/images/buildIcon.jpg"),
-                        "Build", this, &RayMarchingScreen::BuildMimage);
+                        "Рассчитать", this, &RayMarchingScreen::BuildMimage);
     toolVLayout->addWidget(_toolBar);
 
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
@@ -101,9 +101,9 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
     _progressBar->setValue(0);
     _progressBar->hide();
 
-    _codeEditor->AddFile("../Core/Examples/NewFuncs/lopatka.txt");
-    _codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
-    _codeEditor->AddFile("../Core/Examples/NewFuncs/sphere.txt");
+    _codeEditor->AddFile("Examples/NewFuncs/lopatka.txt");
+    _codeEditor->AddFile("Examples/NewFuncs/Bone.txt");
+    _codeEditor->AddFile("Examples/NewFuncs/sphere.txt");
     _oldTabId = _codeEditor->currentIndex();
 
     qRegisterMetaType<CalculatorMode>("CalculatorMode");

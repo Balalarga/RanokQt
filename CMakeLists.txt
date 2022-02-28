@@ -6,26 +6,24 @@ project(${PROJECT_NAME} VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_PREFIX_PATH "C:\\Qt\\5.15.2\\mingw81_64\\lib\\cmake\\")
+
+find_package(Qt5Widgets REQUIRED)
+find_package(Qt5OpenGL REQUIRED)
+
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt5 COMPONENTS OpenGL REQUIRED)
-
-include_directories(src)
-file(GLOB_RECURSE PROJECT_SOURCES src/*.cpp src/*.h examples/*.txt *.qrc)
-add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
-
 add_subdirectory(./Core/RanokCoreLib RanokCore)
 
+include_directories(src)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets
-    Qt5::OpenGL RanokCore)
+file(GLOB_RECURSE PROJECT_SOURCES src/*.cpp src/*.h examples/*.txt *.qrc)
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::OpenGL RanokCore)
 
 if(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -37,5 +35,10 @@ endif()
 
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                       ${CMAKE_SOURCE_DIR}/assets/
-                       $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets/)
+                   ${CMAKE_SOURCE_DIR}/assets/
+                   $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets/)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                  COMMAND ${CMAKE_COMMAND} -E copy_directory
+                  ${CMAKE_SOURCE_DIR}/Core/Examples
+                  $<TARGET_FILE_DIR:${PROJECT_NAME}>/Examples)

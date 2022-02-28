@@ -228,9 +228,3 @@ QComboBox
 {
     background-color: #1d2021;
 }
-
-
-QTextEdit
-{
-    font: 14px;
-}

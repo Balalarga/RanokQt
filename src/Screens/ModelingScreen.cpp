@@ -33,7 +33,7 @@ ModelingScreen::ModelingScreen(QWidget *parent)
 
     QToolBar* _toolBar(new QToolBar(this));
     _toolBar->addAction(QPixmap("assets/images/playIcon.svg"),
-                        "Run", this, &ModelingScreen::Compute);
+                        "Показать", this, &ModelingScreen::Compute);
     toolVLayout->addWidget(_toolBar);
 
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
@@ -147,10 +147,10 @@ ModelingScreen::ModelingScreen(QWidget *parent)
     connect(openclCalculator , &OpenclCalculatorThread::Computed,
             this, &ModelingScreen::ComputeFinished, Qt::BlockingQueuedConnection);
 
-    _codeEditor->AddFile("../Core/Examples/NewFuncs/lopatka.txt");
-    _codeEditor->AddFile("../Core/Examples/NewFuncs/Bone.txt");
-    _codeEditor->AddFile("../Core/Examples/NewFuncs/Chainik.txt");
-    _codeEditor->AddFile("../Core/Examples/NewFuncs/sphere.txt");
+    _codeEditor->AddFile("Examples/NewFuncs/lopatka.txt");
+    _codeEditor->AddFile("Examples/NewFuncs/Bone.txt");
+    _codeEditor->AddFile("Examples/NewFuncs/Chainik.txt");
+    _codeEditor->AddFile("Examples/NewFuncs/sphere.txt");
     _oldTabId = _codeEditor->currentIndex();
 
     connect(_imageType, &QComboBox::currentTextChanged, this, &ModelingScreen::ImageChanged);
