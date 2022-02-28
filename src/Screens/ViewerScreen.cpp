@@ -26,7 +26,6 @@ double ViewerScreen::GetMimage(const MimageData& data)
     case MimageType::Ct:
         return data.Ct;
     }
-    return data.Cx;
 }
 
 
@@ -156,9 +155,9 @@ void ViewerScreen::OpenMimage(const QString &filePath)
 
     _view->ClearObjects();
 
-    QVector3D spaceStart(metadata.startPoint.x,
-                         metadata.startPoint.y,
-                         metadata.startPoint.z);
+    QVector3D spaceStart(metadata.startPoint.x + metadata.pointSize.x,
+                         metadata.startPoint.y + metadata.pointSize.y,
+                         metadata.startPoint.z + metadata.pointSize.z);
     QVector3D spaceEnd(spaceStart + QVector3D(metadata.spaceUnit.x * metadata.pointSize.x,
                                               metadata.spaceUnit.y * metadata.pointSize.y,
                                               metadata.spaceUnit.z * metadata.pointSize.z));

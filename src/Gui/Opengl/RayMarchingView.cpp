@@ -22,7 +22,7 @@ RayMarchingView::RayMarchingView(QWidget *parent, QSize renderSize):
     m_mouseState.pressed[Qt::MiddleButton] = false;
 
     ShadersList screenShadersList(":/shaders/Test/default.vert",
-                                ":/shaders/Test/raymarching.frag");
+                                ":/shaders/Test/myRayMarching.frag");
     QStringList screenUniforms({"worldToView", "resolution", "grad_step",
                               "cameraPosition", "cameraRotation"});
     ShaderProgram* screenShader = GetShaderManager().Add("voxelShader",
