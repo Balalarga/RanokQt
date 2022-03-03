@@ -20,6 +20,8 @@ public:
 
     void SetShiftState(bool pressed);
 
+    const QPixmap& GetImage();
+
 protected:
     void initializeGL() override;
     void resizeGL(int width, int height) override;
@@ -36,6 +38,8 @@ protected:
 private:
     OpenglDrawableObject* _screenRect;
     OpenglDrawableObject* _textureRect;
+
+    QPixmap _pixmapSave;
 
     const QVector<float> _screenData;
     const QVector<float> _textureData;

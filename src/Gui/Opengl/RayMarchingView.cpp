@@ -82,6 +82,11 @@ void RayMarchingView::SetShiftState(bool pressed)
     _shiftButtonPressed = pressed;
 }
 
+const QPixmap &RayMarchingView::GetImage()
+{
+    return _pixmapSave;
+}
+
 void RayMarchingView::initializeGL()
 {
     OpenglWidget::initializeGL();
@@ -120,6 +125,8 @@ void RayMarchingView::paintGL()
     _screenRect->GetShaderProgram()->SetUniformValue("cameraRotation", cameraRotation);
     _screenRect->Render();
     _screenRect->ReleaseShader();
+
+    _pixmapSave = QPixmap::fromImage(fbo->toImage());
 
     fbo->release();
 

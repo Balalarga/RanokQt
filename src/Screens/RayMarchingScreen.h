@@ -31,6 +31,7 @@ private slots:
     void Save(const QString& filepath = "");
     void SaveFile();
     void SaveFileAs();
+    void SaveImage();
     void BuildMimage();
     void UpdateScreen();
 

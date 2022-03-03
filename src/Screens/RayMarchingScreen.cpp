@@ -105,6 +105,11 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
     connect(saveAsAction, &QAction::triggered, this, &RayMarchingScreen::SaveFileAs);
     fileMenu->addAction(saveAsAction);
 
+    QAction* saveImageAction = new QAction;
+    saveImageAction->setText("Сохранить изображение");
+    connect(saveImageAction, &QAction::triggered, this, &RayMarchingScreen::SaveImage);
+    fileMenu->addAction(saveImageAction);
+
     toolVLayout->setMenuBar(menuBar);
 
     _progressBar->setRange(0, 100);
@@ -628,4 +633,15 @@ void RayMarchingScreen::SaveFileAs()
                                                     tr("Plan text(*.txt)"));
     if(!fileName.isEmpty())
         Save(fileName);
+}
+
+void RayMarchingScreen::SaveImage()
+{
+    auto& image = _sceneView->GetImage();
+
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Save image"), "../",
+                                                    tr("Image (*.png)"));
+    if(!fileName.isEmpty())
+        image.save(fileName);
 }
