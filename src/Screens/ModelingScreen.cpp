@@ -10,6 +10,7 @@
 #include <QStringListModel>
 #include <QMessageBox>
 #include <fstream>
+#include <QTextStream>
 
 
 ModelingScreen::ModelingScreen(QWidget *parent)
@@ -124,13 +125,12 @@ ModelingScreen::ModelingScreen(QWidget *parent)
     QMenu *fileMenu = new QMenu("Файл");
     menuBar->addMenu(fileMenu);
 
-    QAction* saveAction = new QAction;
-    saveAction->setText("Открыть");
-    connect(saveAction, &QAction::triggered, this, &ModelingScreen::OpenFile);
-    fileMenu->addAction(saveAction);
+    QAction* openAction = new QAction;
+    openAction->setText("Открыть");
+    connect(openAction, &QAction::triggered, this, &ModelingScreen::OpenFile);
+    fileMenu->addAction(openAction);
 
     toolVLayout->setMenuBar(menuBar);
-
 
     _progressBar->setRange(0, 100);
     _progressBar->setValue(0);
@@ -392,4 +392,31 @@ void ModelingScreen::OpenFile()
                                                     tr("Plan text(*.txt)"));
     if(!fileName.isEmpty())
         _codeEditor->AddFile(fileName);
+}
+
+void ModelingScreen::Save(const QString &filepath)
+{
+    QFile file(filepath);
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        QMessageBox::about(this, "Ошибка", "Невозможно сохранить файл");
+        return;
+    }
+    QTextStream stream(&file);
+    stream << _codeEditor->GetActiveText();
+    file.close();
+}
+
+void ModelingScreen::SaveFile()
+{
+    Save(_codeEditor->GetActiveFile());
+}
+
+void ModelingScreen::SaveFileAs()
+{
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Save program file"), "../",
+                                                    tr("Plan text(*.txt)"));
+    if(!fileName.isEmpty())
+        Save(fileName);
 }

@@ -15,6 +15,7 @@ public:
 
     bool SetFile(const QString &filepath);
     inline QString GetFileName() const {return m_name; }
+    inline QString GetFilepath() const { return m_filepath; }
 
 protected:
     void focusInEvent(QFocusEvent *e) override;

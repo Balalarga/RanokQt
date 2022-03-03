@@ -49,6 +49,16 @@ QString CodeEditor::GetActiveFile()
     return "";
 }
 
+QString CodeEditor::GetActiveFilepath()
+{
+    int id = currentIndex();
+    if(id > -1)
+    {
+        return m_tabs.at(id)->GetFilepath();
+    }
+    return "";
+}
+
 void CodeEditor::keyEvent(QKeyEvent *e)
 {
 

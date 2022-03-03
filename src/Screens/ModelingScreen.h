@@ -48,6 +48,9 @@ public slots:
 
 private slots:
     void OpenFile();
+    void Save(const QString& filepath = "");
+    void SaveFile();
+    void SaveFileAs();
     void Compute();
     void SwitchModelMode();
     void SwitchComputeDevice();

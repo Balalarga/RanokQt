@@ -28,6 +28,9 @@ public slots:
 
 private slots:
     void OpenFile();
+    void Save(const QString& filepath = "");
+    void SaveFile();
+    void SaveFileAs();
     void BuildMimage();
     void UpdateScreen();
 

@@ -90,10 +90,20 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
     QMenu *fileMenu = new QMenu("Файл");
     menuBar->addMenu(fileMenu);
 
+    QAction* openAction = new QAction;
+    openAction->setText("Открыть");
+    connect(openAction, &QAction::triggered, this, &RayMarchingScreen::OpenFile);
+    fileMenu->addAction(openAction);
+
     QAction* saveAction = new QAction;
-    saveAction->setText("Открыть");
-    connect(saveAction, &QAction::triggered, this, &RayMarchingScreen::OpenFile);
+    saveAction->setText("Сохранить");
+    connect(saveAction, &QAction::triggered, this, &RayMarchingScreen::SaveFile);
     fileMenu->addAction(saveAction);
+
+    QAction* saveAsAction = new QAction;
+    saveAsAction->setText("Сохранить как...");
+    connect(saveAsAction, &QAction::triggered, this, &RayMarchingScreen::SaveFileAs);
+    fileMenu->addAction(saveAsAction);
 
     toolVLayout->setMenuBar(menuBar);
 
@@ -101,9 +111,6 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
     _progressBar->setValue(0);
     _progressBar->hide();
 
-    _codeEditor->AddFile("Examples/NewFuncs/lopatka.txt");
-    _codeEditor->AddFile("Examples/NewFuncs/Bone.txt");
-    _codeEditor->AddFile("Examples/NewFuncs/sphere.txt");
     _oldTabId = _codeEditor->currentIndex();
 
     qRegisterMetaType<CalculatorMode>("CalculatorMode");
@@ -594,4 +601,31 @@ void RayMarchingScreen::UpdateScreen()
 
     GetShaderCode(0);
     _sceneView->updateGL();
+}
+
+void RayMarchingScreen::Save(const QString &filepath)
+{
+    QFile file(filepath);
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        QMessageBox::about(this, "Ошибка", "Невозможно сохранить файл");
+        return;
+    }
+    QTextStream stream(&file);
+    stream << _codeEditor->GetActiveText();
+    file.close();
+}
+
+void RayMarchingScreen::SaveFile()
+{
+    Save(_codeEditor->GetActiveFilepath());
+}
+
+void RayMarchingScreen::SaveFileAs()
+{
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Save program file"), "../",
+                                                    tr("Plan text(*.txt)"));
+    if(!fileName.isEmpty())
+        Save(fileName);
 }
