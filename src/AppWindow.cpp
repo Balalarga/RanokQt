@@ -3,6 +3,7 @@
 #include <QDockWidget>
 #include <QFileDialog>
 #include <QKeyEvent>
+#include <QCloseEvent>
 #include "Gui/StyleLoader.h"
 
 
@@ -11,30 +12,13 @@ AppWindow::AppWindow(QWidget *parent):
     _screensContainer(new ScreensView(this))
 {
     StyleLoader::attach("assets/styles/NewStyle.qss");
-
     setCentralWidget(_screensContainer);
-
-//    Qt::WindowFlags flags;
-//    flags = Qt::FramelessWindowHint;
-//    setWindowFlags(flags);
 }
 
-bool AppWindow::eventFilter(QObject *obj, QEvent *event)
+void AppWindow::closeEvent(QCloseEvent *event)
 {
-    if (event->type() == QEvent::KeyPress)
-    {
-        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-        if(QKeySequence("F6") == QKeySequence(keyEvent->key()))
-        {
-//            QString fileName = QFileDialog::getOpenFileName(this,
-//                                                            tr("Stylesheet"), "../style",
-//                                                            tr("Stylesheet(*.qss)"));
-//            if(!fileName.isEmpty())
-//                StyleLoader::attach(fileName);
-
-            StyleLoader::attach("assets/styles/NewStyle.qss");
-            return true;
-        }
-    }
-    return QWidget::eventFilter(obj, event);
+    if (_screensContainer->ReadyToClose())
+        event->accept();
+    else
+        event->ignore();
 }

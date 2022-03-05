@@ -49,6 +49,13 @@ QString CodeEditor::GetActiveFile()
     return "";
 }
 
+CodeEditorTab *CodeEditor::GetTab(int id)
+{
+    if (id < m_tabs.size())
+        return m_tabs[id];
+    return nullptr;
+}
+
 QString CodeEditor::GetActiveFilepath()
 {
     int id = currentIndex();

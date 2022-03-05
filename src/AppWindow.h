@@ -12,14 +12,11 @@ public:
     AppWindow(QWidget *parent = nullptr);
 
 
-protected:
-    bool eventFilter(QObject *obj, QEvent *event) override;
-
-
-private slots:
-
-
 private:
     ScreensView* _screensContainer;
+
+    // QWidget interface
+protected:
+    void closeEvent(QCloseEvent *event) override;
 };
 #endif // WIDGET_H

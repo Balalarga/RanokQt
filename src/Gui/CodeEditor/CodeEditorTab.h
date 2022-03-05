@@ -16,6 +16,8 @@ public:
     bool SetFile(const QString &filepath);
     inline QString GetFileName() const {return m_name; }
     inline QString GetFilepath() const { return m_filepath; }
+    bool Changed() const;
+
 
 protected:
     void focusInEvent(QFocusEvent *e) override;
@@ -29,10 +31,12 @@ private slots:
 
 
 private:
+    bool _changed;
     QCompleter* _completer;
     Highlighter* highlighter;
     QString m_filepath;
     QString m_name;
+    QString _fileText;
 };
 
 #endif

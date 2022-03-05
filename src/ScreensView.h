@@ -12,7 +12,7 @@ public:
     explicit ScreensView(QWidget *parent = nullptr);
 
 
-signals:
+    bool ReadyToClose();
 
 
 private slots:

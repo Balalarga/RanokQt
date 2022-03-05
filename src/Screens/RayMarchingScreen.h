@@ -24,11 +24,13 @@ public:
 
 public slots:
     void Cleanup() override;
+    bool NeedSave();
+    void SaveAll();
 
 
 private slots:
     void OpenFile();
-    void Save(const QString& filepath = "");
+    void Save(const QString& text, const QString& filepath = "");
     void SaveFile();
     void SaveFileAs();
     void SaveImage();

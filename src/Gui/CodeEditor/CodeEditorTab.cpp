@@ -8,7 +8,8 @@
 
 
 CodeEditorTab::CodeEditorTab(QWidget *parent):
-    QTextEdit(parent)
+    QTextEdit(parent),
+    _changed(false)
 {
     _completer = new QCompleter(this);
     _completer->setModel(ModelFromFile(":/assets/language/ranok_words.txt"));
@@ -29,6 +30,7 @@ bool CodeEditorTab::SetFile(const QString &filepath)
     if(file.open(QIODevice::ReadOnly))
     {
         setPlainText(file.readAll());
+        _fileText = toPlainText();
         m_filepath = filepath;
         m_name = filepath;
         auto splitFilepath = filepath.split('/');
@@ -38,6 +40,11 @@ bool CodeEditorTab::SetFile(const QString &filepath)
         return true;
     }
     return false;
+}
+
+bool CodeEditorTab::Changed() const
+{
+    return _fileText.compare(toPlainText());
 }
 
 void CodeEditorTab::insertCompletion(const QString &completion)

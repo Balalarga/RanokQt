@@ -20,7 +20,6 @@ using std::stringstream;
 #include "Space/SpaceManager.h"
 #include "Space/Calculators/CommonCalculator.h"
 #include "Space/Calculators/OpenclCalculator.h"
-
 #include "Gui/BuildSettingsDialog.h"
 
 
@@ -92,18 +91,24 @@ RayMarchingScreen::RayMarchingScreen(QWidget *parent)
 
     QAction* openAction = new QAction;
     openAction->setText("Открыть");
+    openAction->setShortcut(QKeySequence(Qt::ControlModifier, Qt::Key_O));
     connect(openAction, &QAction::triggered, this, &RayMarchingScreen::OpenFile);
     fileMenu->addAction(openAction);
+    parent->addAction(openAction);
 
     QAction* saveAction = new QAction;
     saveAction->setText("Сохранить");
+    openAction->setShortcut(QKeySequence(Qt::ControlModifier, Qt::Key_S));
     connect(saveAction, &QAction::triggered, this, &RayMarchingScreen::SaveFile);
     fileMenu->addAction(saveAction);
+    parent->addAction(saveAction);
 
     QAction* saveAsAction = new QAction;
     saveAsAction->setText("Сохранить как...");
+    openAction->setShortcut(QKeySequence(Qt::ControlModifier, Qt::ShiftModifier, Qt::Key_S));
     connect(saveAsAction, &QAction::triggered, this, &RayMarchingScreen::SaveFileAs);
     fileMenu->addAction(saveAsAction);
+    parent->addAction(saveAsAction);
 
     QAction* saveImageAction = new QAction;
     saveImageAction->setText("Сохранить изображение");
@@ -133,6 +138,27 @@ RayMarchingScreen::~RayMarchingScreen()
 void RayMarchingScreen::Cleanup()
 {
 
+}
+
+bool RayMarchingScreen::NeedSave()
+{
+    if ( _codeEditor->GetTabsCount() == 0)
+        return false;
+
+    for (int i = 0; i < _codeEditor->GetTabsCount(); ++i)
+        if (_codeEditor->GetTab(i)->Changed())
+            return true;
+
+    return false;
+}
+
+void RayMarchingScreen::SaveAll()
+{
+    for (int i = 0; i < _codeEditor->GetTabsCount(); ++i)
+    {
+        CodeEditorTab* tab = _codeEditor->GetTab(i);
+        Save(tab->toPlainText(), tab->GetFilepath());
+    }
 }
 
 void RayMarchingScreen::RenderWidthChanged(int value)
@@ -527,12 +553,14 @@ void RayMarchingScreen::keyPressEvent(QKeyEvent *event)
 {
     if(event->key() == Qt::Key_Shift)
         _sceneView->SetShiftState(true);
+    ClearableWidget::keyPressEvent(event);
 }
 
 void RayMarchingScreen::keyReleaseEvent(QKeyEvent *event)
 {
     if(event->key() == Qt::Key_Shift)
         _sceneView->SetShiftState(false);
+    ClearableWidget::keyReleaseEvent(event);
 }
 
 void RayMarchingScreen::OpenFile()
@@ -608,7 +636,7 @@ void RayMarchingScreen::UpdateScreen()
     _sceneView->updateGL();
 }
 
-void RayMarchingScreen::Save(const QString &filepath)
+void RayMarchingScreen::Save(const QString &text, const QString &filepath)
 {
     QFile file(filepath);
     if (!file.open(QIODevice::WriteOnly))
@@ -617,13 +645,13 @@ void RayMarchingScreen::Save(const QString &filepath)
         return;
     }
     QTextStream stream(&file);
-    stream << _codeEditor->GetActiveText();
+    stream << text;
     file.close();
 }
 
 void RayMarchingScreen::SaveFile()
 {
-    Save(_codeEditor->GetActiveFilepath());
+    Save(_codeEditor->GetActiveText(), _codeEditor->GetActiveFilepath());
 }
 
 void RayMarchingScreen::SaveFileAs()
@@ -632,7 +660,7 @@ void RayMarchingScreen::SaveFileAs()
                                                     tr("Save program file"), "../",
                                                     tr("Plan text(*.txt)"));
     if(!fileName.isEmpty())
-        Save(fileName);
+        Save(_codeEditor->GetActiveText(), fileName);
 }
 
 void RayMarchingScreen::SaveImage()
